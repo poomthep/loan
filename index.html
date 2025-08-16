@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องมือวิเคราะห์สินเชื่อบ้าน</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="print.css" media="print">
+</head>
+<body class="container">
+
+    <h1>เครื่องมือวิเคราะห์สินเชื่อบ้าน 🏡</h1>
+
+    <div class="user-info-container" style="background-color: #e9ecef; padding: 20px; border-radius: 8px;">
+        <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="profession">อาชีพ:</label>
+                <select id="profession">
+                    <option value="salaried">พนักงานประจำ</option>
+                    <option value="government">ข้าราชการ</option>
+                    <option value="business">เจ้าของกิจการ / อาชีพอิสระ</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="userAge">อายุ (ปี):</label>
+                <input type="number" id="userAge" placeholder="เช่น 30">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="monthlyIncome">รายได้ต่อเดือน (บาท):</label>
+                <input type="number" id="monthlyIncome" placeholder="เช่น 50000">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label for="monthlyDebt">ภาระหนี้สินอื่นๆ ต่อเดือน (บาท):</label>
+               	<input type="number" id="monthlyDebt" placeholder="เช่น 10000" value="0">
+            </div>
+			<div class="form-group" style="flex: 1; min-width: 200px;">
+				<label for="extraPayment">ยอดโปะเพิ่มต่อเดือน (บาท):</label>
+				<input type="number" id="extraPayment" placeholder="เช่น 5000" value="0">
+			</div>
+        </div>
+    </div>
+    <hr>
+
+    <h2>กรอกข้อมูลสินเชื่อที่ต้องการ</h2>
+    <div class="input-group">
+        <label for="loanAmount">วงเงินกู้ที่ต้องการ (บาท):</label>
+        <input type="number" id="loanAmount" value="2000000">
+    </div>
+    <div class="input-group">
+        <label for="loanTerm">ระยะเวลากู้ที่ต้องการ (ปี):</label>
+        <input type="number" id="loanTerm" value="30">
+    </div>
+
+    <button id="compareBtn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 18px;">วิเคราะห์และเปรียบเทียบโปรโมชัน</button>
+
+    <hr>
+    
+    <h2>ผลการวิเคราะห์สำหรับคุณ:</h2>
+
+    <div id="resultsContainer">
+		<div id="loading-spinner"></div>
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>

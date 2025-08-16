@@ -1,0 +1,173 @@
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap');
+
+/* --- General Styles --- */
+:root {
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-gray: #f8f9fa;
+    --dark-gray: #6c757d;
+    --text-color: #343a40;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: 'Noto Sans Thai', sans-serif;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+/* --- Container and Card --- */
+.container {
+    max-width: 960px;
+    margin: 20px auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.result-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    transition: box-shadow 0.3s ease;
+}
+
+.result-card:hover {
+    box-shadow: var(--shadow);
+}
+
+/* --- Typography --- */
+h1, h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--light-gray);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* --- Form Elements --- */
+.form-group, .control-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* --- Buttons --- */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-success { background-color: var(--success-color); color: white; }
+.btn-secondary { background-color: var(--dark-gray); color: white; }
+.btn-warning { background-color: var(--warning-color); color: black; }
+.btn-danger { background-color: var(--danger-color); color: white; }
+
+/* --- Table (for admin.html) --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+tr:hover {
+    background-color: #e9ecef;
+}
+
+/* --- Amortization Table Styles --- */
+.amortization-table-container {
+    max-height: 400px;
+    overflow-y: auto; /* ทำให้ตาราง scroll ได้ถ้ามันยาวเกิน */
+    margin-top: 15px;
+    border: 1px solid var(--border-color);
+    display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+}
+
+/* ========== เพิ่มส่วนนี้เข้าไป ========== */
+.amortization-table-container.visible {
+    display: block;
+}
+
+.toggle-schedule-btn {
+    margin-top: 10px;
+    font-size: 14px;
+    padding: 8px 12px;
+}
+
+/* --- Loading Spinner Styles --- */
+#loading-spinner {
+    border: 8px solid #f3f3f3; /* Light grey */
+    border-top: 8px solid var(--primary-color); /* Blue */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin: 50px auto; /* จัดกึ่งกลาง */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
