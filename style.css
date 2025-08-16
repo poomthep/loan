@@ -19,7 +19,7 @@ body {
     background-color: var(--light-gray);
     color: var(--text-color);
     margin: 0;
-    padding: 20px;
+    padding: 10px; /* ลด padding เริ่มต้นสำหรับมือถือ */
 }
 
 /* --- Container and Card --- */
@@ -27,7 +27,7 @@ body {
     max-width: 960px;
     margin: 20px auto;
     background-color: white;
-    padding: 30px;
+    padding: 20px; /* ลด padding เริ่มต้น */
     border-radius: 8px;
     box-shadow: var(--shadow);
 }
@@ -35,7 +35,7 @@ body {
 .result-card {
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
     margin-top: 20px;
     transition: box-shadow 0.3s ease;
 }
@@ -54,6 +54,7 @@ h1, h2 {
 
 h1 {
     text-align: center;
+    font-size: 1.8em; /* ปรับขนาดสำหรับจอเล็ก */
 }
 
 /* --- Form Elements --- */
@@ -145,29 +146,86 @@ tr:hover {
     display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
 }
 
-/* ========== เพิ่มส่วนนี้เข้าไป ========== */
 .amortization-table-container.visible {
     display: block;
 }
 
-.toggle-schedule-btn {
-    margin-top: 10px;
-    font-size: 14px;
-    padding: 8px 12px;
-}
-
 /* --- Loading Spinner Styles --- */
 #loading-spinner {
-    border: 8px solid #f3f3f3; /* Light grey */
-    border-top: 8px solid var(--primary-color); /* Blue */
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid var(--primary-color);
     border-radius: 50%;
     width: 60px;
     height: 60px;
     animation: spin 1s linear infinite;
-    margin: 50px auto; /* จัดกึ่งกลาง */
+    margin: 50px auto;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+
+/*
+============================================
+--- Responsive Styles for Mobile/Tablet ---
+============================================
+*/
+@media (max-width: 768px) {
+
+    /* --- ปรับ Layout หลัก --- */
+    body {
+        padding: 5px;
+    }
+    .container {
+        padding: 15px;
+        margin: 10px auto;
+    }
+    h1 {
+        font-size: 1.5em;
+    }
+
+    /* --- ปรับฟอร์มให้เป็นแนวตั้ง --- */
+    .user-info-container > div,
+    #promo-form > div[style*="display: flex"] {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .controls-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* --- ปรับตารางในหน้า Admin ให้แสดงผลเป็น Card --- */
+    #promo-table-body thead {
+        display: none; /* ซ่อนหัวตาราง */
+    }
+    #promo-table-body tr {
+        display: block;
+        border: 1px solid var(--border-color);
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+    #promo-table-body td {
+        display: block;
+        text-align: right; /* จัดข้อมูลชิดขวา */
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        position: relative;
+        padding-left: 50%; /* เว้นที่ให้ Label */
+    }
+    #promo-table-body td:last-child {
+        border-bottom: none;
+    }
+    #promo-table-body td::before {
+        content: attr(data-label); /* ดึงข้อความจาก data-label มาแสดง */
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        text-align: left;
+        white-space: nowrap;
+    }
+
 }

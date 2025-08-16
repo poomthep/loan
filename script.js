@@ -40,10 +40,8 @@ function generateAmortizationTable(principal, annualRate, years, extraPayment = 
         months++;
         const interestForMonth = remainingBalance * monthlyRate;
         totalInterestPaid += interestForMonth;
-
         let principalForMonth = monthlyPayment - interestForMonth;
         let actualExtraPayment = extraPayment;
-
         if ((principalForMonth + actualExtraPayment) >= remainingBalance) {
             principalForMonth = remainingBalance;
             actualExtraPayment = 0;
@@ -51,7 +49,6 @@ function generateAmortizationTable(principal, annualRate, years, extraPayment = 
         } else {
             remainingBalance -= (principalForMonth + actualExtraPayment);
         }
-
         tableHtml += `
             <tr>
                 <td>${months}</td>
@@ -73,14 +70,14 @@ function generateAmortizationTable(principal, annualRate, years, extraPayment = 
 }
 
 function displayOffers() {
-    // (ฟังก์ชันนี้เหมือนเดิมทั้งหมด)
     const userAge = parseInt(userAgeInput.value);
     const profession = professionSelect.value;
     const monthlyIncome = parseFloat(monthlyIncomeInput.value);
     const monthlyDebt = parseFloat(monthlyDebtInput.value) || 0;
     const requestedLoanAmount = parseFloat(loanAmountInput.value);
-    const requestedLoanTerm = parseInt(loanTermInput.value);
-    if (isNaN(userAge) || isNaN(monthlyIncome) || isNaN(requestedLoanAmount) || isNaN(requestedLoanTerm)) {
+    const requestedLoanTerm = parseInt(loanTermInput.value) || 0; 
+    
+    if (isNaN(userAge) || isNaN(monthlyIncome) || isNaN(requestedLoanAmount)) {
         alert('กรุณากรอกข้อมูลผู้กู้ และข้อมูลสินเชื่อให้ครบถ้วน');
         return;
     }
@@ -93,17 +90,28 @@ function displayOffers() {
     allOffers.forEach((offer, index) => {
         const maxRepaymentAge = (profession === 'business') ? offer.max_age_business : offer.max_age_salaried;
         const tenureByAge = maxRepaymentAge - userAge;
-        const finalLoanTerm = Math.min(requestedLoanTerm, offer.max_loan_tenure, tenureByAge);
+        
+        let finalLoanTerm;
+        if (requestedLoanTerm > 0) {
+            finalLoanTerm = Math.min(requestedLoanTerm, offer.max_loan_tenure, tenureByAge);
+        } else {
+            finalLoanTerm = Math.min(offer.max_loan_tenure, tenureByAge);
+        }
+
         if (finalLoanTerm <= 0) return;
+
         const avgInterest3yr = (offer.interest_rate_yr1 + offer.interest_rate_yr2 + offer.interest_rate_yr3) / 3;
         const monthlyPayment = calculateMonthlyPayment(requestedLoanAmount, avgInterest3yr, finalLoanTerm);
         let eligibilityNote = '';
         if (monthlyPayment > maxAffordablePayment) {
             eligibilityNote = `<p style="color: #856404;"><strong>ข้อควรระวัง:</strong> ค่างวดอาจสูงกว่าความสามารถในการผ่อนของคุณ</p>`;
         }
-        if (finalLoanTerm < requestedLoanTerm) {
+        if (requestedLoanTerm > 0 && finalLoanTerm < requestedLoanTerm) {
             eligibilityNote += `<p style="color: #004085;"><em>หมายเหตุ: ระยะเวลากู้ถูกปรับเป็น ${finalLoanTerm} ปี ตามเกณฑ์อายุของคุณและธนาคาร</em></p>`;
+        } else if (requestedLoanTerm === 0) {
+             eligibilityNote += `<p style="color: #004085;"><em>หมายเหตุ: โปรแกรมคำนวณระยะเวลากู้สูงสุดให้คุณคือ ${finalLoanTerm} ปี</em></p>`;
         }
+
         const totalPayments = finalLoanTerm * 12;
         const totalPaid = monthlyPayment * totalPayments;
         const totalInterest = totalPaid - requestedLoanAmount;
@@ -122,13 +130,14 @@ function displayOffers() {
                 <hr>
                 <p><strong>ค่างวดประมาณ (สำหรับ ${finalLoanTerm} ปี): ${monthlyPayment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท/เดือน</strong></p>
                 <p style="color: #dc3545; font-weight: bold;">ดอกเบี้ยที่จ่ายทั้งหมด (ตลอดสัญญา ${finalLoanTerm} ปี): ${totalInterest.toLocaleString('th-TH', { maximumFractionDigits: 0 })} บาท</p>
-                
-                <div class="button-group" style="margin-top: 15px; display: flex; gap: 10px;">
-                    <button class="btn btn-secondary toggle-schedule-btn" data-target-id="table-container-${index}" data-amount="${requestedLoanAmount}" data-rate="${avgInterest3yr}" data-term="${finalLoanTerm}" data-original-interest="${totalInterest}">
-                        แสดง/ซ่อนตารางผ่อน
-                    </button>
-                    </div>
-
+                <button class="btn btn-secondary toggle-schedule-btn" 
+                        data-amount="${requestedLoanAmount}" 
+                        data-rate="${avgInterest3yr}" 
+                        data-term="${finalLoanTerm}"
+                        data-original-interest="${totalInterest}"
+                        data-target-id="table-container-${index}">
+                    แสดง/ซ่อนตารางผ่อนและผลการโปะ
+                </button>
                 <div class="amortization-table-container" id="table-container-${index}"></div> 
             </div>
         `;
@@ -146,7 +155,9 @@ async function fetchAndDisplayInitialData() {
 
     try {
         const { data, error } = await supabaseClient.from('loan_offers').select('*');
-        if (error) { throw error; }
+        if (error) {
+            throw error;
+        }
         allOffers = data;
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
@@ -156,71 +167,34 @@ async function fetchAndDisplayInitialData() {
     }
 }
 
-
 compareBtn.addEventListener('click', displayOffers);
 
 resultsContainer.addEventListener('click', function(event) {
-    const button = event.target;
-    const targetId = button.dataset.targetId;
-    const tableContainer = document.getElementById(targetId);
+    if (event.target.classList.contains('toggle-schedule-btn')) {
+        const button = event.target;
+        const targetId = button.dataset.targetId;
+        const tableContainer = document.getElementById(targetId);
 
-    // --- Logic for Toggle Button ---
-    if (button.classList.contains('toggle-schedule-btn')) {
         if (tableContainer.innerHTML.trim() === '') {
             const amount = parseFloat(button.dataset.amount);
             const rate = parseFloat(button.dataset.rate);
             const term = parseInt(button.dataset.term);
             const extraPayment = parseFloat(extraPaymentInput.value) || 0;
             let summaryHtml = '';
-
             if (extraPayment > 0) {
                 const originalInterest = parseFloat(button.dataset.originalInterest);
                 const resultWithExtra = generateAmortizationTable(amount, rate, term, extraPayment);
                 const years = Math.floor(resultWithExtra.totalMonths / 12);
                 const months = resultWithExtra.totalMonths % 12;
                 const interestSaved = originalInterest - resultWithExtra.totalInterest;
-                summaryHtml = `<div class="print-summary" style="background-color: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px;"><p><strong>สรุปผลการโปะเพิ่ม:</strong></p><p>ระยะเวลาผ่อนใหม่: <strong>${years} ปี ${months} เดือน</strong></p><p style="color: var(--success-color);">ประหยัดดอกเบี้ยได้: <strong>${interestSaved.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</strong> บาท</p></div>`;
+                summaryHtml = `<div style="background-color: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px;"><p><strong>สรุปผลการโปะเพิ่ม:</strong></p><p>ระยะเวลาผ่อนใหม่: <strong>${years} ปี ${months} เดือน</strong></p><p style="color: var(--success-color);">ประหยัดดอกเบี้ยได้: <strong>${interestSaved.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</strong> บาท</p></div>`;
                 tableContainer.innerHTML = summaryHtml + resultWithExtra.tableHtml;
             } else {
                 const result = generateAmortizationTable(amount, rate, term, 0);
                 tableContainer.innerHTML = result.tableHtml;
             }
-            
-            // Add Print button after generating the table
-            const printButton = document.createElement('button');
-            printButton.className = 'btn btn-secondary print-table-btn';
-            printButton.textContent = '🖨️ พิมพ์ตารางนี้';
-            printButton.dataset.targetId = targetId;
-            button.parentElement.appendChild(printButton);
         }
         tableContainer.classList.toggle('visible');
-    }
-
-    // --- Logic for Print Button ---
-    if (button.classList.contains('print-table-btn')) {
-        const tableToPrint = tableContainer.innerHTML;
-        const bankName = button.closest('.result-card').querySelector('h3').textContent;
-
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>ตารางผ่อนชำระ - ${bankName}</title>
-                    <link rel="stylesheet" href="style.css">
-                    <link rel="stylesheet" href="print.css">
-                </head>
-                <body>
-                    <div class="container">
-                        <h1>ตารางผ่อนชำระ</h1>
-                        <h2>${bankName}</h2>
-                        ${tableToPrint}
-                    </div>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); }, 500); // Wait for styles to load
     }
 });
 
