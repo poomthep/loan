@@ -13,91 +13,21 @@
     <form id="promo-form">
         <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
         <input type="hidden" id="promo-id">
-        
-        <div class="form-group">
-            <label for="bank_name">ชื่อธนาคาร:</label>
-            <input type="text" id="bank_name" required>
-        </div>
-        
-        <div style="display: flex; gap: 15px;">
-            <div class="form-group" style="flex: 1;">
-                <label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%):</label>
-                <input type="number" id="interest_rate_yr1" step="0.01" required>
-            </div>
-            <div class="form-group" style="flex: 1;">
-                <label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%):</label>
-                <input type="number" id="interest_rate_yr2" step="0.01" required>
-            </div>
-            <div class="form-group" style="flex: 1;">
-                <label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%):</label>
-                <input type="number" id="interest_rate_yr3" step="0.01" required>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="interest_rate_after_value">ดอกเบี้ยปีถัดไป:</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <span>MRR - </span>
-                <input type="number" id="interest_rate_after_value" step="0.01" style="flex: 1;" required>
-                <span>%</span>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="max_ltv">วงเงินกู้สูงสุด (% LTV):</label>
-            <input type="number" id="max_ltv" placeholder="เช่น 95 หรือ 100">
-        </div>
-
-        <div style="display: flex; gap: 15px;">
-            <div class="form-group" style="flex: 1;">
-                <label for="max_loan_tenure">ระยะเวลากู้สูงสุด (ปี):</label>
-                <input type="number" id="max_loan_tenure" placeholder="เช่น 30" required>
-            </div>
-             <div class="form-group" style="flex: 1;">
-                <label for="max_age_salaried">อายุผ่อนหมด (พนักงานประจำ):</label>
-                <input type="number" id="max_age_salaried" placeholder="เช่น 60" required>
-            </div>
-             <div class="form-group" style="flex: 1;">
-                <label for="max_age_business">อายุผ่อนหมด (เจ้าของกิจการ):</label>
-                <input type="number" id="max_age_business" placeholder="เช่น 70" required>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="notes">เงื่อนไขพิเศษอื่นๆ:</label>
-            <input type="text" id="notes" placeholder="เช่น สำหรับกลุ่มอาชีพพิเศษ">
-        </div>
-        
-        <div class="form-group" style="display: flex; align-items: center;">
-            <input type="checkbox" id="waive_mortgage_fee" style="width: auto; margin-right: 10px;">
-            <label for="waive_mortgage_fee" style="margin-bottom: 0;">ฟรีค่าจดจำนอง</label>
-        </div>
-
-        <div class="button-group">
-            <button type="submit" id="submit-btn" class="btn btn-success">เพิ่มโปรโมชัน</button>
-            <button type="button" id="clear-btn" class="btn btn-secondary">ล้างฟอร์ม</button>
-        </div>
+        <div class="form-group"><label for="bank_name">ชื่อธนาคาร:</label><input type="text" id="bank_name" required></div>
+        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%):</label><input type="number" id="interest_rate_yr1" step="0.01" required></div><div class="form-group" style="flex: 1;"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%):</label><input type="number" id="interest_rate_yr2" step="0.01" required></div><div class="form-group" style="flex: 1;"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%):</label><input type="number" id="interest_rate_yr3" step="0.01" required></div></div>
+        <div class="form-group"><label for="interest_rate_after_value">ดอกเบี้ยปีถัดไป:</label><div style="display: flex; align-items: center; gap: 5px;"><span>MRR - </span><input type="number" id="interest_rate_after_value" step="0.01" style="flex: 1;" required><span>%</span></div></div>
+        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="max_ltv">วงเงินกู้สูงสุด (% LTV):</label><input type="number" id="max_ltv" placeholder="เช่น 95 หรือ 100"></div><div class="form-group" style="flex: 1;"><label for="dsr_limit">DSR Limit (%):</label><input type="number" id="dsr_limit" placeholder="เช่น 40, 50"></div></div>
+        <div class="form-group"><label for="income_per_million">รายได้ที่ต้องการต่อวงเงิน 1 ล้านบาท:</label><input type="number" id="income_per_million" placeholder="เช่น 4500"></div>
+        <div class="form-group"><label for="min_living_expense">ค่าใช้จ่ายครองชีพขั้นต่ำ (บาท/เดือน):</label><input type="number" id="min_living_expense" placeholder="เช่น 10000"></div>
+        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="max_loan_tenure">ระยะเวลากู้สูงสุด (ปี):</label><input type="number" id="max_loan_tenure" placeholder="เช่น 30" required></div><div class="form-group" style="flex: 1;"><label for="max_age_salaried">อายุผ่อนหมด (พนักงานประจำ):</label><input type="number" id="max_age_salaried" placeholder="เช่น 60" required></div><div class="form-group" style="flex: 1;"><label for="max_age_business">อายุผ่อนหมด (เจ้าของกิจการ):</label><input type="number" id="max_age_business" placeholder="เช่น 70" required></div></div>
+        <div class="form-group"><label for="notes">เงื่อนไขพิเศษอื่นๆ:</label><input type="text" id="notes" placeholder="เช่น สำหรับกลุ่มอาชีพพิเศษ"></div>
+        <div class="form-group" style="display: flex; align-items: center;"><input type="checkbox" id="waive_mortgage_fee" style="width: auto; margin-right: 10px;"><label for="waive_mortgage_fee" style="margin-bottom: 0;">ฟรีค่าจดจำนอง</label></div>
+        <div class="button-group"><button type="submit" id="submit-btn" class="btn btn-success">เพิ่มโปรโมชัน</button><button type="button" id="clear-btn" class="btn btn-secondary">ล้างฟอร์ม</button></div>
     </form>
-
     <hr>
-
     <h2>รายการโปรโมชันทั้งหมด</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ธนาคาร</th>
-                <th>ปีที่ 1</th>
-                <th>ปีที่ 2</th>
-                <th>ปีที่ 3</th>
-                <th>ปีต่อไป</th>
-                <th>LTV (%)</th>
-                <th>ฟรีค่าจดฯ</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody id="promo-table-body">
-            </tbody>
-    </table>
-
+    <table id="promo-table"><thead><tr><th>ธนาคาร</th><th>ปีที่ 1</th><th>ปีที่ 2</th><th>ปีที่ 3</th><th>ปีต่อไป</th><th>LTV (%)</th><th>ฟรีค่าจดฯ</th><th>จัดการ</th></tr></thead><tbody id="promo-table-body"></tbody></table>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="admin.js"></script>
 </body>

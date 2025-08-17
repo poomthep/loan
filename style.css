@@ -19,7 +19,7 @@ body {
     background-color: var(--light-gray);
     color: var(--text-color);
     margin: 0;
-    padding: 10px; /* ลด padding เริ่มต้นสำหรับมือถือ */
+    padding: 10px;
 }
 
 /* --- Container and Card --- */
@@ -27,7 +27,7 @@ body {
     max-width: 960px;
     margin: 20px auto;
     background-color: white;
-    padding: 20px; /* ลด padding เริ่มต้น */
+    padding: 20px;
     border-radius: 8px;
     box-shadow: var(--shadow);
 }
@@ -54,7 +54,7 @@ h1, h2 {
 
 h1 {
     text-align: center;
-    font-size: 1.8em; /* ปรับขนาดสำหรับจอเล็ก */
+    font-size: 1.8em;
 }
 
 /* --- Form Elements --- */
@@ -140,10 +140,10 @@ tr:hover {
 /* --- Amortization Table Styles --- */
 .amortization-table-container {
     max-height: 400px;
-    overflow-y: auto; /* ทำให้ตาราง scroll ได้ถ้ามันยาวเกิน */
+    overflow-y: auto;
     margin-top: 15px;
     border: 1px solid var(--border-color);
-    display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+    display: none;
 }
 
 .amortization-table-container.visible {
@@ -166,15 +166,9 @@ tr:hover {
     100% { transform: rotate(360deg); }
 }
 
-
-/*
-============================================
---- Responsive Styles for Mobile/Tablet ---
-============================================
-*/
+/* --- Responsive Styles for Mobile/Tablet --- */
 @media (max-width: 768px) {
 
-    /* --- ปรับ Layout หลัก --- */
     body {
         padding: 5px;
     }
@@ -186,7 +180,6 @@ tr:hover {
         font-size: 1.5em;
     }
 
-    /* --- ปรับฟอร์มให้เป็นแนวตั้ง --- */
     .user-info-container > div,
     #promo-form > div[style*="display: flex"] {
         flex-direction: column;
@@ -198,34 +191,32 @@ tr:hover {
         align-items: stretch;
     }
 
-    /* --- ปรับตารางในหน้า Admin ให้แสดงผลเป็น Card --- */
-    #promo-table-body thead {
-        display: none; /* ซ่อนหัวตาราง */
+    table thead {
+        display: none;
     }
-    #promo-table-body tr {
+    table tr {
         display: block;
         border: 1px solid var(--border-color);
         margin-bottom: 15px;
         border-radius: 5px;
     }
-    #promo-table-body td {
+    table td {
         display: block;
-        text-align: right; /* จัดข้อมูลชิดขวา */
+        text-align: right;
         border: none;
         border-bottom: 1px solid #f0f0f0;
         position: relative;
-        padding-left: 50%; /* เว้นที่ให้ Label */
+        padding-left: 50%;
     }
-    #promo-table-body td:last-child {
+    table td:last-child {
         border-bottom: none;
     }
-    #promo-table-body td::before {
-        content: attr(data-label); /* ดึงข้อความจาก data-label มาแสดง */
+    table td::before {
+        content: attr(data-label);
         position: absolute;
         left: 10px;
         font-weight: bold;
         text-align: left;
         white-space: nowrap;
     }
-
 }
