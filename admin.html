@@ -1,34 +1,159 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการโปรโมชัน</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ระบบจัดการโปรโมชัน (Admin)</title>
+
+  <!-- Theme / PWA basics -->
+  <meta name="theme-color" content="#0ea5e9" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <!-- simple SVG favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M20 42l6 6 18-18-6-6-18 18zM40 16l8 8' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="container">
+<body>
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <span class="logo">🏦</span>
+        <div class="titles">
+          <h1>ระบบจัดการโปรโมชัน</h1>
+          <small class="muted">Admin Console</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="installBtn" class="btn ghost hide">ติดตั้งแอป</button>
+        <button id="signOutBtn" class="btn ghost">ออกจากระบบ</button>
+      </div>
+    </div>
+  </header>
 
-    <h1>ระบบจัดการโปรโมชัน (Admin) 🛠️</h1>
+  <main class="wrap">
+    <!-- Gate (Login) -->
+    <section id="auth-gate" class="card gate" style="display:none;">
+      <h2>เข้าสู่ระบบ Admin</h2>
+      <form id="loginForm">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" name="email" placeholder="your@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn primary" id="loginBtn" type="submit">เข้าสู่ระบบ</button>
+          <span class="muted">* ต้องเป็นบัญชีแอดมินที่ได้รับอนุมัติ</span>
+        </div>
+      </form>
+    </section>
 
-    <form id="promo-form">
+    <!-- Admin App -->
+    <section id="admin-app" style="display:none;">
+      <div class="card">
         <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
-        <input type="hidden" id="promo-id">
-        <div class="form-group"><label for="bank_name">ชื่อธนาคาร:</label><input type="text" id="bank_name" required></div>
-        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%):</label><input type="number" id="interest_rate_yr1" step="0.01" required></div><div class="form-group" style="flex: 1;"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%):</label><input type="number" id="interest_rate_yr2" step="0.01" required></div><div class="form-group" style="flex: 1;"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%):</label><input type="number" id="interest_rate_yr3" step="0.01" required></div></div>
-        <div class="form-group"><label for="interest_rate_after_value">ดอกเบี้ยปีถัดไป:</label><div style="display: flex; align-items: center; gap: 5px;"><span>MRR - </span><input type="number" id="interest_rate_after_value" step="0.01" style="flex: 1;" required><span>%</span></div></div>
-        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="max_ltv">วงเงินกู้สูงสุด (% LTV):</label><input type="number" id="max_ltv" placeholder="เช่น 95 หรือ 100"></div><div class="form-group" style="flex: 1;"><label for="dsr_limit">DSR Limit (%):</label><input type="number" id="dsr_limit" placeholder="เช่น 40, 50"></div></div>
-        <div class="form-group"><label for="income_per_million">รายได้ที่ต้องการต่อวงเงิน 1 ล้านบาท:</label><input type="number" id="income_per_million" placeholder="เช่น 4500"></div>
-        <div class="form-group"><label for="min_living_expense">ค่าใช้จ่ายครองชีพขั้นต่ำ (บาท/เดือน):</label><input type="number" id="min_living_expense" placeholder="เช่น 10000"></div>
-        <div style="display: flex; gap: 15px;"><div class="form-group" style="flex: 1;"><label for="max_loan_tenure">ระยะเวลากู้สูงสุด (ปี):</label><input type="number" id="max_loan_tenure" placeholder="เช่น 30" required></div><div class="form-group" style="flex: 1;"><label for="max_age_salaried">อายุผ่อนหมด (พนักงานประจำ):</label><input type="number" id="max_age_salaried" placeholder="เช่น 60" required></div><div class="form-group" style="flex: 1;"><label for="max_age_business">อายุผ่อนหมด (เจ้าของกิจการ):</label><input type="number" id="max_age_business" placeholder="เช่น 70" required></div></div>
-        <div class="form-group"><label for="notes">เงื่อนไขพิเศษอื่นๆ:</label><input type="text" id="notes" placeholder="เช่น สำหรับกลุ่มอาชีพพิเศษ"></div>
-        <div class="form-group" style="display: flex; align-items: center;"><input type="checkbox" id="waive_mortgage_fee" style="width: auto; margin-right: 10px;"><label for="waive_mortgage_fee" style="margin-bottom: 0;">ฟรีค่าจดจำนอง</label></div>
-        <div class="button-group"><button type="submit" id="submit-btn" class="btn btn-success">เพิ่มโปรโมชัน</button><button type="button" id="clear-btn" class="btn btn-secondary">ล้างฟอร์ม</button></div>
-    </form>
-    <hr>
-    <h2>รายการโปรโมชันทั้งหมด</h2>
-    <table id="promo-table"><thead><tr><th>ธนาคาร</th><th>ปีที่ 1</th><th>ปีที่ 2</th><th>ปีที่ 3</th><th>ปีต่อไป</th><th>LTV (%)</th><th>ฟรีค่าจดฯ</th><th>จัดการ</th></tr></thead><tbody id="promo-table-body"></tbody></table>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="admin.js"></script>
+        <form id="promo-form">
+          <input type="hidden" id="promo-id" />
+          <div class="grid-3">
+            <div class="form-group">
+              <label for="bank_id">ธนาคาร</label>
+              <select id="bank_id" required>
+                <option value="">-- กรุณาเลือกธนาคาร --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="promotion_name">ชื่อโปรโมชัน</label>
+              <input type="text" id="promotion_name" required placeholder="เช่น สินเชื่อบ้านสุขใจ ปี 2568" />
+            </div>
+            <div class="form-group">
+              <label for="interest_rate_after_value">อัตราหลัง 3 ปี (รูปแบบ MRR - X%)</label>
+              <input type="number" id="interest_rate_after_value" step="0.01" placeholder="เช่น 1.50" />
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="form-group"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%)</label><input type="number" id="interest_rate_yr1" step="0.01" /></div>
+            <div class="form-group"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%)</label><input type="number" id="interest_rate_yr2" step="0.01" /></div>
+            <div class="form-group"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%)</label><input type="number" id="interest_rate_yr3" step="0.01" /></div>
+            <div class="form-group"><label for="max_ltv">LTV สูงสุด (%)</label><input type="number" id="max_ltv" step="1" /></div>
+            <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" step="1" placeholder="เช่น 40" /></div>
+            <div class="form-group"><label for="income_per_million">ต้องมีรายได้ต่อ 1 ล้านบาท (บาท)</label><input type="number" id="income_per_million" step="100" /></div>
+            <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ (บาท)</label><input type="number" id="min_living_expense" step="100" /></div>
+            <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" step="1" /></div>
+            <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สิ้นสุด (พนง.)</label><input type="number" id="max_age_salaried" step="1" /></div>
+            <div class="form-group"><label for="max_age_business">อายุผู้กู้สิ้นสุด (ธุรกิจ)</label><input type="number" id="max_age_business" step="1" /></div>
+            <div class="form-group checkbox">
+              <label><input type="checkbox" id="waive_mortgage_fee" /> ยกเว้นค่าจดจำนอง</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">หมายเหตุ</label>
+            <textarea id="notes" rows="3" placeholder="เงื่อนไขเพิ่มเติม / เอกสาร"></textarea>
+          </div>
+
+          <div class="toolbar sticky">
+            <div class="left">
+              <button class="btn primary" id="submitBtn" type="submit">บันทึกโปรโมชัน</button>
+              <button type="button" class="btn" id="clearBtn" onclick="document.getElementById('promo-form').reset()">ล้างฟอร์ม</button>
+            </div>
+            <span class="muted">* แก้ไข: คลิก “แก้ไข” ในตาราง แล้วเลื่อนขึ้นมาแก้ฟอร์ม</span>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>รายการโปรโมชัน</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>ธนาคาร</th><th>ชื่อโปรโมชัน</th><th>Avg 3Y (%)</th><th style="text-align:right;">จัดการ</th></tr>
+            </thead>
+            <tbody id="promo-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // PWA: register service worker + install button
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.warn);
+      });
+    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.remove('hide');
+    });
+    installBtn?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      installBtn.disabled = true;
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.classList.add('hide');
+      installBtn.disabled = false;
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
 </body>
 </html>

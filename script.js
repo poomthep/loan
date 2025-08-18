@@ -1,6 +1,6 @@
 // ตั้งค่าการเชื่อมต่อกับ Supabase
-const SUPABASE_URL = 'https://tswdqjnexuynkaagbvjb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzd2Rxam5leHV5bmthYWdidmpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMjM2OTMsImV4cCI6MjA3MDg5OTY5M30.xbj60kwNOUixRxSjIOY9F2z7We1QXS4kK8F7P84EUTI';
+const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -50,7 +50,7 @@ function renderComparisonTable(topResults) {
     if (topResults.length < 2) return '';
     const formatCurrency = (num) => num.toLocaleString('th-TH', { maximumFractionDigits: 0 });
     let tableHtml = `<div class="result-card" style="background-color: #f8f9fa;"><h2 style="text-align:center;">ตารางสรุปเปรียบเทียบ ${topResults.length} อันดับแรก</h2><table class="comparison-table" style="width: 100%; text-align: center;"><thead><tr><th style="text-align: left;">หัวข้อ</th>`;
-    topResults.forEach(result => { tableHtml += `<th>${result.bank_name}</th>`; });
+    topResults.forEach(result => { tableHtml += `<th>${result.banks.bank_name}</th>`; });
     tableHtml += `</tr></thead><tbody>`;
     tableHtml += `<tr><td style="text-align: left;">อัตราดอกเบี้ยเฉลี่ย 3 ปีแรก</td>`;
     topResults.forEach(result => { tableHtml += `<td><strong>${result.avgInterest3yr.toFixed(2)}%</strong></td>`; });
@@ -62,12 +62,7 @@ function renderComparisonTable(topResults) {
     });
     tableHtml += `</tr>`;
     tableHtml += `<tr><td style="text-align: left;">วงเงินกู้สูงสุด (ที่อนุมัติได้)</td>`;
-    topResults.forEach(result => {
-        tableHtml += `<td>${formatCurrency(result.finalMaxPossibleLoan)}</td>`;
-    });
-    tableHtml += `</tr>`;
-    tableHtml += `<tr><td style="text-align: left;">ฟรีค่าจดจำนอง</td>`;
-    topResults.forEach(result => { tableHtml += `<td>${result.waive_mortgage_fee ? '✅' : '❌'}</td>`; });
+    topResults.forEach(result => { tableHtml += `<td>${formatCurrency(result.finalMaxPossibleLoan)}</td>`; });
     tableHtml += `</tr>`;
     tableHtml += `</tbody></table></div>`;
     return tableHtml;
@@ -84,11 +79,11 @@ function renderResults(resultsToRender) {
         const totalPayments = offer.finalLoanTerm * 12;
         const totalPaid = monthlyPayment * totalPayments;
         const totalInterest = totalPaid - offer.loanAmountToCalculate;
-        offersHtml += `<div class="result-card"><h3>ธนาคาร: ${offer.bank_name}</h3>${offer.eligibilityNote}<p>วงเงินกู้สูงสุดที่คาดว่าจะได้รับ: <strong>${formatCurrency(offer.finalMaxPossibleLoan)}</strong> บาท</p><p><strong>อัตราดอกเบี้ยเฉลี่ย 3 ปี: ${offer.avgInterest3yr.toFixed(2)} %</strong></p><ul><li>ปีที่ 1: ${offer.interest_rate_yr1.toFixed(2)}%</li><li>ปีที่ 2: ${offer.interest_rate_yr2.toFixed(2)}%</li><li>ปีที่ 3: ${offer.interest_rate_yr3.toFixed(2)}%</li><li>ปีต่อไป: ${offer.interest_rate_after}</li></ul><hr><p><strong>ค่างวดประมาณ (สำหรับ ${offer.finalLoanTerm} ปี): ${monthlyPayment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท/เดือน</strong></p><p style="color: #dc3545; font-weight: bold;">จากวงเงิน ${formatCurrency(offer.loanAmountToCalculate)} บาท | ดอกเบี้ยทั้งหมด: ${formatCurrency(totalInterest)} บาท</p><div class="button-group" style="margin-top: 15px; display: flex; gap: 10px;"><button class="btn btn-secondary toggle-schedule-btn" data-target-id="table-container-${index}" data-amount="${offer.loanAmountToCalculate}" data-rate="${offer.avgInterest3yr}" data-term="${offer.finalLoanTerm}">แสดง/ซ่อนตารางผ่อน</button></div><div class="amortization-table-container" id="table-container-${index}"></div></div>`;
+        offersHtml += `<div class="result-card"><h3>${offer.banks.bank_name}</h3><p><strong>โปรโมชัน:</strong> ${offer.promotion_name}</p>${offer.eligibilityNote}<p>วงเงินกู้สูงสุดที่คาดว่าจะได้รับ: <strong>${formatCurrency(offer.finalMaxPossibleLoan)}</strong> บาท</p><p><strong>อัตราดอกเบี้ยเฉลี่ย 3 ปี: ${offer.avgInterest3yr.toFixed(2)} %</strong></p><ul><li>ปีที่ 1: ${offer.interest_rate_yr1.toFixed(2)}%</li><li>ปีที่ 2: ${offer.interest_rate_yr2.toFixed(2)}%</li><li>ปีที่ 3: ${offer.interest_rate_yr3.toFixed(2)}%</li><li>ปีต่อไป: ${offer.interest_rate_after}</li></ul><hr><p><strong>ค่างวดประมาณ (สำหรับ ${offer.finalLoanTerm} ปี): ${monthlyPayment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท/เดือน</strong></p><p style="color: #dc3545; font-weight: bold;">จากวงเงิน ${formatCurrency(offer.loanAmountToCalculate)} บาท | ดอกเบี้ยทั้งหมด: ${formatCurrency(totalInterest)} บาท</p><div class="button-group" style="margin-top: 15px; display: flex; gap: 10px;"><button class="btn btn-secondary toggle-schedule-btn" data-target-id="table-container-${index}" data-amount="${offer.loanAmountToCalculate}" data-rate="${offer.avgInterest3yr}" data-term="${offer.finalLoanTerm}">แสดง/ซ่อนตารางผ่อน</button></div><div class="amortization-table-container" id="table-container-${index}"></div></div>`;
     });
     resultsContainer.innerHTML = comparisonTableHtml + offersHtml;
     if (resultsToRender.length === 0) {
-        resultsContainer.innerHTML = `<div class="result-card"><p>ไม่พบโปรโมชันที่เหมาะสมกับคุณสมบัติของคุณ (อาจเนื่องมาจากอายุเกินเกณฑ์)</p></div>`;
+        resultsContainer.innerHTML = `<div class="result-card"><p>ไม่พบโปรโมชันที่เหมาะสมกับคุณสมบัติของคุณ</p></div>`;
     }
 }
 
@@ -108,27 +103,21 @@ function analyzeAndFilterOffers() {
         const dsrValue = (offer.dsr_limit || 40) / 100;
         const maxAffordablePayment = (monthlyIncome * dsrValue) - monthlyDebt;
         if (maxAffordablePayment <= 0) return;
-
         const maxLoanByDSR = maxAffordablePayment * 150;
-        let maxLoanByIncome = Infinity; // ให้ค่าเป็น Infinity ถ้าไม่มีเกณฑ์นี้
+        let maxLoanByIncome = Infinity;
         if (offer.income_per_million > 0) {
             const netIncomeAfterExpenses = monthlyIncome - (offer.min_living_expense || 0) - monthlyDebt;
             if (netIncomeAfterExpenses > 0) {
                 maxLoanByIncome = (netIncomeAfterExpenses / offer.income_per_million) * 1000000;
             }
         }
-        
-        // --- ส่วนแก้ไขตรรกะที่สำคัญ ---
-        // วงเงินกู้สูงสุดที่เป็นไปได้จริง คือค่าที่น้อยที่สุดระหว่าง 2 เกณฑ์
         const finalMaxPossibleLoan = Math.min(maxLoanByDSR, maxLoanByIncome);
-        
         let eligibilityNote = '';
         let loanAmountToCalculate = requestedLoanAmount;
         if (requestedLoanAmount > finalMaxPossibleLoan) {
             loanAmountToCalculate = finalMaxPossibleLoan;
             eligibilityNote += `<p style="color: #856404;"><strong>ข้อควรระวัง:</strong> วงเงินที่ต้องการสูงเกินไป โปรแกรมจึงคำนวณจากวงเงินสูงสุดที่เป็นไปได้</p>`;
         }
-        
         const maxRepaymentAge = (profession === 'business' || profession === 'government') ? offer.max_age_business : offer.max_age_salaried;
         const tenureByAge = maxRepaymentAge - userAge;
         let finalLoanTerm;
@@ -138,9 +127,7 @@ function analyzeAndFilterOffers() {
             finalLoanTerm = Math.min(offer.max_loan_tenure, tenureByAge);
         }
         if (finalLoanTerm <= 0) return;
-        
         const avgInterest3yr = (offer.interest_rate_yr1 + offer.interest_rate_yr2 + offer.interest_rate_yr3) / 3;
-        
         currentResults.push({ ...offer, finalLoanTerm, avgInterest3yr, requestedLoanTerm, loanAmountToCalculate, eligibilityNote, finalMaxPossibleLoan });
     });
     sortAndRenderResults();
@@ -148,7 +135,7 @@ function analyzeAndFilterOffers() {
 
 function sortAndRenderResults() {
     const filterText = filterBankInput.value.toLowerCase();
-    let filteredResults = currentResults.filter(offer => offer.bank_name.toLowerCase().includes(filterText));
+    let filteredResults = currentResults.filter(offer => offer.banks.bank_name.toLowerCase().includes(filterText));
     const sortValue = sortOrderSelect.value;
     if (sortValue === 'rate_asc') {
         filteredResults.sort((a, b) => a.avgInterest3yr - b.avgInterest3yr);
@@ -161,7 +148,7 @@ function sortAndRenderResults() {
 async function fetchAndDisplayInitialData() {
     loadingSpinner.style.display = 'block';
     try {
-        const { data, error } = await supabaseClient.from('loan_offers').select('*');
+        const { data, error } = await supabaseClient.from('promotions').select(`*, banks(bank_name)`);
         if (error) { throw error; }
         allOffers = data;
     } catch (error) {

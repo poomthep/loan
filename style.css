@@ -1,222 +1,134 @@
-/* --- Google Font --- */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap');
-
-/* --- General Styles --- */
-:root {
-    --primary-color: #007bff;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --light-gray: #f8f9fa;
-    --dark-gray: #6c757d;
-    --text-color: #343a40;
-    --border-color: #dee2e6;
-    --shadow: 0 4px 8px rgba(0,0,0,0.1);
+/* === Design System === */
+:root{
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --primary:#0ea5e9;
+  --primary-600:#0284c7;
+  --accent:#3b82f6;
+  --ring: rgba(14,165,233,.35);
+  --danger:#ef4444;
+  --ok:#10b981;
+  --shadow: 0 10px 24px rgba(2,8,23,.08), 0 2px 8px rgba(2,8,23,.06);
+  --radius:16px;
 }
 
-body {
-    font-family: 'Noto Sans Thai', sans-serif;
-    background-color: var(--light-gray);
-    color: var(--text-color);
-    margin: 0;
-    padding: 10px;
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  line-height:1.55;
 }
 
-/* --- Container and Card --- */
-.container {
-    max-width: 960px;
-    margin: 20px auto;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+/* Topbar */
+.topbar{
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color:#fff; position:sticky; top:0; z-index:20;
+  box-shadow: var(--shadow);
+}
+.topbar .wrap{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; max-width:1200px; margin:0 auto;
+}
+.brand{ display:flex; gap:12px; align-items:center; }
+.brand .logo{ font-size:28px; }
+.brand h1{ font-size:20px; margin:0; font-weight:700; letter-spacing:.2px; }
+.brand .muted{ opacity:.85 }
+
+.wrap{ max-width:1100px; margin:24px auto; padding:0 16px; }
+
+/* Card */
+.card{
+  background:var(--card); border-radius:var(--radius);
+  padding:18px; box-shadow:var(--shadow); margin-bottom:18px;
 }
 
-.result-card {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 20px;
-    transition: box-shadow 0.3s ease;
+/* Forms */
+.form-group{ margin-bottom:12px; }
+.form-group label{ display:block; margin:0 0 6px; font-weight:600; color:#0b1220; }
+.form-group input, .form-group select, .form-group textarea{
+  width:100%; padding:10px 12px; border-radius:12px; border:1px solid #e5e9f2;
+  background:#fff; outline:none; transition:.15s border, .15s box-shadow, .15s transform;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+.form-group.checkbox label{ font-weight:500; display:flex; align-items:center; gap:10px; }
+
+.grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.grid-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
+.grid-4{ display:grid; grid-template-columns: repeat(4,1fr); gap:12px; }
+
+@media (max-width: 1024px){
+  .grid-4{ grid-template-columns: repeat(3,1fr); }
+}
+@media (max-width: 800px){
+  .grid-3{ grid-template-columns: 1fr; }
+  .grid-4{ grid-template-columns: 1fr 1fr; }
+  .grid-2{ grid-template-columns: 1fr; }
+  .topbar .wrap{ padding:12px 14px; }
+  .brand h1{ font-size:18px; }
 }
 
-.result-card:hover {
-    box-shadow: var(--shadow);
+/* Buttons */
+.btn{
+  padding:10px 14px; border-radius:12px; border:1px solid #e5e9f2; background:#fff;
+  cursor:pointer; font-weight:600; color:#0b1220; transition:.15s transform, .15s box-shadow, .15s background, .15s border;
+}
+.btn:hover{ transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn:active{ transform: translateY(0); }
+.btn:disabled{ opacity:.6; cursor:not-allowed; box-shadow:none; }
+
+.btn.primary{
+  background: var(--primary); color:#fff; border-color: var(--primary-600);
+}
+.btn.primary:hover{ background: var(--primary-600); }
+
+.btn.ghost{
+  color:#fff; background:transparent; border-color: rgba(255,255,255,.35);
+}
+.btn.ghost:hover{ background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); }
+.top-actions{ display:flex; gap:10px; }
+.hide{ display:none !important; }
+
+/* Toolbar */
+.toolbar{
+  display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:10px;
+}
+.toolbar .left{ display:flex; gap:10px; align-items:center; }
+
+/* Sticky action */
+.toolbar.sticky{
+  position: sticky; bottom: -8px; background:linear-gradient(0deg, rgba(246,248,251,1) 0%, rgba(255,255,255,1) 100%);
+  padding:10px; border-radius:12px; margin-top:14px;
 }
 
-/* --- Typography --- */
-h1, h2 {
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--light-gray);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+/* Table */
+.table-wrap{ overflow:auto; border-radius:12px; }
+.table{ width:100%; border-collapse:separate; border-spacing:0; }
+.table th, .table td{ padding:12px; border-bottom:1px solid #eef2f7; }
+.table thead th{ text-align:left; background:#f0f7ff; color:#0b1220; position:sticky; top:0; z-index:1; }
+.table tbody tr:hover{ background:#f8fbff; }
+.table td:last-child{ text-align:right; }
+
+/* Toast */
+.toast{
+  position: fixed; right:16px; bottom:16px;
+  background:#111827; color:#fff; padding:12px 14px; border-radius:12px;
+  box-shadow: var(--shadow); display:none; z-index:50;
 }
 
-h1 {
-    text-align: center;
-    font-size: 1.8em;
-}
+/* Gate card tweaks */
+.gate{ max-width:720px; margin:20px auto; }
 
-/* --- Form Elements --- */
-.form-group, .control-group {
-    margin-bottom: 20px;
-}
+/* Muted text */
+.muted{ color:var(--muted); font-size:.9rem; }
 
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-input[type="number"],
-input[type="text"],
-select {
-    width: 100%;
-    padding: 12px;
-    box-sizing: border-box;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 16px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-/* --- Buttons --- */
-.btn {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s ease, transform 0.1s ease;
-}
-
-.btn:hover {
-    opacity: 0.9;
-}
-
-.btn:active {
-    transform: translateY(1px);
-}
-
-.btn-primary { background-color: var(--primary-color); color: white; }
-.btn-success { background-color: var(--success-color); color: white; }
-.btn-secondary { background-color: var(--dark-gray); color: white; }
-.btn-warning { background-color: var(--warning-color); color: black; }
-.btn-danger { background-color: var(--danger-color); color: white; }
-
-/* --- Table (for admin.html) --- */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    border: 1px solid var(--border-color);
-    padding: 12px;
-    text-align: left;
-}
-
-th {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-tr:nth-child(even) {
-    background-color: var(--light-gray);
-}
-
-tr:hover {
-    background-color: #e9ecef;
-}
-
-/* --- Amortization Table Styles --- */
-.amortization-table-container {
-    max-height: 400px;
-    overflow-y: auto;
-    margin-top: 15px;
-    border: 1px solid var(--border-color);
-    display: none;
-}
-
-.amortization-table-container.visible {
-    display: block;
-}
-
-/* --- Loading Spinner Styles --- */
-#loading-spinner {
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid var(--primary-color);
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
-    margin: 50px auto;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* --- Responsive Styles for Mobile/Tablet --- */
-@media (max-width: 768px) {
-
-    body {
-        padding: 5px;
-    }
-    .container {
-        padding: 15px;
-        margin: 10px auto;
-    }
-    h1 {
-        font-size: 1.5em;
-    }
-
-    .user-info-container > div,
-    #promo-form > div[style*="display: flex"] {
-        flex-direction: column;
-        gap: 0;
-    }
-    
-    .controls-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    table thead {
-        display: none;
-    }
-    table tr {
-        display: block;
-        border: 1px solid var(--border-color);
-        margin-bottom: 15px;
-        border-radius: 5px;
-    }
-    table td {
-        display: block;
-        text-align: right;
-        border: none;
-        border-bottom: 1px solid #f0f0f0;
-        position: relative;
-        padding-left: 50%;
-    }
-    table td:last-child {
-        border-bottom: none;
-    }
-    table td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        font-weight: bold;
-        text-align: left;
-        white-space: nowrap;
-    }
+/* Smaller inputs on mobile for better fit */
+@media (max-width: 480px){
+  .btn{ padding:9px 12px; border-radius:10px; }
+  .form-group input, .form-group select, .form-group textarea{ padding:9px 10px; border-radius:10px; }
 }
