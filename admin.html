@@ -2,314 +2,276 @@
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบจัดการโปรโมชัน | Admin Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ระบบจัดการโปรโมชัน | Admin Console (NO-AUTH)</title>
   <meta name="theme-color" content="#0ea5e9" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="icon" href="/icons/icon-192.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --brand:#0ea5e9; --brand-dark:#0284c7; --ink:#0f172a; --muted:#64748b;
-      --bg:#f8fafc; --card:#ffffff; --ok:#111827; --bad:#b91c1c;
-      --radius:16px; --shadow:0 8px 24px rgba(2,8,23,.08);
-    }
-    *{ box-sizing:border-box; } html,body{ height:100%; }
-    body{ margin:0; font-family:"Noto Sans Thai",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      background:var(--bg); color:var(--ink); font-size:16px;
-    }
-    header{ position:sticky; top:0; z-index:10; background:linear-gradient(90deg, var(--brand), #22c55e);
-      color:white; box-shadow:var(--shadow); }
-    .bar{ max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px; }
-    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; }
-    .brand .logo{ width:36px;height:36px;border-radius:12px;background:white;color:var(--brand);
-      display:grid;place-items:center;font-weight:700; box-shadow: inset 0 0 0 2px rgba(0,0,0,.04); }
-    .grow{ flex:1; }
-    .btn{ appearance:none; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
-      background:white; color:var(--ink); box-shadow:var(--shadow); transition:.15s all; font-size:inherit; }
-    .btn:hover{ transform: translateY(-1px); }
-    .btn.primary{ background:var(--brand); color:#fff; } .btn.warning{ background:#f59e0b; color:#fff; }
-    .btn.danger{ background:#ef4444; color:#fff; } .btn.ghost{ background:transparent; color:white;
-      box-shadow:none; border:2px solid rgba(255,255,255,.35) } .btn:disabled{ opacity:.6; cursor:not-allowed; }
-    main{ max-width:1100px; margin:20px auto; padding:0 16px 40px; }
-    .card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
-    .grid{ display:grid; gap:16px; grid-template-columns:repeat(12, 1fr); }
-    .col-12{ grid-column:span 12; } .col-6{ grid-column:span 6; } .col-4{ grid-column:span 4; } .col-3{ grid-column:span 3; }
-    @media (max-width: 900px){ .col-6,.col-4{ grid-column:span 6; } .col-3{ grid-column:span 4; } }
-    @media (max-width: 640px){ .col-6,.col-4,.col-3{ grid-column:span 12; } }
-    label{ font-size:.9rem; color:var(--muted); display:block; margin-bottom:6px; font-weight:600; }
-    input, select, textarea{ width:100%; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; font:inherit; background:#fff; }
-    input[type="checkbox"] { width: auto; }
-    textarea{ min-height:64px; } .muted{ color:var(--muted); }
-    table{ width:100%; border-collapse:separate; border-spacing:0 8px; }
-    thead th{ text-align:left; font-size:.85rem; color:var(--muted); font-weight:600; padding:6px 10px; }
-    tbody tr{ background:white; box-shadow:0 2px 8px rgba(2,8,23,.06); border-radius:12px; }
-    tbody td{ padding:12px 10px; vertical-align:top; } td:first-child{ border-radius:12px 0 0 12px; } td:last-child{ border-radius:0 12px 12px 0; }
-    td.toolbar{ width:160px; text-align:right; } td.toolbar .btn{ padding:8px 10px; border-radius:10px; margin-left:4px; }
-    #loader, #auth-gate, #admin-app { display:none; }
-    .center{ display:grid; place-items:center; min-height:60vh; }
-    .spinner{ width:56px; height:56px; border-radius:50%; border:6px solid rgba(2,8,23,.12); border-top-color:white; animation:spin 1s linear infinite; box-shadow:var(--shadow); }
-    .loader-card{ background:linear-gradient(180deg, var(--brand), var(--brand-dark)); color:white; padding:24px; border-radius:var(--radius); text-align:center; box-shadow:var(--shadow); }
-    @keyframes spin{ to{ transform:rotate(360deg); } }
-    #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:20px; padding:10px 14px; color:white;
-      background:var(--ok); border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700; }
-    .section-title{ margin:6px 0 14px; font-weight:700; font-size:1.25rem; } .actions{ display:flex; gap:8px; flex-wrap:wrap; }
-    .mrta-wrap{ display:none; }
-    /* ซ่อนปุ่มออกจากระบบ */
-    #signOutBtn { display: none; }
+    :root{ --brand:#0ea5e9; --brand-dark:#0284c7; --ink:#0f172a; --muted:#64748b;
+      --bg:#f8fafc; --card:#fff; --ok:#111827; --bad:#b91c1c; --radius:16px; --shadow:0 8px 24px rgba(2,8,23,.08) }
+    *{ box-sizing:border-box } html,body{ height:100% } body{ margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink) }
+    header{ position:sticky; top:0; z-index:10; background:linear-gradient(90deg, var(--brand), #22c55e); color:#fff; box-shadow:var(--shadow) }
+    .bar{ max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:800 }
+    .logo{ width:36px; height:36px; border-radius:12px; background:#fff; color:var(--brand); display:grid; place-items:center; font-weight:900 }
+    .grow{ flex:1 }
+    .btn{ appearance:none; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; background:#fff; color:#111827; box-shadow:var(--shadow) }
+    .btn.primary{ background:var(--brand); color:#fff } .btn.warning{ background:#f59e0b; color:#111 } .btn.danger{ background:#ef4444; color:#fff }
+    .btn.ghost{ background:transparent; color:#fff; box-shadow:none; border:2px solid rgba(255,255,255,.35) } .btn:disabled{ opacity:.6; cursor:not-allowed }
+    main{ max-width:1100px; margin:20px auto; padding:0 16px 40px }
+    .card{ background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:18px }
+    .grid{ display:grid; gap:12px; grid-template-columns:repeat(12,1fr) }
+    .col-12{ grid-column:span 12 } .col-6{ grid-column:span 6 } .col-4{ grid-column:span 4 } .col-3{ grid-column:span 3 }
+    @media (max-width:900px){ .col-6,.col-4,.col-3{ grid-column:span 12 } }
+    label{ font-size:.9rem; color:var(--muted); display:block; margin-bottom:6px }
+    input,select,textarea{ width:100%; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; font:inherit; background:#fff }
+    textarea{ min-height:64px } .muted{ color:var(--muted) }
+    table{ width:100%; border-collapse:separate; border-spacing:0 8px }
+    thead th{ text-align:left; font-size:.85rem; color:var(--muted); font-weight:800; padding:6px 10px }
+    tbody tr{ background:#fff; box-shadow:var(--shadow) }
+    tbody td{ padding:12px 10px } td.toolbar{ width:160px }
+    #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:20px; padding:10px 14px; color:#fff; background:var(--ok); border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700 }
+    .actions{ display:flex; gap:8px; flex-wrap:wrap } .section-title{ margin:6px 0 14px; font-weight:800 }
+    .mrta-wrap{ display:none }
+    .flag{ position:fixed; left:12px; bottom:12px; background:#111827; color:#fff; padding:6px 10px; border-radius:10px; font-size:.8rem; box-shadow:var(--shadow); opacity:.85 }
   </style>
 </head>
 <body>
   <header>
     <div class="bar">
-      <div class="brand">
-        <div class="logo">🏦</div>
-        <div>ระบบจัดการโปรโมชัน</div>
-      </div>
+      <div class="brand"><div class="logo">PA</div><div>ระบบจัดการโปรโมชัน</div></div>
       <div class="grow"></div>
-      <button id="signOutBtn" class="btn ghost">ออกจากระบบ</button>
+      <button id="hardReloadBtn" class="btn ghost" title="เคลียร์ SW/แคชแล้วรีโหลด">รีโหลดแรง</button>
     </div>
   </header>
 
-  <div id="loader" class="center">
-    <div class="loader-card">
-      <div class="spinner" style="margin:0 auto 14px;"></div>
-      <div>กำลังโหลดข้อมูล...</div>
-    </div>
-  </div>
-
-  <main id="auth-gate" class="center"></main>
-
+  <!-- ไม่มีหน้า Gate/Loader แล้ว แสดงแอปตรง ๆ -->
   <main id="admin-app">
-    <div class="card">
-      <h2 class="section-title">เพิ่ม/แก้ไข โปรโมชัน</h2>
-      <form id="promo-form" class="grid" autocomplete="off">
-        <input type="hidden" id="promo-id" />
-        <div class="col-12 grid" style="padding:0; gap:16px;">
-          <div class="col-4"><label>ธนาคาร</label><select id="bank_id" required></select></div>
-          <div class="col-4"><label>ชื่อโปรโมชัน</label><input id="promotion_name" placeholder="เช่น Home For All 2025" /></div>
-          <div class="col-4"><label>ประเภทสินเชื่อ</label><select id="loan_type"><option value="ทั่วไป">ทั่วไป</option><option value="สวัสดิการ">สวัสดิการ</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="โครงการพิเศษ">โครงการพิเศษ</option></select></div>
+    <div class="grid">
+      <section class="col-12 card">
+        <h2 class="section-title">เพิ่ม/แก้ไข โปรโมชัน</h2>
+        <form id="promo-form" class="grid" autocomplete="off">
+          <input type="hidden" id="promo-id" />
+          <div class="col-6"><label>ธนาคาร</label><select id="bank_id" required></select></div>
+          <div class="col-6"><label>ชื่อโปรโมชัน</label><input id="promotion_name" placeholder="เช่น Home For All 2025" /></div>
+          <div class="col-4"><label>ประเภทสินเชื่อ</label>
+            <select id="loan_type">
+              <option value="ทั่วไป">ทั่วไป</option><option value="สวัสดิการ">สวัสดิการ</option>
+              <option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="โครงการพิเศษ">โครงการพิเศษ</option>
+            </select>
+          </div>
+          <div class="col-4"><label>เริ่มใช้</label><input id="start_date" type="date" /></div>
+          <div class="col-4"><label>สิ้นสุด</label><input id="end_date" type="date" /></div>
           <div class="col-3"><label>ดอกเบี้ยปี 1 (%)</label><input id="interest_rate_yr1" type="number" step="0.01" /></div>
           <div class="col-3"><label>ดอกเบี้ยปี 2 (%)</label><input id="interest_rate_yr2" type="number" step="0.01" /></div>
           <div class="col-3"><label>ดอกเบี้ยปี 3 (%)</label><input id="interest_rate_yr3" type="number" step="0.01" /></div>
-          <div class="col-3"></div>
-          <div class="col-3"><label>หลัง 3 ปี: รีเทล (MRR-X%)</label><input id="interest_rate_after_value_retail" type="number" step="0.01" /></div>
-          <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ (MRR-X%)</label><input id="interest_rate_after_value_welfare" type="number" step="0.01" /></div>
-          <div class="col-12"><hr style="border-color:#f1f5f9; margin: 8px 0;" /></div>
-          <div class="col-12"><label class="actions" style="align-items:center; gap:8px;"><input id="has_mrta_option" type="checkbox" /> มีตัวเลือกซื้อ MRTA</label></div>
-          <div id="mrta-fields" class="col-12 grid mrta-wrap" style="padding:0; gap:16px;">
+          <div class="col-3"><label>Max LTV (%)</label><input id="max_ltv" type="number" step="1" /></div>
+          <div class="col-3"><label>DSR Limit (%)</label><input id="dsr_limit" type="number" step="1" /></div>
+          <div class="col-3"><label>รายได้ต่อกู้ 1 ลบ. (บ/ด)</label><input id="income_per_million" type="number" step="1" /></div>
+          <div class="col-3"><label>ค่าครองชีพขั้นต่ำ (บ/ด)</label><input id="min_living_expense" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุงานสูงสุด (สัญญา)</label><input id="max_loan_tenure" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุผู้กู้สูงสุด (พนักงาน)</label><input id="max_age_salaried" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุผู้กู้สูงสุด (ธุรกิจ)</label><input id="max_age_business" type="number" step="1" /></div>
+          <div class="col-3"><label>ยกเว้นค่าจดจำนอง?</label><input id="waive_mortgage_fee" type="checkbox" /></div>
+
+          <div class="col-12">
+            <label class="actions" style="align-items:center; gap:8px"><input id="has_mrta_option" type="checkbox" /> มีตัวเลือกซื้อ MRTA</label>
+          </div>
+
+          <div id="mrta-fields" class="grid mrta-wrap">
             <div class="col-3"><label>ปี1 (MRTA) %</label><input id="interest_rate_yr1_mrta" type="number" step="0.01" /></div>
             <div class="col-3"><label>ปี2 (MRTA) %</label><input id="interest_rate_yr2_mrta" type="number" step="0.01" /></div>
             <div class="col-3"><label>ปี3 (MRTA) %</label><input id="interest_rate_yr3_mrta" type="number" step="0.01" /></div>
             <div class="col-3"></div>
-            <div class="col-3"><label>หลัง 3 ปี: รีเทล+MRTA</label><input id="interest_rate_after_value_mrta_retail" type="number" step="0.01" /></div>
-            <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ+MRTA</label><input id="interest_rate_after_value_mrta_welfare" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: รีเทล (%)</label><input id="interest_rate_after_value_retail" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ (%)</label><input id="interest_rate_after_value_welfare" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: รีเทล+MRTA (%)</label><input id="interest_rate_after_value_mrta_retail" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ+MRTA (%)</label><input id="interest_rate_after_value_mrta_welfare" type="number" step="0.01" /></div>
           </div>
-          <div class="col-12"><hr style="border-color:#f1f5f9; margin: 8px 0;" /></div>
-          <div class="col-3"><label>Max LTV (%)</label><input id="max_ltv" type="number" step="1" /></div>
-          <div class="col-3"><label>DSR Limit (%)</label><input id="dsr_limit" type="number" step="1" /></div>
-          <div class="col-3"><label>รายได้/1ลบ.</label><input id="income_per_million" type="number" step="1" /></div>
-          <div class="col-3"><label>ค่าครองชีพขั้นต่ำ</label><input id="min_living_expense" type="number" step="1" /></div>
-          <div class="col-3"><label>อายุสัญญา (ปี)</label><input id="max_loan_tenure" type="number" step="1" /></div>
-          <div class="col-3"><label>อายุผู้กู้ (พนง.)</label><input id="max_age_salaried" type="number" step="1" /></div>
-          <div class="col-3"><label>อายุผู้กู้ (ธุรกิจ)</label><input id="max_age_business" type="number" step="1" /></div>
-          <div class="col-3"><label class="actions" style="align-items:center; gap:8px; height:100%"><input id="waive_mortgage_fee" type="checkbox" /> ยกเว้นค่าจดจำนอง</label></div>
-          <div class="col-6"><label>เริ่มใช้</label><input id="start_date" type="date" /></div>
-          <div class="col-6"><label>สิ้นสุด</label><input id="end_date" type="date" /></div>
-          <div class="col-12"><label>หมายเหตุ</label><textarea id="notes" placeholder="รายละเอียดพิเศษ เงื่อนไข ฯฯ"></textarea></div>
-          <div class="col-12 actions"><button id="submitBtn" class="btn primary" type="submit">บันทึกโปรโมชัน</button><button id="clearBtn" class="btn" type="button">ล้างฟอร์ม</button></div>
+
+          <div class="col-12"><label>หมายเหตุ</label><textarea id="notes" placeholder="รายละเอียดพิเศษ เงื่อนไข ฯลฯ"></textarea></div>
+          <div class="col-12 actions">
+            <button id="submitBtn" class="btn primary" type="submit">บันทึกโปรโมชัน</button>
+            <button id="clearBtn" class="btn" type="button">ล้างฟอร์ม</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="col-12 card">
+        <h2 class="section-title">รายการโปรโมชัน</h2>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปี (%)</th><th>จัดการ</th></tr></thead>
+            <tbody id="promo-table-body"></tbody>
+          </table>
         </div>
-      </form>
-    </div>
-    <div class="card">
-      <h2 class="section-title">รายการโปรโมชัน</h2>
-      <div style="overflow:auto;">
-        <table>
-          <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปี (%)</th><th>จัดการ</th></tr></thead>
-          <tbody id="promo-table-body"></tbody>
-        </table>
-      </div>
+        <p class="muted">* ค่าเฉลี่ย 3 ปี จะคิดเฉพาะช่องที่มีข้อมูล</p>
+      </section>
     </div>
   </main>
+
+  <div id="flag" class="flag">STATUS: APP (NO-AUTH)</div>
   <div id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      console.log("Admin App Initializing (No Auth)...");
+  // --- admin-no-auth.js v13.1 ---
+  (function(){
+    // ===== Supabase (ใช้ anon key ตามเดิม) =====
+    const SUPABASE_URL='https://kpsferwaplnkzrbqoghv.supabase.co';
+    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ===== Elements =====
+    const $=id=>document.getElementById(id);
+    const promoForm=$('promo-form'), promoTableBody=$('promo-table-body'), submitBtn=$('submitBtn'), clearBtn=$('clearBtn');
+    const bankSelect=$('bank_id'), notesInput=$('notes'), promoIdInput=$('promo-id');
+    const promotionNameInput=$('promotion_name'), loanTypeSelect=$('loan_type');
+    const startDateInput=$('start_date'), endDateInput=$('end_date');
+    const interestRateYr1Input=$('interest_rate_yr1'), interestRateYr2Input=$('interest_rate_yr2'), interestRateYr3Input=$('interest_rate_yr3');
+    const maxLtvInput=$('max_ltv'), dsrLimitInput=$('dsr_limit'), incomePerMillionInput=$('income_per_million'), minLivingExpenseInput=$('min_living_expense');
+    const maxLoanTenureInput=$('max_loan_tenure'), maxAgeSalariedInput=$('max_age_salaried'), maxAgeBusinessInput=$('max_age_business'), waiveMortgageFeeInput=$('waive_mortgage_fee');
+    const hasMrtaOptionInput=$('has_mrta_option'), mrtaFields=$('mrta-fields');
+    const interestRateYr1MrtaInput=$('interest_rate_yr1_mrta'), interestRateYr2MrtaInput=$('interest_rate_yr2_mrta'), interestRateYr3MrtaInput=$('interest_rate_yr3_mrta');
+    const interestRateAfterValueRetailInput=$('interest_rate_after_value_retail'), interestRateAfterValueWelfareInput=$('interest_rate_after_value_welfare');
+    const interestRateAfterValueMrtaRetailInput=$('interest_rate_after_value_mrta_retail'), interestRateAfterValueMrtaWelfareInput=$('interest_rate_after_value_mrta_welfare');
+    const toast=$('toast'), hardReloadBtn=$('hardReloadBtn');
 
-      const q = (id) => document.getElementById(id);
-      const elements = {
-          promoForm: q('promo-form'), promoTableBody: q('promo-table-body'), promoIdInput: q('promo-id'),
-          bankSelect: q('bank_id'), promotionNameInput: q('promotion_name'), loanTypeSelect: q('loan_type'),
-          interestRateYr1Input: q('interest_rate_yr1'), interestRateYr2Input: q('interest_rate_yr2'), interestRateYr3Input: q('interest_rate_yr3'),
-          maxLtvInput: q('max_ltv'), dsrLimitInput: q('dsr_limit'), incomePerMillionInput: q('income_per_million'),
-          minLivingExpenseInput: q('min_living_expense'), maxLoanTenureInput: q('max_loan_tenure'), maxAgeSalariedInput: q('max_age_salaried'),
-          maxAgeBusinessInput: q('max_age_business'), waiveMortgageFeeInput: q('waive_mortgage_fee'), notesInput: q('notes'),
-          submitBtn: q('submitBtn'), clearBtn: q('clearBtn'), toast: q('toast'), app: q('admin-app'),
-          loader: q('loader'), startDateInput: q('start_date'), endDateInput: q('end_date'), hasMrtaOptionInput: q('has_mrta_option'),
-          interestRateYr1MrtaInput: q('interest_rate_yr1_mrta'), interestRateYr2MrtaInput: q('interest_rate_yr2_mrta'),
-          interestRateYr3MrtaInput: q('interest_rate_yr3_mrta'), mrtaFields: q('mrta-fields'),
-          interestRateAfterValueRetailInput: q('interest_rate_after_value_retail'), interestRateAfterValueWelfareInput: q('interest_rate_after_value_welfare'),
-          interestRateAfterValueMrtaRetailInput: q('interest_rate_after_value_mrta_retail'), interestRateAfterValueMrtaWelfareInput: q('interest_rate_after_value_mrta_welfare'),
-      };
+    const N=v=>(v===''||v==null||typeof v==='undefined'?null:Number(v));
+    const D=v=>(v===''||v==null?null:v);
+    const showToast=(m,ok=true)=>{ toast.textContent=m; toast.style.background=ok?'#111827':'#b91c1c'; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000) };
 
-      const N = (v) => (v === '' || v === null || typeof v === 'undefined' ? null : Number(v));
-      const D = (v) => (v === '' || v === null ? null : v);
-      function showToast(msg, ok = true) { elements.toast.textContent = msg; elements.toast.style.background = ok ? 'var(--ok)' : 'var(--bad)'; elements.toast.style.display = 'block'; setTimeout(() => elements.toast.style.display = 'none', 1800); }
-      function showApp() { elements.loader.style.display = 'none'; elements.app.style.display = 'block'; }
-      function showLoader() { elements.app.style.display = 'none'; elements.loader.style.display = 'grid'; }
-
-      async function populateBankSelect() {
-          const { data, error } = await supabaseClient.from('banks').select('id, bank_name').order('bank_name');
-          if (error) { showToast('โหลดข้อมูลธนาคารล้มเหลว', false); return; }
-          elements.bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>';
-          data.forEach(b => {
-              const opt = document.createElement('option');
-              opt.value = b.id; opt.textContent = b.bank_name;
-              elements.bankSelect.appendChild(opt);
-          });
-      }
-
-      function avg3y(p) {
-          const rates = [p.interest_rate_yr1, p.interest_rate_yr2, p.interest_rate_yr3].filter(r => r !== null && r !== undefined);
-          if (rates.length === 0) return null;
-          return (rates.reduce((a, b) => a + b, 0) / rates.length).toFixed(2);
-      }
-      
-      function renderPromotions(rows) {
-          const bankMap = new Map(rows.banks.map(b => [b.id, b.bank_name]));
-          elements.promoTableBody.innerHTML = rows.promotions.map(p => `
-              <tr>
-                  <td>${bankMap.get(p.bank_id) || '-'}</td>
-                  <td>${p.promotion_name || '-'}<br><small class="muted">${p.loan_type || 'ทั่วไป'}</small></td>
-                  <td>${avg3y(p) || '-'}</td>
-                  <td class="toolbar">
-                      <button class="btn warning edit-btn" data-id="${p.id}">แก้ไข</button>
-                      <button class="btn danger delete-btn" data-id="${p.id}">ลบ</button>
-                  </td>
-              </tr>`).join('');
-      }
-
-      async function fetchPromotions() {
-          const [promosRes, banksRes] = await Promise.all([
-              supabaseClient.from('promotions').select('*').order('id', { ascending: false }),
-              supabaseClient.from('banks').select('id, bank_name')
-          ]);
-          if (promosRes.error || banksRes.error) {
-              showToast('โหลดโปรโมชันล้มเหลว', false);
-              return;
-          }
-          renderPromotions({ promotions: promosRes.data, banks: banksRes.data });
-      }
-
-      function clearForm() {
-          elements.promoIdInput.value = '';
-          elements.promoForm.reset();
-          elements.submitBtn.textContent = 'บันทึกโปรโมชัน';
-          elements.mrtaFields.style.display = 'none';
-          elements.mrtaFields.classList.add('mrta-wrap');
-      }
-      
-      elements.hasMrtaOptionInput.addEventListener('change', () => {
-        elements.mrtaFields.style.display = elements.hasMrtaOptionInput.checked ? 'grid' : 'none';
-        elements.mrtaFields.classList.toggle('mrta-wrap', !elements.hasMrtaOptionInput.checked);
-      });
-      elements.clearBtn.addEventListener('click', clearForm);
-
-      elements.promoForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const payload = {
-              bank_id: N(elements.bankSelect.value), promotion_name: elements.promotionNameInput.value.trim(), loan_type: elements.loanTypeSelect.value,
-              interest_rate_yr1: N(elements.interestRateYr1Input.value), interest_rate_yr2: N(elements.interestRateYr2Input.value), interest_rate_yr3: N(elements.interestRateYr3Input.value),
-              max_ltv: N(elements.maxLtvInput.value), dsr_limit: N(elements.dsrLimitInput.value), income_per_million: N(elements.incomePerMillionInput.value),
-              min_living_expense: N(elements.minLivingExpenseInput.value), max_loan_tenure: N(elements.maxLoanTenureInput.value),
-              max_age_salaried: N(elements.maxAgeSalariedInput.value), max_age_business: N(elements.maxAgeBusinessInput.value),
-              waive_mortgage_fee: !!elements.waiveMortgageFeeInput.checked, notes: elements.notesInput.value.trim(),
-              start_date: D(elements.startDateInput.value), end_date: D(elements.endDateInput.value),
-              has_mrta_option: !!elements.hasMrtaOptionInput.checked,
-              interest_rate_yr1_mrta: N(elements.interestRateYr1MrtaInput.value), interest_rate_yr2_mrta: N(elements.interestRateYr2MrtaInput.value), interest_rate_yr3_mrta: N(elements.interestRateYr3MrtaInput.value),
-              interest_rate_after_value_retail: N(elements.interestRateAfterValueRetailInput.value), interest_rate_after_value_welfare: N(elements.interestRateAfterValueWelfareInput.value),
-              interest_rate_after_value_mrta_retail: N(elements.interestRateAfterValueMrtaRetailInput.value), interest_rate_after_value_mrta_welfare: N(elements.interestRateAfterValueMrtaWelfareInput.value),
-          };
-          elements.submitBtn.disabled = true;
-          try {
-              const { error } = elements.promoIdInput.value
-                  ? await supabaseClient.from('promotions').update(payload).eq('id', N(elements.promoIdInput.value))
-                  : await supabaseClient.from('promotions').insert(payload);
-              if (error) throw error;
-              showToast(elements.promoIdInput.value ? 'อัปเดตสำเร็จ' : 'บันทึกสำเร็จ');
-              clearForm();
-              await fetchPromotions();
-          } catch (err) {
-              showToast('เกิดข้อผิดพลาด: ' + err.message, false);
-          } finally {
-              elements.submitBtn.disabled = false;
-          }
-      });
-      
-      document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        if (btn.classList.contains('edit-btn')) {
-          const { data: p, error } = await supabaseClient.from('promotions').select('*').eq('id', N(btn.dataset.id)).single();
-          if (error) { showToast('โหลดข้อมูลล้มเหลว', false); return; }
-          
-          elements.promoIdInput.value = p.id;
-          elements.bankSelect.value = p.bank_id;
-          elements.promotionNameInput.value = p.promotion_name || '';
-          elements.loanTypeSelect.value = p.loan_type || 'ทั่วไป';
-          elements.interestRateYr1Input.value = p.interest_rate_yr1 ?? '';
-          elements.interestRateYr2Input.value = p.interest_rate_yr2 ?? '';
-          elements.interestRateYr3Input.value = p.interest_rate_yr3 ?? '';
-          elements.maxLtvInput.value = p.max_ltv ?? '';
-          elements.dsrLimitInput.value = p.dsr_limit ?? '';
-          elements.incomePerMillionInput.value = p.income_per_million ?? '';
-          elements.minLivingExpenseInput.value = p.min_living_expense ?? '';
-          elements.maxLoanTenureInput.value = p.max_loan_tenure ?? '';
-          elements.maxAgeSalariedInput.value = p.max_age_salaried ?? '';
-          elements.maxAgeBusinessInput.value = p.max_age_business ?? '';
-          elements.waiveMortgageFeeInput.checked = !!p.waive_mortgage_fee;
-          elements.notesInput.value = p.notes ?? '';
-          elements.startDateInput.value = p.start_date ?? '';
-          elements.endDateInput.value = p.end_date ?? '';
-          elements.hasMrtaOptionInput.checked = !!p.has_mrta_option;
-          elements.interestRateYr1MrtaInput.value = p.interest_rate_yr1_mrta ?? '';
-          elements.interestRateYr2MrtaInput.value = p.interest_rate_yr2_mrta ?? '';
-          elements.interestRateYr3MrtaInput.value = p.interest_rate_yr3_mrta ?? '';
-          elements.interestRateAfterValueRetailInput.value = p.interest_rate_after_value_retail ?? '';
-          elements.interestRateAfterValueWelfareInput.value = p.interest_rate_after_value_welfare ?? '';
-          elements.interestRateAfterValueMrtaRetailInput.value = p.interest_rate_after_value_mrta_retail ?? '';
-          elements.interestRateAfterValueMrtaWelfareInput.value = p.interest_rate_after_value_mrta_welfare ?? '';
-
-          elements.mrtaFields.style.display = p.has_mrta_option ? 'grid' : 'none';
-          elements.mrtaFields.classList.toggle('mrta-wrap', !p.has_mrta_option);
-          elements.submitBtn.textContent = 'บันทึกการแก้ไข';
-          elements.promoForm.scrollIntoView({ behavior: 'smooth' });
-        }
-        if (btn.classList.contains('delete-btn')) {
-          if (!confirm('ยืนยันการลบ?')) return;
-          const { error } = await supabaseClient.from('promotions').delete().eq('id', N(btn.dataset.id));
-          if (error) { showToast('ลบไม่สำเร็จ', false); }
-          else { showToast('ลบสำเร็จ'); await fetchPromotions(); }
-        }
-      });
-      
-      // --- Simplified Bootstrap Logic (No Auth) ---
-      async function main() {
-        console.log("Loading app data directly...");
-        showApp();
-        await populateBankSelect();
-        await fetchPromotions();
-      }
-      
-      main();
-
+    hasMrtaOptionInput.addEventListener('change',()=>{ mrtaFields.style.display=hasMrtaOptionInput.checked?'grid':'none'; mrtaFields.classList.toggle('mrta-wrap',!hasMrtaOptionInput.checked) });
+    clearBtn.addEventListener('click',clearForm);
+    hardReloadBtn.addEventListener('click',async()=>{
+      try{
+        if('serviceWorker' in navigator){ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); }
+        if(window.caches){ const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }
+      }catch{} location.reload();
     });
+
+    // ===== Banks =====
+    async function populateBankSelect(){
+      const {data,error}=await supabaseClient.from('banks').select('id, bank_name').order('bank_name',{ascending:true});
+      if(error){ console.error(error); showToast('โหลดรายชื่อธนาคารล้มเหลว',false); return }
+      bankSelect.innerHTML='<option value="">-- กรุณาเลือกธนาคาร --</option>';
+      (data||[]).forEach(b=>{ const o=document.createElement('option'); o.value=b.id; o.textContent=b.bank_name; bankSelect.appendChild(o) });
+    }
+
+    // ===== Utils =====
+    function avg3y(p){ const a=[p.interest_rate_yr1,p.interest_rate_yr2,p.interest_rate_yr3].map(v=>v==null?NaN:parseFloat(v)).filter(Number.isFinite); return a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(2):null }
+
+    // ===== Data =====
+    async function fetchPromotions(){
+      const [banksRes,promosRes]=await Promise.all([
+        supabaseClient.from('banks').select('id, bank_name'),
+        supabaseClient.from('promotions').select('*').order('id',{ascending:false})
+      ]);
+      if(banksRes.error){ console.error(banksRes.error); showToast('โหลดรายชื่อธนาคารล้มเหลว',false); return }
+      if(promosRes.error){ console.error(promosRes.error); showToast('โหลดโปรโมชันล้มเหลว',false); return }
+      const dict=new Map((banksRes.data||[]).map(b=>[b.id,b.bank_name]));
+      const rows=(promosRes.data||[]).map(p=>({...p, bank_name:dict.get(p.bank_id)??'-'}));
+      renderPromotions(rows);
+    }
+    function renderPromotions(rows){
+      promoTableBody.innerHTML=(rows||[]).map(p=>`
+        <tr>
+          <td>${p.bank_name??'-'}</td>
+          <td>${p.promotion_name??'-'}<br><small class="muted">${p.loan_type??'ทั่วไป'}</small></td>
+          <td>${avg3y(p)??'-'}</td>
+          <td class="toolbar">
+            <button class="btn warning edit-btn" data-id="${p.id}">แก้ไข</button>
+            <button class="btn danger delete-btn" data-id="${p.id}">ลบ</button>
+          </td>
+        </tr>`).join('');
+    }
+    async function loadAppData(){ await populateBankSelect(); await fetchPromotions(); }
+
+    // ===== Form =====
+    function clearForm(){ promoIdInput.value=''; promoForm.reset(); submitBtn.textContent='บันทึกโปรโมชัน'; mrtaFields.style.display='none'; mrtaFields.classList.add('mrta-wrap') }
+
+    promoForm.addEventListener('submit',async(e)=>{
+      e.preventDefault();
+      if(!bankSelect.value) return showToast('กรุณาเลือกธนาคาร',false);
+      const payload={
+        bank_id:Number(bankSelect.value), promotion_name:promotionNameInput.value.trim(), loan_type:loanTypeSelect.value,
+        interest_rate_yr1:N(interestRateYr1Input.value), interest_rate_yr2:N(interestRateYr2Input.value), interest_rate_yr3:N(interestRateYr3Input.value),
+        max_ltv:N(maxLtvInput.value), dsr_limit:N(dsrLimitInput.value), income_per_million:N(incomePerMillionInput.value),
+        min_living_expense:N(minLivingExpenseInput.value), max_loan_tenure:N(maxLoanTenureInput.value),
+        max_age_salaried:N(maxAgeSalariedInput.value), max_age_business:N(maxAgeBusinessInput.value),
+        waive_mortgage_fee:!!waiveMortgageFeeInput.checked, notes:notesInput.value.trim(),
+        start_date:D(startDateInput.value), end_date:D(endDateInput.value),
+        has_mrta_option:!!hasMrtaOptionInput.checked,
+        interest_rate_yr1_mrta:N(interestRateYr1MrtaInput.value), interest_rate_yr2_mrta:N(interestRateYr2MrtaInput.value), interest_rate_yr3_mrta:N(interestRateYr3MrtaInput.value),
+        interest_rate_after_value_retail:N(interestRateAfterValueRetailInput.value), interest_rate_after_value_welfare:N(interestRateAfterValueWelfareInput.value),
+        interest_rate_after_value_mrta_retail:N(interestRateAfterValueMrtaRetailInput.value), interest_rate_after_value_mrta_welfare:N(interestRateAfterValueMrtaWelfareInput.value),
+      };
+      submitBtn.disabled=true;
+      try{
+        if(promoIdInput.value){
+          const id=Number(promoIdInput.value);
+          const {error}=await supabaseClient.from('promotions').update(payload).eq('id',id);
+          if(error) throw error;
+          showToast('อัปเดตโปรโมชันสำเร็จ');
+        }else{
+          const {error}=await supabaseClient.from('promotions').insert(payload);
+          if(error) throw error;
+          showToast('บันทึกโปรโมชันสำเร็จ');
+        }
+        clearForm(); await fetchPromotions();
+      }catch(err){
+        console.error(err);
+        // ถ้า RLS ปฏิเสธเพราะไม่มีการล็อกอิน จะแจ้งเตือนชัดเจน
+        const msg = /permission|row level|rls|auth/i.test(err.message||'') ? 'สิทธิ์ไม่พอ (ปิดล็อกอินอยู่) — เขียนไม่ได้' : 'บันทึกไม่สำเร็จ';
+        showToast(msg,false);
+      }finally{ submitBtn.disabled=false }
+    });
+
+    // ===== Row actions =====
+    document.addEventListener('click',async(e)=>{
+      const btn=e.target.closest('button'); if(!btn) return;
+      if(btn.classList.contains('edit-btn')){
+        const id=Number(btn.dataset.id);
+        const {data:p,error}=await supabaseClient.from('promotions').select('*').eq('id',id).single();
+        if(error){ console.error(error); return showToast('โหลดข้อมูลโปรโมชันล้มเหลว',false) }
+        promoIdInput.value=p.id; bankSelect.value=p.bank_id; promotionNameInput.value=p.promotion_name||''; loanTypeSelect.value=p.loan_type||'ทั่วไป';
+        interestRateYr1Input.value=p.interest_rate_yr1??''; interestRateYr2Input.value=p.interest_rate_yr2??''; interestRateYr3Input.value=p.interest_rate_yr3??'';
+        maxLtvInput.value=p.max_ltv??''; dsrLimitInput.value=p.dsr_limit??''; incomePerMillionInput.value=p.income_per_million??'';
+        minLivingExpenseInput.value=p.min_living_expense??''; maxLoanTenureInput.value=p.max_loan_tenure??'';
+        maxAgeSalariedInput.value=p.max_age_salaried??''; maxAgeBusinessInput.value=p.max_age_business??'';
+        waiveMortgageFeeInput.checked=!!p.waive_mortgage_fee; notesInput.value=p.notes??'';
+        startDateInput.value=p.start_date??''; endDateInput.value=p.end_date??'';
+        hasMrtaOptionInput.checked=!!p.has_mrta_option;
+        interestRateYr1MrtaInput.value=p.interest_rate_yr1_mrta??''; interestRateYr2MrtaInput.value=p.interest_rate_yr2_mrta??''; interestRateYr3MrtaInput.value=p.interest_rate_yr3_mrta??'';
+        interestRateAfterValueRetailInput.value=p.interest_rate_after_value_retail??''; interestRateAfterValueWelfareInput.value=p.interest_rate_after_value_welfare??'';
+        interestRateAfterValueMrtaRetailInput.value=p.interest_rate_after_value_mrta_retail??''; interestRateAfterValueMrtaWelfareInput.value=p.interest_rate_after_value_mrta_welfare??'';
+
+        mrtaFields.style.display=hasMrtaOptionInput.checked?'grid':'none';
+        mrtaFields.classList.toggle('mrta-wrap',!hasMrtaOptionInput.checked);
+        submitBtn.textContent='บันทึกการแก้ไข';
+        promoForm.scrollIntoView({behavior:'smooth'});
+      }
+      if(btn.classList.contains('delete-btn')){
+        const id=Number(btn.dataset.id);
+        if(!confirm('ลบโปรโมชันนี้ใช่ไหม?')) return;
+        const {error}=await supabaseClient.from('promotions').delete().eq('id',id);
+        if(error){ console.error(error); return showToast(/permission|rls|auth/i.test(error.message)?'สิทธิ์ไม่พอ — ลบไม่ได้':'ลบไม่สำเร็จ',false) }
+        showToast('ลบสำเร็จ'); await fetchPromotions();
+      }
+    });
+
+    // ===== SW: ให้รีโหลดเมื่อ SW ใหม่ takeover (กันไฟล์เก่าค้าง) =====
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+      navigator.serviceWorker.ready.then(reg=>reg.update()).catch(()=>{});
+      navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
+    }
+
+    // ===== Boot (ไม่มีการตรวจสิทธิ์อีกต่อไป) =====
+    loadAppData();
+  })();
   </script>
 </body>
 </html>
