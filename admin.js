@@ -1,5 +1,5 @@
-// --- admin.js v6 (client-side join; no PostgREST embed) ---
-console.log("admin.js v6 loaded");
+// --- admin.js (เวอร์ชันรองรับลูกค้าสวัสดิการ/รายย่อย) ---
+console.log("admin.js v10.0 loaded");
 
 // ========== Supabase ==========
 const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
@@ -15,7 +15,6 @@ const promotionNameInput = document.getElementById('promotion_name');
 const interestRateYr1Input = document.getElementById('interest_rate_yr1');
 const interestRateYr2Input = document.getElementById('interest_rate_yr2');
 const interestRateYr3Input = document.getElementById('interest_rate_yr3');
-const interestRateAfterValueInput = document.getElementById('interest_rate_after_value');
 const maxLtvInput = document.getElementById('max_ltv');
 const dsrLimitInput = document.getElementById('dsr_limit');
 const incomePerMillionInput = document.getElementById('income_per_million');
@@ -33,81 +32,80 @@ const gate = document.getElementById('auth-gate');
 const loginBtn = document.getElementById('loginBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 const loginForm = document.getElementById('loginForm');
+const loader = document.getElementById('loader');
+
+// -- Date/MRTA Elements --
+const startDateInput = document.getElementById('start_date');
+const endDateInput = document.getElementById('end_date');
+const hasMrtaOptionInput = document.getElementById('has_mrta_option');
+const interestRateYr1MrtaInput = document.getElementById('interest_rate_yr1_mrta');
+const interestRateYr2MrtaInput = document.getElementById('interest_rate_yr2_mrta');
+const interestRateYr3MrtaInput = document.getElementById('interest_rate_yr3_mrta');
+const mrtaFields = document.getElementById('mrta-fields');
+
+// -- New Customer Type Elements --
+const interestRateAfterValueRetailInput = document.getElementById('interest_rate_after_value_retail');
+const interestRateAfterValueWelfareInput = document.getElementById('interest_rate_after_value_welfare');
+const interestRateAfterValueMrtaRetailInput = document.getElementById('interest_rate_after_value_mrta_retail');
+const interestRateAfterValueMrtaWelfareInput = document.getElementById('interest_rate_after_value_mrta_welfare');
+
+
+// ========== Event Listeners ==========
+hasMrtaOptionInput.addEventListener('change', () => {
+    mrtaFields.style.display = hasMrtaOptionInput.checked ? 'block' : 'none';
+});
+clearBtn.addEventListener('click', () => {
+    clearForm();
+});
 
 // ========== Helpers ==========
 const N = (v) => (v === '' || v === null || typeof v === 'undefined' ? null : Number(v));
+const D = (v) => (v === '' || v === null ? null : v);
 function showToast(msg, ok = true) {
   toast.textContent = msg;
   toast.style.background = ok ? '#111827' : '#b91c1c';
   toast.style.display = 'block';
   setTimeout(() => (toast.style.display = 'none'), 1800);
 }
-function showGate(){ app.style.display='none'; gate.style.display='block'; }
-function showApp(){ gate.style.display='none'; app.style.display='block'; }
+function showGate(){ loader.style.display='none'; app.style.display='none'; gate.style.display='block'; }
+function showApp(){ loader.style.display='none'; gate.style.display='none'; app.style.display='block'; }
 
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-async function waitForSessionClear(maxMs = 4000) {
-  const start = Date.now();
-  while (Date.now() - start < maxMs) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return true;
-    await sleep(120);
-  }
-  return false;
-}
-
-// ใช้ flag กันเคส SIGNED_OUT ดีเลย์
-let logoutIntent = false;
-
-// ========== Profile bootstrap ==========
-async function ensureSelfProfile() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return;
-  const { data: have } = await supabaseClient
-    .from('profiles').select('id').eq('id', user.id).maybeSingle();
-  if (!have) {
-    const payload = { id: user.id, email: user.email, role: 'user', status: 'pending' };
-    const { error } = await supabaseClient.from('profiles').insert(payload);
-    if (error) console.warn('[profile] insert error:', error.message);
-  }
+// ========== App Logic ==========
+async function loadAppData() {
+    await populateBankSelect();
+    await fetchPromotions();
 }
 
 // ========== Auth gate ==========
 async function requireAdmin() {
-  console.log('1. requireAdmin(): start');
-  showGate(); // กันจอขาวขณะรอ async
+  console.log('requireAdmin(): Verifying session...');
 
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    console.log('1.1 getSession:', !!session);
-    if (!session) return { ok:false, reason:'no-session' };
-
-    const { data: { user }, error: userErr } = await supabaseClient.auth.getUser();
-    console.log('1.2 getUser:', user?.email || '(none)', userErr?.message || 'ok');
-    if (!user || userErr) return { ok:false, reason:'no-user' };
-
-    await ensureSelfProfile();
-
-    const { data: prof, error: profErr } = await supabaseClient
-      .from('profiles').select('role,status').eq('id', user.id).single();
-    console.log('1.3 profile:', prof, profErr?.message || 'ok');
-
-    if (profErr || !prof || prof.role !== 'admin' || prof.status !== 'approved') {
-      await supabaseClient.auth.signOut();
-      showToast('สิทธิ์ไม่เพียงพอ หรือยังไม่อนุมัติ', false);
-      showGate();
-      return { ok:false, reason:'no-permission' };
-    }
-
-    console.log('1.4 admin verified → show app');
-    showApp();
-    return { ok:true };
-
-  } catch (e) {
-    console.error('requireAdmin error:', e);
+  const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError || !session) {
+    console.log('Verification failed: No session found.');
     showGate();
-    return { ok:false, reason:e.message || 'unknown' };
+    return false;
   }
+  const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+  if (userError || !user) {
+    console.log('Verification failed: No user found.');
+    showGate();
+    return false;
+  }
+  console.log(`User found: ${user.email}`);
+  await ensureSelfProfile();
+  const { data: prof, error: profError } = await supabaseClient
+    .from('profiles').select('role,status').eq('id', user.id).single();
+  if (profError || !prof || prof.role !== 'admin' || prof.status !== 'approved') {
+    console.log('Verification failed: User is not an approved admin.');
+    await supabaseClient.auth.signOut();
+    showToast('สิทธิ์ไม่เพียงพอ หรือยังไม่อนุมัติ', false);
+    showGate();
+    return false;
+  }
+  console.log('Admin verified successfully.');
+  showApp();
+  return true;
 }
 
 // ========== Banks ==========
@@ -124,6 +122,19 @@ async function populateBankSelect() {
   });
 }
 
+// ========== Profile bootstrap ==========
+async function ensureSelfProfile() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+    const { data: have } = await supabaseClient
+      .from('profiles').select('id').eq('id', user.id).maybeSingle();
+    if (!have) {
+      const payload = { id: user.id, email: user.email, role: 'user', status: 'pending' };
+      const { error } = await supabaseClient.from('profiles').insert(payload);
+      if (error) console.warn('[profile] insert error:', error.message);
+    }
+}
+
 // ========== Utils ==========
 function avg3y(p) {
   const nums = [p.interest_rate_yr1, p.interest_rate_yr2, p.interest_rate_yr3]
@@ -135,15 +146,12 @@ function avg3y(p) {
 
 // ========== Data (client-side join) ==========
 async function fetchPromotions() {
-  // ดึง banks และ promotions แยกกัน แล้ว map เอาเอง — เลี่ยง PGRST201
   const [banksRes, promosRes] = await Promise.all([
     supabaseClient.from('banks').select('id, bank_name'),
     supabaseClient.from('promotions').select('*').order('id', { ascending: false })
   ]);
-
   if (banksRes.error) { console.error(banksRes.error); showToast('โหลดรายชื่อธนาคารล้มเหลว', false); return; }
   if (promosRes.error) { console.error(promosRes.error); showToast('โหลดโปรโมชันล้มเหลว', false); return; }
-
   const dict = new Map((banksRes.data || []).map(b => [b.id, b.bank_name]));
   const rows = (promosRes.data || []).map(p => ({ ...p, bank_name: dict.get(p.bank_id) ?? '-' }));
   renderPromotions(rows);
@@ -163,7 +171,12 @@ function renderPromotions(rows) {
   `).join('');
 }
 
-function clearForm(){ promoIdInput.value=''; promoForm.reset(); submitBtn.textContent='บันทึกโปรโมชัน'; }
+function clearForm(){
+  promoIdInput.value='';
+  promoForm.reset();
+  submitBtn.textContent='บันทึกโปรโมชัน';
+  mrtaFields.style.display = 'none';
+}
 
 // ========== Form submit ==========
 promoForm.addEventListener('submit', async (e) => {
@@ -176,7 +189,6 @@ promoForm.addEventListener('submit', async (e) => {
     interest_rate_yr1: N(interestRateYr1Input.value),
     interest_rate_yr2: N(interestRateYr2Input.value),
     interest_rate_yr3: N(interestRateYr3Input.value),
-    interest_rate_after: `MRR - ${N(interestRateAfterValueInput.value)?.toFixed(2) ?? '0.00'}%`,
     max_ltv: N(maxLtvInput.value),
     dsr_limit: N(dsrLimitInput.value),
     income_per_million: N(incomePerMillionInput.value),
@@ -185,7 +197,18 @@ promoForm.addEventListener('submit', async (e) => {
     max_age_salaried: N(maxAgeSalariedInput.value),
     max_age_business: N(maxAgeBusinessInput.value),
     waive_mortgage_fee: !!waiveMortgageFeeInput.checked,
-    notes: notesInput.value.trim()
+    notes: notesInput.value.trim(),
+    start_date: D(startDateInput.value),
+    end_date: D(endDateInput.value),
+    has_mrta_option: !!hasMrtaOptionInput.checked,
+    interest_rate_yr1_mrta: N(interestRateYr1MrtaInput.value),
+    interest_rate_yr2_mrta: N(interestRateYr2MrtaInput.value),
+    interest_rate_yr3_mrta: N(interestRateYr3MrtaInput.value),
+    // New/Renamed Fields
+    interest_rate_after_value_retail: N(interestRateAfterValueRetailInput.value),
+    interest_rate_after_value_welfare: N(interestRateAfterValueWelfareInput.value),
+    interest_rate_after_value_mrta_retail: N(interestRateAfterValueMrtaRetailInput.value),
+    interest_rate_after_value_mrta_welfare: N(interestRateAfterValueMrtaWelfareInput.value),
   };
 
   submitBtn.disabled = true;
@@ -210,20 +233,17 @@ promoForm.addEventListener('submit', async (e) => {
 // ========== Row actions ==========
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('button'); if (!btn) return;
-
   if (btn.classList.contains('edit-btn')) {
     const id = Number(btn.dataset.id);
-    const { data, error } = await supabaseClient.from('promotions').select('*').eq('id', id).single();
+    const { data: p, error } = await supabaseClient.from('promotions').select('*').eq('id', id).single();
     if (error) { console.error(error); return showToast('โหลดข้อมูลโปรโมชันล้มเหลว', false); }
-    const p = data;
+    
     promoIdInput.value = p.id;
     bankSelect.value = p.bank_id;
     promotionNameInput.value = p.promotion_name || '';
     interestRateYr1Input.value = p.interest_rate_yr1 ?? '';
     interestRateYr2Input.value = p.interest_rate_yr2 ?? '';
     interestRateYr3Input.value = p.interest_rate_yr3 ?? '';
-    const m = (p.interest_rate_after || '').match(/([0-9]+(?:\.[0-9]+)?)/);
-    interestRateAfterValueInput.value = m ? m[1] : '';
     maxLtvInput.value = p.max_ltv ?? '';
     dsrLimitInput.value = p.dsr_limit ?? '';
     incomePerMillionInput.value = p.income_per_million ?? '';
@@ -233,6 +253,20 @@ document.addEventListener('click', async (e) => {
     maxAgeBusinessInput.value = p.max_age_business ?? '';
     waiveMortgageFeeInput.checked = !!p.waive_mortgage_fee;
     notesInput.value = p.notes ?? '';
+    startDateInput.value = p.start_date ?? '';
+    endDateInput.value = p.end_date ?? '';
+    hasMrtaOptionInput.checked = !!p.has_mrta_option;
+    interestRateYr1MrtaInput.value = p.interest_rate_yr1_mrta ?? '';
+    interestRateYr2MrtaInput.value = p.interest_rate_yr2_mrta ?? '';
+    interestRateYr3MrtaInput.value = p.interest_rate_yr3_mrta ?? '';
+    
+    // Populate New/Renamed Fields
+    interestRateAfterValueRetailInput.value = p.interest_rate_after_value_retail ?? '';
+    interestRateAfterValueWelfareInput.value = p.interest_rate_after_value_welfare ?? '';
+    interestRateAfterValueMrtaRetailInput.value = p.interest_rate_after_value_mrta_retail ?? '';
+    interestRateAfterValueMrtaWelfareInput.value = p.interest_rate_after_value_mrta_welfare ?? '';
+    
+    mrtaFields.style.display = hasMrtaOptionInput.checked ? 'block' : 'none';
     submitBtn.textContent = 'บันทึกการแก้ไข';
     promoForm.scrollIntoView({ behavior: 'smooth' });
   }
@@ -251,84 +285,38 @@ document.addEventListener('click', async (e) => {
 async function doLogin(email, password) {
   loginBtn.disabled = true;
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) { showToast('คุณเข้าสู่ระบบอยู่แล้ว'); return; }
-
-    console.log('[login] attempt', email);
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
       const msg = /invalid login credentials/i.test(error.message)
         ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
         : `ล็อกอินไม่สำเร็จ: ${error.message}`;
       showToast(msg, false);
-      return;
     }
-    showToast('ล็อกอินสำเร็จ');
   } finally {
     loginBtn.disabled = false;
   }
 }
-
-loginBtn?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  await doLogin(
-    document.getElementById('loginEmail').value.trim(),
-    document.getElementById('loginPassword').value
-  );
-});
 loginForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   await doLogin(loginForm.email.value.trim(), loginForm.password.value);
 });
-
 signOutBtn?.addEventListener('click', async () => {
-  try {
-    logoutIntent = true;
-    signOutBtn.disabled = true;
     await supabaseClient.auth.signOut();
-    await waitForSessionClear(4000);
-  } finally {
-    signOutBtn.disabled = false;
-    showGate();
-  }
 });
 
-// ========== Bootstrap ==========
-let bootstrapping = false;
-async function bootstrap(reason='manual') {
-  if (bootstrapping) { console.log('[bootstrap] skip (busy), reason=', reason); return; }
-  bootstrapping = true;
-  try {
-    const { ok, reason: r } = await requireAdmin();
-    console.log('[bootstrap] result:', ok, r || '', 'reason=', reason);
-    if (ok) {
-      await populateBankSelect();
-      await fetchPromotions();
-    }
-  } finally { bootstrapping = false; }
-}
-
+// ========== App Initializer ==========
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
-  console.log('[auth] event:', event, 'session?', !!session);
-
-  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-    await bootstrap(event);
-    return;
-  }
-
+  console.log(`Auth event: ${event}`);
   if (event === 'SIGNED_OUT') {
-    if (!logoutIntent) {
-      const { data: { session: now } } = await supabaseClient.auth.getSession();
-      if (now) { console.log('[auth] ignore SIGNED_OUT (late; session present)'); return; }
-      console.log('[auth] ignore SIGNED_OUT (no intent)'); return;
-    }
     showGate();
-    logoutIntent = false;
     return;
   }
-
-  if (event === 'INITIAL_SESSION') return; // เราเรียกเองด้านล่าง
+  if (session) {
+    const isAdmin = await requireAdmin();
+    if (isAdmin) {
+      await loadAppData();
+    }
+  } else {
+    showGate();
+  }
 });
-
-// เรียกรอบแรก
-bootstrap('initial');

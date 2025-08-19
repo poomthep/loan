@@ -4,21 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ระบบจัดการโปรโมชัน (Admin)</title>
-
-  <!-- Theme / PWA basics -->
   <meta name="theme-color" content="#0ea5e9" />
   <link rel="manifest" href="manifest.webmanifest">
-  <!-- simple SVG favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M20 42l6 6 18-18-6-6-18 18zM40 16l8 8' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Topbar -->
   <header class="topbar">
     <div class="wrap">
       <div class="brand">
@@ -36,18 +28,21 @@
   </header>
 
   <main class="wrap">
-    <!-- Gate (Login) -->
+    <div id="loader" class="card" style="text-align: center; padding: 40px;">
+      <p>กำลังตรวจสอบสิทธิ์...</p>
+    </div>
+
     <section id="auth-gate" class="card gate" style="display:none;">
       <h2>เข้าสู่ระบบ Admin</h2>
       <form id="loginForm">
         <div class="grid-2">
           <div class="form-group">
             <label>Email</label>
-            <input type="email" id="loginEmail" name="email" placeholder="your@email.com" required>
+            <input type="email" id="loginEmail" name="email" placeholder="your@email.com" required autocomplete="email">
           </div>
           <div class="form-group">
             <label>Password</label>
-            <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+            <input type="password" id="loginPassword" name="password" placeholder="••••••••" required autocomplete="current-password">
           </div>
         </div>
         <div class="toolbar">
@@ -57,13 +52,13 @@
       </form>
     </section>
 
-    <!-- Admin App -->
     <section id="admin-app" style="display:none;">
       <div class="card">
         <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
         <form id="promo-form">
           <input type="hidden" id="promo-id" />
-          <div class="grid-3">
+          
+          <div class="grid-2">
             <div class="form-group">
               <label for="bank_id">ธนาคาร</label>
               <select id="bank_id" required>
@@ -74,19 +69,43 @@
               <label for="promotion_name">ชื่อโปรโมชัน</label>
               <input type="text" id="promotion_name" required placeholder="เช่น สินเชื่อบ้านสุขใจ ปี 2568" />
             </div>
-            <div class="form-group">
-              <label for="interest_rate_after_value">อัตราหลัง 3 ปี (รูปแบบ MRR - X%)</label>
-              <input type="number" id="interest_rate_after_value" step="0.01" placeholder="เช่น 1.50" />
-            </div>
           </div>
-
+          
+          <hr style="margin: 20px 0; border-color: #eee;">
+          <h4>อัตราดอกเบี้ยปกติ (MRR - X%)</h4>
           <div class="grid-4">
             <div class="form-group"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%)</label><input type="number" id="interest_rate_yr1" step="0.01" /></div>
             <div class="form-group"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%)</label><input type="number" id="interest_rate_yr2" step="0.01" /></div>
             <div class="form-group"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%)</label><input type="number" id="interest_rate_yr3" step="0.01" /></div>
+            <div class="form-group"></div>
+            <div class="form-group"><label for="interest_rate_after_value_retail">หลัง 3 ปี (รายย่อย)</label><input type="number" id="interest_rate_after_value_retail" step="0.01" placeholder="เช่น 0.50" /></div>
+            <div class="form-group"><label for="interest_rate_after_value_welfare">หลัง 3 ปี (สวัสดิการ)</label><input type="number" id="interest_rate_after_value_welfare" step="0.01" placeholder="เช่น 1.00" /></div>
+          </div>
+          
+          <hr style="margin: 20px 0; border-color: #eee;">
+          <h4>
+            <label class="checkbox" style="font-size: 1rem;">
+              <input type="checkbox" id="has_mrta_option" />
+              มีตัวเลือกทำประกัน MRTA (เพื่อลดดอกเบี้ย)
+            </label>
+          </h4>
+          <div id="mrta-fields" style="display:none;">
+            <div class="grid-4">
+                <div class="form-group"><label for="interest_rate_yr1_mrta">ดอกเบี้ยปีที่ 1 (MRTA)</label><input type="number" id="interest_rate_yr1_mrta" step="0.01" /></div>
+                <div class="form-group"><label for="interest_rate_yr2_mrta">ดอกเบี้ยปีที่ 2 (MRTA)</label><input type="number" id="interest_rate_yr2_mrta" step="0.01" /></div>
+                <div class="form-group"><label for="interest_rate_yr3_mrta">ดอกเบี้ยปีที่ 3 (MRTA)</label><input type="number" id="interest_rate_yr3_mrta" step="0.01" /></div>
+                <div class="form-group"></div>
+                <div class="form-group"><label for="interest_rate_after_value_mrta_retail">หลัง 3 ปี (MRTA-รายย่อย)</label><input type="number" id="interest_rate_after_value_mrta_retail" step="0.01" placeholder="เช่น 0.75" /></div>
+                <div class="form-group"><label for="interest_rate_after_value_mrta_welfare">หลัง 3 ปี (MRTA-สวัสดิการ)</label><input type="number" id="interest_rate_after_value_mrta_welfare" step="0.01" placeholder="เช่น 1.25" /></div>
+            </div>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: #eee;">
+          <h4>เงื่อนไขอื่นๆ</h4>
+          <div class="grid-4">
             <div class="form-group"><label for="max_ltv">LTV สูงสุด (%)</label><input type="number" id="max_ltv" step="1" /></div>
             <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" step="1" placeholder="เช่น 40" /></div>
-            <div class="form-group"><label for="income_per_million">ต้องมีรายได้ต่อ 1 ล้านบาท (บาท)</label><input type="number" id="income_per_million" step="100" /></div>
+            <div class="form-group"><label for="income_per_million">รายได้ต่อ 1 ล้านบาท (บาท)</label><input type="number" id="income_per_million" step="100" /></div>
             <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ (บาท)</label><input type="number" id="min_living_expense" step="100" /></div>
             <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" step="1" /></div>
             <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สิ้นสุด (พนง.)</label><input type="number" id="max_age_salaried" step="1" /></div>
@@ -94,6 +113,8 @@
             <div class="form-group checkbox">
               <label><input type="checkbox" id="waive_mortgage_fee" /> ยกเว้นค่าจดจำนอง</label>
             </div>
+            <div class="form-group"><label for="start_date">วันที่เริ่มโปรโมชัน</label><input type="date" id="start_date" /></div>
+            <div class="form-group"><label for="end_date">วันที่สิ้นสุดโปรโมชัน</label><input type="date" id="end_date" /></div>
           </div>
 
           <div class="form-group">
@@ -104,7 +125,7 @@
           <div class="toolbar sticky">
             <div class="left">
               <button class="btn primary" id="submitBtn" type="submit">บันทึกโปรโมชัน</button>
-              <button type="button" class="btn" id="clearBtn" onclick="document.getElementById('promo-form').reset()">ล้างฟอร์ม</button>
+              <button type="button" class="btn" id="clearBtn">ล้างฟอร์ม</button>
             </div>
             <span class="muted">* แก้ไข: คลิก “แก้ไข” ในตาราง แล้วเลื่อนขึ้นมาแก้ฟอร์ม</span>
           </div>
@@ -128,10 +149,8 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // PWA: register service worker + install button
     let deferredPrompt = null;
     const installBtn = document.getElementById('installBtn');
-
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(console.warn);
