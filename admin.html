@@ -54,8 +54,8 @@
       background:var(--ok); border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700; }
     .section-title{ margin:6px 0 14px; font-weight:800; } .actions{ display:flex; gap:8px; flex-wrap:wrap; }
     .mrta-wrap{ display:none; }
-    .devbar{ position:fixed; right:12px; bottom:12px; z-index:60; display:flex; gap:8px; }
     .flag{ position:fixed; left:12px; bottom:12px; background:#111827; color:#fff; padding:6px 10px; border-radius:10px; font-size:.8rem; box-shadow:var(--shadow); opacity:.85; }
+    .helper{ margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
   </style>
 </head>
 <body>
@@ -70,11 +70,16 @@
     </div>
   </header>
 
-  <!-- Loader -->
+  <!-- Loader + Diagnostics -->
   <div id="loader" class="center">
     <div class="loader-card">
       <div class="spinner" style="margin:0 auto 14px;"></div>
-      <div>กำลังตรวจสอบสิทธิ...</div>
+      <div id="loaderText">กำลังตรวจสอบสิทธิ...</div>
+      <div id="diag" class="muted" style="margin-top:8px;font-size:.9rem;"></div>
+      <div class="helper">
+        <button id="retryBtn" class="btn">ลองใหม่</button>
+        <button id="hardReloadBtn" class="btn warning">โหลดใหม่ (แก้ค้าง)</button>
+      </div>
     </div>
   </div>
 
@@ -183,12 +188,7 @@
     </div>
   </main>
 
-  <!-- Dev helper -->
-  <div class="devbar">
-    <button id="devModeBtn" class="btn">DEV MODE: OFF</button>
-  </div>
   <div id="flag" class="flag" style="display:none;"></div>
-
   <div id="toast"></div>
 
   <!-- Supabase SDK -->
@@ -196,15 +196,15 @@
 
   <!-- Inline App -->
   <script>
-  // --- admin.js v12.5 (inline: show app first, load in background) ---
+  // --- admin.js v12.6 (prod) ---
   (function(){
     const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
-    const DEV_KEY = 'promoAdminDevMode';
 
     // Elements
     const $ = id => document.getElementById(id);
     const app = $('admin-app'), gate = $('auth-gate'), loader = $('loader'), toast = $('toast'), flag = $('flag');
+    const loaderText = $('loaderText'), diag = $('diag'), retryBtn = $('retryBtn'), hardReloadBtn = $('hardReloadBtn');
     const loginForm = $('loginForm'), loginBtn = $('loginBtn'), signOutBtn = $('signOutBtn');
     const bankSelect = $('bank_id'), promoForm = $('promo-form'), promoTableBody = $('promo-table-body');
     const promoIdInput = $('promo-id'), promotionNameInput = $('promotion_name'), loanTypeSelect = $('loan_type');
@@ -217,39 +217,39 @@
     const interestRateYr3MrtaInput = $('interest_rate_yr3_mrta'), interestRateAfterValueRetailInput = $('interest_rate_after_value_retail');
     const interestRateAfterValueWelfareInput = $('interest_rate_after_value_welfare'), interestRateAfterValueMrtaRetailInput = $('interest_rate_after_value_mrta_retail');
     const interestRateAfterValueMrtaWelfareInput = $('interest_rate_after_value_mrta_welfare'), mrtaFields = $('mrta-fields');
-    const submitBtn = $('submitBtn'), clearBtn = $('clearBtn'), devModeBtn = $('devModeBtn');
+    const submitBtn = $('submitBtn'), clearBtn = $('clearBtn');
 
     // UI helpers
     const N = v => (v === '' || v === null || typeof v === 'undefined' ? null : Number(v));
     const D = v => (v === '' || v === null ? null : v);
     const showToast = (m, ok=true)=>{ toast.textContent=m; toast.style.background = ok ? '#111827' : '#b91c1c'; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 2000); };
-    const showGate = ()=>{ loader.style.display='none'; app.style.display='none'; gate.style.display='grid'; flag.textContent='STATUS: GATE'; flag.style.display='block'; };
+    const showGate = (reason='')=>{ loader.style.display='none'; app.style.display='none'; gate.style.display='grid'; flag.textContent='STATUS: GATE'; flag.style.display='block'; if(reason) showToast(reason, false); };
     const showApp  = ()=>{ loader.style.display='none'; gate.style.display='none'; app.style.display='block'; flag.textContent='STATUS: APP'; flag.style.display='block'; };
-    const showLoader = (txt='กำลังตรวจสอบสิทธิ...')=>{ loader.querySelector('.loader-card div:last-child').textContent = txt; loader.style.display='grid'; gate.style.display='none'; app.style.display='none'; flag.textContent='STATUS: LOADER'; flag.style.display='block'; };
+    const showLoader = (txt='กำลังตรวจสอบสิทธิ...', detail='')=>{
+      loaderText.textContent = txt; diag.textContent = detail || ''; 
+      loader.style.display='grid'; gate.style.display='none'; app.style.display='none';
+      flag.textContent='STATUS: LOADER'; flag.style.display='block';
+    };
 
-    // Dev mode (persist)
-    let DEV_MODE = localStorage.getItem(DEV_KEY) === '1';
-    function renderDev(){
-      devModeBtn.textContent = `DEV MODE: ${DEV_MODE ? 'ON' : 'OFF'}`;
-      devModeBtn.style.background = DEV_MODE ? '#22c55e' : '';
+    // Service worker/cache hard reload
+    async function hardReload(){
+      try{
+        if('serviceWorker' in navigator){
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        if(window.caches){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      }catch(e){ console.warn('hardReload:', e.message); }
+      location.reload();
     }
-    devModeBtn.addEventListener('click', ()=>{
-      DEV_MODE = !DEV_MODE; localStorage.setItem(DEV_KEY, DEV_MODE ? '1' : '0'); renderDev();
-      showToast(`Dev mode ${DEV_MODE ? 'เปิด' : 'ปิด'}`);
-    });
-    renderDev();
+    retryBtn.addEventListener('click', ()=> boot(true));
+    hardReloadBtn.addEventListener('click', hardReload);
 
     // Supabase
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Common helpers
-    const withTimeout = (p, ms=6000) => Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms))]);
-    const loadDataInBackground = async () => {
-      console.log('[data] loading in background…');
-      try { await withTimeout(populateBankSelect(), 6000); } catch(e){ console.warn('[banks]', e.message); }
-      try { await withTimeout(fetchPromotions(), 6000); } catch(e){ console.warn('[promotions]', e.message); }
-      console.log('[data] done (background)');
-    };
 
     // Events
     hasMrtaOptionInput.addEventListener('change', ()=>{
@@ -291,15 +291,13 @@
       }catch(e){ console.error('checkApprovedAdmin error:', e.message); return false; }
     }
     async function requireAdminWithTimeout(ms=8000){
-      console.log('requireAdmin(): start');
       const { data:{ session } } = await supabaseClient.auth.getSession();
-      if(!session){ console.log('requireAdmin(): NO_SESSION'); return 'NO_SESSION'; }
+      if(!session) return 'NO_SESSION';
       await ensureSelfProfile();
       const res = await Promise.race([
         (async()=> (await checkApprovedAdmin()) ? 'OK' : 'NOT_APPROVED')(),
         new Promise(r=> setTimeout(()=>r('TIMEOUT'), ms))
       ]);
-      console.log('requireAdmin(): result =', res);
       return res;
     }
 
@@ -407,28 +405,22 @@
       }
     });
 
+    // ===== Data loading =====
+    const withTimeout = (p, ms=6000) => Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms))]);
+    async function loadDataInBackground(){
+      try{ await withTimeout(populateBankSelect(), 6000); }catch(e){ console.warn('[banks]', e.message); }
+      try{ await withTimeout(fetchPromotions(), 6000); }catch(e){ console.warn('[promotions]', e.message); }
+    }
+
     // ===== Boot sequence =====
-    async function boot(){
-      console.log('boot(): start');
-      showLoader();
-
-      // DEV MODE: show app first, then load data in background
-      if(DEV_MODE){
-        console.log('boot(): DEV_MODE true -> show app & load bg');
-        showApp();
-        loadDataInBackground(); // no await
-        return;
-      }
-
+    async function boot(isRetry=false){
+      showLoader(isRetry ? 'กำลังลองใหม่...' : 'กำลังตรวจสอบสิทธิ...');
       const { data:{ session } } = await supabaseClient.auth.getSession();
       if(session){
         const result = await requireAdminWithTimeout(8000);
-        if(result === 'OK'){
-          console.log('boot(): admin ok -> show app & load bg');
-          showApp();
-          loadDataInBackground();
-        }else if(result === 'NOT_APPROVED'){ showGate(); showToast('บัญชีไม่ใช่ผู้ดูแลที่อนุมัติ', false); }
-        else if(result === 'TIMEOUT'){ showGate(); showToast('เชื่อมต่อช้าผิดปกติ ลองเข้าสู่ระบบใหม่', false); }
+        if(result === 'OK'){ showApp(); loadDataInBackground(); }
+        else if(result === 'NOT_APPROVED'){ showGate('บัญชีไม่ใช่ผู้ดูแลที่อนุมัติ'); }
+        else if(result === 'TIMEOUT'){ showGate('เชื่อมต่อช้าผิดปกติ ลองใหม่หรือล้างแคช'); }
         else { showGate(); }
       }else{
         showGate();
@@ -436,17 +428,15 @@
     }
 
     supabaseClient.auth.onAuthStateChange(async (event, session)=>{
-      console.log('Auth event:', event);
-      if(DEV_MODE){
-        showApp(); loadDataInBackground(); return;
-      }
       if(!session){ return showGate(); }
       const result = await requireAdminWithTimeout(8000);
       if(result === 'OK'){ showApp(); loadDataInBackground(); }
-      else if(result === 'NOT_APPROVED'){ showGate(); showToast('บัญชีไม่ใช่ผู้ดูแลที่อนุมัติ', false); }
-      else if(result === 'TIMEOUT'){ showGate(); showToast('เชื่อมต่อช้าผิดปกติ', false); }
+      else if(result === 'NOT_APPROVED'){ showGate('บัญชีไม่ใช่ผู้ดูแลที่อนุมัติ'); }
+      else if(result === 'TIMEOUT'){ showGate('เชื่อมต่อช้าผิดปกติ'); }
     });
 
+    // Buttons
+    window.addEventListener('keydown', (e)=>{ if(e.key==='r' && (e.ctrlKey||e.metaKey)) diag.textContent=''; });
     // Start
     boot();
   })();
