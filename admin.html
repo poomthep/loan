@@ -11,115 +11,53 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="icon" href="/icons/icon-192.png" />
 
-  <!-- Minimal modern, mobile-first styles -->
+  <!-- Minimal, mobile-first styles -->
   <style>
     :root{
-      --brand:#0ea5e9; /* sky-500 */
-      --brand-dark:#0284c7; /* sky-600 */
-      --ink:#0f172a; /* slate-900 */
-      --muted:#64748b; /* slate-500 */
-      --bg:#f8fafc; /* slate-50 */
-      --card:#ffffff;
-      --ok:#111827;
-      --bad:#b91c1c;
-      --radius:16px;
-      --shadow:0 8px 24px rgba(2,8,23,.08);
+      --brand:#0ea5e9; --brand-dark:#0284c7; --ink:#0f172a; --muted:#64748b;
+      --bg:#f8fafc; --card:#ffffff; --ok:#111827; --bad:#b91c1c;
+      --radius:16px; --shadow:0 8px 24px rgba(2,8,23,.08);
     }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      background:var(--bg); color:var(--ink);
-    }
-    header{
-      position:sticky; top:0; z-index:10;
-      background:linear-gradient(90deg, var(--brand), #22c55e);
-      color:white; box-shadow:var(--shadow);
-    }
-    .bar{
-      max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px;
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
-    }
-    .brand .logo{
-      width:36px;height:36px;border-radius:12px;background:white;color:var(--brand);
-      display:grid;place-items:center;font-weight:900; box-shadow: inset 0 0 0 2px rgba(0,0,0,.04);
-    }
+    *{ box-sizing:border-box; } html,body{ height:100%; }
+    body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial;
+      background:var(--bg); color:var(--ink); }
+    header{ position:sticky; top:0; z-index:10; background:linear-gradient(90deg, var(--brand), #22c55e);
+      color:white; box-shadow:var(--shadow); }
+    .bar{ max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; }
+    .brand .logo{ width:36px;height:36px;border-radius:12px;background:white;color:var(--brand);
+      display:grid;place-items:center;font-weight:900; box-shadow: inset 0 0 0 2px rgba(0,0,0,.04); }
     .grow{ flex:1; }
-    .btn{
-      appearance:none; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700;
-      background:white; color:var(--ink); box-shadow:var(--shadow);
-    }
-    .btn.primary{ background:var(--brand); color:#fff; }
-    .btn.warning{ background:#f59e0b; color:#111; }
-    .btn.danger{ background:#ef4444; color:#fff; }
-    .btn.ghost{ background:transparent; color:white; box-shadow:none; border:2px solid rgba(255,255,255,.35) }
-    .btn:disabled{ opacity:.6; cursor:not-allowed; }
-
+    .btn{ appearance:none; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      background:white; color:var(--ink); box-shadow:var(--shadow); }
+    .btn.primary{ background:var(--brand); color:#fff; } .btn.warning{ background:#f59e0b; color:#111; }
+    .btn.danger{ background:#ef4444; color:#fff; } .btn.ghost{ background:transparent; color:white;
+      box-shadow:none; border:2px solid rgba(255,255,255,.35) } .btn:disabled{ opacity:.6; cursor:not-allowed; }
     main{ max-width:1100px; margin:20px auto; padding:0 16px 40px; }
-
-    .card{
-      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
-    }
-
-    .grid{
-      display:grid; gap:12px;
-      grid-template-columns:repeat(12, 1fr);
-    }
-    .col-12{ grid-column:span 12; }
-    .col-6{ grid-column:span 6; }
-    .col-4{ grid-column:span 4; }
-    .col-3{ grid-column:span 3; }
-
-    @media (max-width: 900px){
-      .col-6,.col-4,.col-3{ grid-column:span 12; }
-    }
-
+    .card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
+    .grid{ display:grid; gap:12px; grid-template-columns:repeat(12, 1fr); }
+    .col-12{ grid-column:span 12; } .col-6{ grid-column:span 6; } .col-4{ grid-column:span 4; } .col-3{ grid-column:span 3; }
+    @media (max-width: 900px){ .col-6,.col-4,.col-3{ grid-column:span 12; } }
     label{ font-size:.9rem; color:var(--muted); display:block; margin-bottom:6px; }
-    input, select, textarea{
-      width:100%; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; font:inherit; background:#fff;
-    }
-    textarea{ min-height:64px; }
-    .muted{ color:var(--muted); }
-
+    input, select, textarea{ width:100%; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; font:inherit; background:#fff; }
+    textarea{ min-height:64px; } .muted{ color:var(--muted); }
     table{ width:100%; border-collapse:separate; border-spacing:0 8px; }
     thead th{ text-align:left; font-size:.85rem; color:var(--muted); font-weight:800; padding:6px 10px; }
     tbody tr{ background:white; box-shadow:var(--shadow); }
-    tbody td{ padding:12px 10px; vertical-align:top; }
-    td.toolbar{ width:160px; }
+    tbody td{ padding:12px 10px; vertical-align:top; } td.toolbar{ width:160px; }
     td.toolbar .btn{ padding:8px 10px; border-radius:10px; }
-
-    /* Gate / Loader */
     #loader, #auth-gate, #admin-app { display:none; }
-    .center{
-      display:grid; place-items:center; min-height:60vh;
-    }
-    .spinner{
-      width:56px; height:56px; border-radius:50%;
-      border:6px solid rgba(2,8,23,.12);
-      border-top-color:white;
-      animation:spin 1s linear infinite;
-      box-shadow:var(--shadow);
-    }
-    .loader-card{
-      background:linear-gradient(180deg, var(--brand), var(--brand-dark));
-      color:white; padding:24px; border-radius:var(--radius); text-align:center; box-shadow:var(--shadow);
-    }
+    .center{ display:grid; place-items:center; min-height:60vh; }
+    .spinner{ width:56px; height:56px; border-radius:50%; border:6px solid rgba(2,8,23,.12); border-top-color:white; animation:spin 1s linear infinite; box-shadow:var(--shadow); }
+    .loader-card{ background:linear-gradient(180deg, var(--brand), var(--brand-dark)); color:white; padding:24px; border-radius:var(--radius); text-align:center; box-shadow:var(--shadow); }
     @keyframes spin{ to{ transform:rotate(360deg); } }
-
-    #toast{
-      position:fixed; left:50%; transform:translateX(-50%);
-      bottom:20px; padding:10px 14px; color:white; background:var(--ok);
-      border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700;
-    }
-    .section-title{ margin:6px 0 14px; font-weight:800; }
-    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:20px; padding:10px 14px; color:white;
+      background:var(--ok); border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700; }
+    .section-title{ margin:6px 0 14px; font-weight:800; } .actions{ display:flex; gap:8px; flex-wrap:wrap; }
     .mrta-wrap{ display:none; }
   </style>
 </head>
 <body>
-
   <header>
     <div class="bar">
       <div class="brand">
@@ -143,14 +81,14 @@
   <main id="auth-gate" class="center">
     <div class="card" style="width:min(560px, 100%);">
       <h2 class="section-title">เข้าสู่ระบบผู้ดูแล</h2>
-      <form id="loginForm" class="grid">
+      <form id="loginForm" class="grid" autocomplete="on">
         <div class="col-12">
           <label>อีเมล</label>
-          <input type="email" name="email" required placeholder="name@example.com" />
+          <input type="email" name="email" required placeholder="name@example.com" autocomplete="username" />
         </div>
         <div class="col-12">
           <label>รหัสผ่าน</label>
-          <input type="password" name="password" required placeholder="••••••••" />
+          <input type="password" name="password" required placeholder="••••••••" autocomplete="current-password" />
         </div>
         <div class="col-12 actions">
           <button id="loginBtn" class="btn primary" type="submit">เข้าสู่ระบบ</button>
@@ -168,7 +106,6 @@
         <h2 class="section-title">เพิ่ม/แก้ไข โปรโมชัน</h2>
         <form id="promo-form" class="grid" autocomplete="off">
           <input type="hidden" id="promo-id" />
-
           <div class="col-6">
             <label>ธนาคาร</label>
             <select id="bank_id" required></select>
@@ -177,7 +114,6 @@
             <label>ชื่อโปรโมชัน</label>
             <input id="promotion_name" placeholder="เช่น Home For All 2025" />
           </div>
-
           <div class="col-4">
             <label>ประเภทสินเชื่อ</label>
             <select id="loan_type">
@@ -195,100 +131,36 @@
             <label>สิ้นสุด</label>
             <input id="end_date" type="date" />
           </div>
-
-          <div class="col-3">
-            <label>ดอกเบี้ยปี 1 (%)</label>
-            <input id="interest_rate_yr1" type="number" step="0.01" />
-          </div>
-          <div class="col-3">
-            <label>ดอกเบี้ยปี 2 (%)</label>
-            <input id="interest_rate_yr2" type="number" step="0.01" />
-          </div>
-          <div class="col-3">
-            <label>ดอกเบี้ยปี 3 (%)</label>
-            <input id="interest_rate_yr3" type="number" step="0.01" />
-          </div>
-
-          <div class="col-3">
-            <label>Max LTV (%)</label>
-            <input id="max_ltv" type="number" step="1" />
-          </div>
-
-          <div class="col-3">
-            <label>DSR Limit (%)</label>
-            <input id="dsr_limit" type="number" step="1" />
-          </div>
-          <div class="col-3">
-            <label>รายได้ต่อกู้ 1 ลบ. (บ/ด)</label>
-            <input id="income_per_million" type="number" step="1" />
-          </div>
-          <div class="col-3">
-            <label>ค่าครองชีพขั้นต่ำ (บ/ด)</label>
-            <input id="min_living_expense" type="number" step="1" />
-          </div>
-
-          <div class="col-3">
-            <label>อายุงานสูงสุด (สัญญา)</label>
-            <input id="max_loan_tenure" type="number" step="1" />
-          </div>
-          <div class="col-3">
-            <label>อายุผู้กู้สูงสุด (พนักงาน)</label>
-            <input id="max_age_salaried" type="number" step="1" />
-          </div>
-          <div class="col-3">
-            <label>อายุผู้กู้สูงสุด (ธุรกิจ)</label>
-            <input id="max_age_business" type="number" step="1" />
-          </div>
-          <div class="col-3">
-            <label>ยกเว้นค่าจดจำนอง?</label>
-            <input id="waive_mortgage_fee" type="checkbox" />
-          </div>
+          <div class="col-3"><label>ดอกเบี้ยปี 1 (%)</label><input id="interest_rate_yr1" type="number" step="0.01" /></div>
+          <div class="col-3"><label>ดอกเบี้ยปี 2 (%)</label><input id="interest_rate_yr2" type="number" step="0.01" /></div>
+          <div class="col-3"><label>ดอกเบี้ยปี 3 (%)</label><input id="interest_rate_yr3" type="number" step="0.01" /></div>
+          <div class="col-3"><label>Max LTV (%)</label><input id="max_ltv" type="number" step="1" /></div>
+          <div class="col-3"><label>DSR Limit (%)</label><input id="dsr_limit" type="number" step="1" /></div>
+          <div class="col-3"><label>รายได้ต่อกู้ 1 ลบ. (บ/ด)</label><input id="income_per_million" type="number" step="1" /></div>
+          <div class="col-3"><label>ค่าครองชีพขั้นต่ำ (บ/ด)</label><input id="min_living_expense" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุงานสูงสุด (สัญญา)</label><input id="max_loan_tenure" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุผู้กู้สูงสุด (พนักงาน)</label><input id="max_age_salaried" type="number" step="1" /></div>
+          <div class="col-3"><label>อายุผู้กู้สูงสุด (ธุรกิจ)</label><input id="max_age_business" type="number" step="1" /></div>
+          <div class="col-3"><label>ยกเว้นค่าจดจำนอง?</label><input id="waive_mortgage_fee" type="checkbox" /></div>
 
           <div class="col-12">
             <label class="actions" style="align-items:center; gap:8px;">
-              <input id="has_mrta_option" type="checkbox" />
-              มีตัวเลือกซื้อ MRTA
+              <input id="has_mrta_option" type="checkbox" /> มีตัวเลือกซื้อ MRTA
             </label>
           </div>
 
           <div id="mrta-fields" class="grid mrta-wrap">
-            <div class="col-3">
-              <label>ปี1 (MRTA) %</label>
-              <input id="interest_rate_yr1_mrta" type="number" step="0.01" />
-            </div>
-            <div class="col-3">
-              <label>ปี2 (MRTA) %</label>
-              <input id="interest_rate_yr2_mrta" type="number" step="0.01" />
-            </div>
-            <div class="col-3">
-              <label>ปี3 (MRTA) %</label>
-              <input id="interest_rate_yr3_mrta" type="number" step="0.01" />
-            </div>
-
+            <div class="col-3"><label>ปี1 (MRTA) %</label><input id="interest_rate_yr1_mrta" type="number" step="0.01" /></div>
+            <div class="col-3"><label>ปี2 (MRTA) %</label><input id="interest_rate_yr2_mrta" type="number" step="0.01" /></div>
+            <div class="col-3"><label>ปี3 (MRTA) %</label><input id="interest_rate_yr3_mrta" type="number" step="0.01" /></div>
             <div class="col-3"></div>
-            <div class="col-3">
-              <label>หลัง 3 ปี: รีเทล (%)</label>
-              <input id="interest_rate_after_value_retail" type="number" step="0.01" />
-            </div>
-            <div class="col-3">
-              <label>หลัง 3 ปี: สวัสดิการ (%)</label>
-              <input id="interest_rate_after_value_welfare" type="number" step="0.01" />
-            </div>
-            <div class="col-3">
-              <label>หลัง 3 ปี: รีเทล+MRTA (%)</label>
-              <input id="interest_rate_after_value_mrta_retail" type="number" step="0.01" />
-            </div>
-            <div class="col-3">
-              <label>หลัง 3 ปี: สวัดิการ+MRTA (%)</label>
-              <input id="interest_rate_after_value_mrta_welfare" type="number" step="0.01" />
-            </div>
+            <div class="col-3"><label>หลัง 3 ปี: รีเทล (%)</label><input id="interest_rate_after_value_retail" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ (%)</label><input id="interest_rate_after_value_welfare" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: รีเทล+MRTA (%)</label><input id="interest_rate_after_value_mrta_retail" type="number" step="0.01" /></div>
+            <div class="col-3"><label>หลัง 3 ปี: สวัสดิการ+MRTA (%)</label><input id="interest_rate_after_value_mrta_welfare" type="number" step="0.01" /></div>
           </div>
 
-          <div class="col-12">
-            <label>หมายเหตุ</label>
-            <textarea id="notes" placeholder="รายละเอียดพิเศษ เงื่อนไข ฯลฯ"></textarea>
-          </div>
-
+          <div class="col-12"><label>หมายเหตุ</label><textarea id="notes" placeholder="รายละเอียดพิเศษ เงื่อนไข ฯลฯ"></textarea></div>
           <div class="col-12 actions">
             <button id="submitBtn" class="btn primary" type="submit">บันทึกโปรโมชัน</button>
             <button id="clearBtn" class="btn" type="button">ล้างฟอร์ม</button>
@@ -301,14 +173,7 @@
         <h2 class="section-title">รายการโปรโมชัน</h2>
         <div style="overflow:auto;">
           <table>
-            <thead>
-              <tr>
-                <th>ธนาคาร</th>
-                <th>โปรโมชัน</th>
-                <th>เฉลี่ย 3 ปี (%)</th>
-                <th>จัดการ</th>
-              </tr>
-            </thead>
+            <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปี (%)</th><th>จัดการ</th></tr></thead>
             <tbody id="promo-table-body"></tbody>
           </table>
         </div>
@@ -320,11 +185,211 @@
   <div id="toast"></div>
 
   <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- App scripts -->
-  <script src="/js/admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
-  <!-- Register basic Service Worker for A2HS -->
+  <!-- Inline App (ป้องกัน 404 จากไฟล์แยก) -->
+  <script>
+  // --- admin.js (v12.2 inline) ---
+  window.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Elements
+    const q = (id) => document.getElementById(id);
+    const promoForm = q('promo-form'), promoTableBody = q('promo-table-body'), promoIdInput = q('promo-id');
+    const bankSelect = q('bank_id'), promotionNameInput = q('promotion_name'), loanTypeSelect = q('loan_type');
+    const interestRateYr1Input = q('interest_rate_yr1'), interestRateYr2Input = q('interest_rate_yr2'), interestRateYr3Input = q('interest_rate_yr3');
+    const maxLtvInput = q('max_ltv'), dsrLimitInput = q('dsr_limit'), incomePerMillionInput = q('income_per_million');
+    const minLivingExpenseInput = q('min_living_expense'), maxLoanTenureInput = q('max_loan_tenure'), maxAgeSalariedInput = q('max_age_salaried');
+    const maxAgeBusinessInput = q('max_age_business'), waiveMortgageFeeInput = q('waive_mortgage_fee'), notesInput = q('notes');
+    const submitBtn = q('submitBtn'), clearBtn = q('clearBtn'), toast = q('toast');
+    const app = q('admin-app'), gate = q('auth-gate'), loginBtn = q('loginBtn'), signOutBtn = q('signOutBtn');
+    const loginForm = q('loginForm'), loader = q('loader'), startDateInput = q('start_date'), endDateInput = q('end_date');
+    const hasMrtaOptionInput = q('has_mrta_option'), interestRateYr1MrtaInput = q('interest_rate_yr1_mrta'), interestRateYr2MrtaInput = q('interest_rate_yr2_mrta');
+    const interestRateYr3MrtaInput = q('interest_rate_yr3_mrta'), mrtaFields = q('mrta-fields');
+    const interestRateAfterValueRetailInput = q('interest_rate_after_value_retail'), interestRateAfterValueWelfareInput = q('interest_rate_after_value_welfare');
+    const interestRateAfterValueMrtaRetailInput = q('interest_rate_after_value_mrta_retail'), interestRateAfterValueMrtaWelfareInput = q('interest_rate_after_value_mrta_welfare');
+
+    // Events
+    hasMrtaOptionInput.addEventListener('change', () => {
+      mrtaFields.style.display = hasMrtaOptionInput.checked ? 'grid' : 'none';
+      mrtaFields.classList.toggle('mrta-wrap', !hasMrtaOptionInput.checked);
+    });
+    clearBtn.addEventListener('click', () => clearForm());
+
+    // Helpers
+    const N = (v) => (v === '' || v === null || typeof v === 'undefined' ? null : Number(v));
+    const D = (v) => (v === '' || v === null ? null : v);
+    function showToast(msg, ok = true){ toast.textContent = msg; toast.style.background = ok ? '#111827' : '#b91c1c'; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1800); }
+    function showGate(){ loader.style.display='none'; app.style.display='none'; gate.style.display='grid'; }
+    function showApp(){ loader.style.display='none'; gate.style.display='none'; app.style.display='block'; }
+    function showLoader(){ loader.style.display='grid'; gate.style.display='none'; app.style.display='none'; }
+
+    async function loadAppData(){ await populateBankSelect(); await fetchPromotions(); }
+
+    // Auth
+    async function requireAdmin(){
+      try{
+        const { data:{ session } } = await supabaseClient.auth.getSession();
+        if(!session) throw new Error('No active session.');
+        const { data:{ user } } = await supabaseClient.auth.getUser();
+        if(!user) throw new Error('No user.');
+        await ensureSelfProfile();
+        const { data:prof, error:profError } = await supabaseClient.from('profiles').select('role,status').eq('id', user.id).single();
+        if(profError) throw profError;
+        if(!prof || prof.role!=='admin' || prof.status!=='approved') throw new Error('Not an approved admin.');
+        showApp(); return true;
+      }catch(err){
+        console.error('Admin verification failed:', err.message);
+        await supabaseClient.auth.signOut().catch(()=>{});
+        showGate(); return false;
+      }
+    }
+
+    async function populateBankSelect(){
+      const { data, error } = await supabaseClient.from('banks').select('id, bank_name').order('bank_name', { ascending:true });
+      if(error){ console.error(error); showToast('โหลดรายชื่อธนาคารล้มเหลว', false); return; }
+      bankSelect.innerHTML = '<option value=\"\">-- กรุณาเลือกธนาคาร --</option>';
+      (data||[]).forEach(b=>{
+        const opt = document.createElement('option'); opt.value=b.id; opt.textContent=b.bank_name; bankSelect.appendChild(opt);
+      });
+    }
+
+    async function ensureSelfProfile(){
+      const { data:{ user } } = await supabaseClient.auth.getUser(); if(!user) return;
+      const { data:have } = await supabaseClient.from('profiles').select('id').eq('id', user.id).maybeSingle();
+      if(!have){ const payload = { id:user.id, email:user.email, role:'user', status:'pending' }; const { error } = await supabaseClient.from('profiles').insert(payload); if(error) console.warn('[profile] insert error:', error.message); }
+    }
+
+    function avg3y(p){
+      const nums = [p.interest_rate_yr1, p.interest_rate_yr2, p.interest_rate_yr3].map(v=>v==null?NaN:parseFloat(v)).filter(Number.isFinite);
+      if(!nums.length) return null; return (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(2);
+    }
+
+    async function fetchPromotions(){
+      const [banksRes, promosRes] = await Promise.all([
+        supabaseClient.from('banks').select('id, bank_name'),
+        supabaseClient.from('promotions').select('*').order('id', { ascending:false })
+      ]);
+      if(banksRes.error){ console.error(banksRes.error); showToast('โหลดรายชื่อธนาคารล้มเหลว', false); return; }
+      if(promosRes.error){ console.error(promosRes.error); showToast('โหลดโปรโมชันล้มเหลว', false); return; }
+      const dict = new Map((banksRes.data||[]).map(b=>[b.id,b.bank_name]));
+      const rows = (promosRes.data||[]).map(p=>({ ...p, bank_name: dict.get(p.bank_id) ?? '-' }));
+      renderPromotions(rows);
+    }
+
+    function renderPromotions(rows){
+      promoTableBody.innerHTML = (rows||[]).map(p=>`
+        <tr>
+          <td>${p.bank_name ?? '-'}</td>
+          <td>${p.promotion_name ?? '-'}<br><small class="muted">${p.loan_type ?? 'ทั่วไป'}</small></td>
+          <td>${avg3y(p) ?? '-'}</td>
+          <td class="toolbar">
+            <button class="btn warning edit-btn" data-id="${p.id}">แก้ไข</button>
+            <button class="btn danger delete-btn" data-id="${p.id}">ลบ</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function clearForm(){
+      promoIdInput.value=''; promoForm.reset(); submitBtn.textContent='บันทึกโปรโมชัน';
+      mrtaFields.style.display='none'; mrtaFields.classList.add('mrta-wrap');
+    }
+
+    promoForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!bankSelect.value) return showToast('กรุณาเลือกธนาคาร', false);
+      const payload = {
+        bank_id: Number(bankSelect.value), promotion_name: promotionNameInput.value.trim(), loan_type: loanTypeSelect.value,
+        interest_rate_yr1: N(interestRateYr1Input.value), interest_rate_yr2: N(interestRateYr2Input.value), interest_rate_yr3: N(interestRateYr3Input.value),
+        max_ltv: N(maxLtvInput.value), dsr_limit: N(dsrLimitInput.value), income_per_million: N(incomePerMillionInput.value),
+        min_living_expense: N(minLivingExpenseInput.value), max_loan_tenure: N(maxLoanTenureInput.value),
+        max_age_salaried: N(maxAgeSalariedInput.value), max_age_business: N(maxAgeBusinessInput.value),
+        waive_mortgage_fee: !!waiveMortgageFeeInput.checked, notes: notesInput.value.trim(),
+        start_date: D(startDateInput.value), end_date: D(endDateInput.value),
+        has_mrta_option: !!hasMrtaOptionInput.checked,
+        interest_rate_yr1_mrta: N(interestRateYr1MrtaInput.value), interest_rate_yr2_mrta: N(interestRateYr2MrtaInput.value), interest_rate_yr3_mrta: N(interestRateYr3MrtaInput.value),
+        interest_rate_after_value_retail: N(interestRateAfterValueRetailInput.value), interest_rate_after_value_welfare: N(interestRateAfterValueWelfareInput.value),
+        interest_rate_after_value_mrta_retail: N(interestRateAfterValueMrtaRetailInput.value), interest_rate_after_value_mrta_welfare: N(interestRateAfterValueMrtaWelfareInput.value),
+      };
+      submitBtn.disabled=true;
+      try{
+        if(promoIdInput.value){
+          const id = Number(promoIdInput.value);
+          const { error } = await supabaseClient.from('promotions').update(payload).eq('id', id);
+          if(error) throw error; showToast('อัปเดตโปรโมชันสำเร็จ');
+        }else{
+          const { error } = await supabaseClient.from('promotions').insert(payload);
+          if(error) throw error; showToast('บันทึกโปรโมชันสำเร็จ');
+        }
+        clearForm(); await fetchPromotions();
+      }catch(err){ console.error(err); showToast('บันทึกล้มเหลว', false); }
+      finally{ submitBtn.disabled=false; }
+    });
+
+    document.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      if(btn.classList.contains('edit-btn')){
+        const id = Number(btn.dataset.id);
+        const { data:p, error } = await supabaseClient.from('promotions').select('*').eq('id', id).single();
+        if(error){ console.error(error); return showToast('โหลดข้อมูลโปรโมชันล้มเหลว', false); }
+        promoIdInput.value = p.id; bankSelect.value = p.bank_id; promotionNameInput.value = p.promotion_name || '';
+        loanTypeSelect.value = p.loan_type || 'ทั่วไป';
+        interestRateYr1Input.value = p.interest_rate_yr1 ?? ''; interestRateYr2Input.value = p.interest_rate_yr2 ?? ''; interestRateYr3Input.value = p.interest_rate_yr3 ?? '';
+        maxLtvInput.value = p.max_ltv ?? ''; dsrLimitInput.value = p.dsr_limit ?? ''; incomePerMillionInput.value = p.income_per_million ?? '';
+        minLivingExpenseInput.value = p.min_living_expense ?? ''; maxLoanTenureInput.value = p.max_loan_tenure ?? '';
+        maxAgeSalariedInput.value = p.max_age_salaried ?? ''; maxAgeBusinessInput.value = p.max_age_business ?? '';
+        waiveMortgageFeeInput.checked = !!p.waive_mortgage_fee; notesInput.value = p.notes ?? '';
+        startDateInput.value = p.start_date ?? ''; endDateInput.value = p.end_date ?? '';
+        hasMrtaOptionInput.checked = !!p.has_mrta_option;
+        interestRateYr1MrtaInput.value = p.interest_rate_yr1_mrta ?? ''; interestRateYr2MrtaInput.value = p.interest_rate_yr2_mrta ?? ''; interestRateYr3MrtaInput.value = p.interest_rate_yr3_mrta ?? '';
+        interestRateAfterValueRetailInput.value = p.interest_rate_after_value_retail ?? '';
+        interestRateAfterValueWelfareInput.value = p.interest_rate_after_value_welfare ?? '';
+        interestRateAfterValueMrtaRetailInput.value = p.interest_rate_after_value_mrta_retail ?? '';
+        interestRateAfterValueMrtaWelfareInput.value = p.interest_rate_after_value_mrta_welfare ?? '';
+        mrtaFields.style.display = hasMrtaOptionInput.checked ? 'grid' : 'none';
+        mrtaFields.classList.toggle('mrta-wrap', !hasMrtaOptionInput.checked);
+        submitBtn.textContent='บันทึกการแก้ไข'; promoForm.scrollIntoView({ behavior:'smooth' });
+      }
+      if(btn.classList.contains('delete-btn')){
+        const id = Number(btn.dataset.id); if(!confirm('ลบโปรโมชันนี้ใช่ไหม?')) return;
+        const { error } = await supabaseClient.from('promotions').delete().eq('id', id);
+        if(error){ console.error(error); return showToast('ลบไม่สำเร็จ', false); }
+        showToast('ลบสำเร็จ'); await fetchPromotions();
+      }
+    });
+
+    async function doLogin(email, password){
+      loginBtn.disabled=true;
+      try{
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if(error){
+          const msg = /invalid login credentials/i.test(error.message) ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' : `ล็อกอินไม่สำเร็จ: ${error.message}`;
+          showToast(msg,false);
+        }
+      } finally { loginBtn.disabled=false; }
+    }
+    loginForm?.addEventListener('submit', async (e)=>{ e.preventDefault(); await doLogin(loginForm.email.value.trim(), loginForm.password.value); });
+    signOutBtn?.addEventListener('click', async ()=>{ showLoader(); await supabaseClient.auth.signOut(); });
+
+    // Boot
+    async function boot(){
+      showLoader();
+      const { data:{ session } } = await supabaseClient.auth.getSession();
+      if(session){ const ok = await requireAdmin(); if(ok) await loadAppData(); } else { showGate(); }
+    }
+    supabaseClient.auth.onAuthStateChange(async (event, session)=>{
+      console.log(`Auth event: ${event}`);
+      if(!session) return showGate();
+      const ok = await requireAdmin(); if(ok) await loadAppData();
+    });
+    boot();
+  });
+  </script>
+
+  <!-- Register Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
