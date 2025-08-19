@@ -1,5 +1,5 @@
-// --- admin.js (เวอร์ชันรองรับลูกค้าสวัสดิการ/รายย่อย) ---
-console.log("admin.js v10.0 loaded");
+// --- admin.js (เวอร์ชันเพิ่มประเภทสินเชื่อ) ---
+console.log("admin.js v11.0 loaded");
 
 // ========== Supabase ==========
 const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
@@ -12,6 +12,7 @@ const promoTableBody = document.getElementById('promo-table-body');
 const promoIdInput = document.getElementById('promo-id');
 const bankSelect = document.getElementById('bank_id');
 const promotionNameInput = document.getElementById('promotion_name');
+const loanTypeSelect = document.getElementById('loan_type'); // <-- Element ใหม่
 const interestRateYr1Input = document.getElementById('interest_rate_yr1');
 const interestRateYr2Input = document.getElementById('interest_rate_yr2');
 const interestRateYr3Input = document.getElementById('interest_rate_yr3');
@@ -33,8 +34,6 @@ const loginBtn = document.getElementById('loginBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 const loginForm = document.getElementById('loginForm');
 const loader = document.getElementById('loader');
-
-// -- Date/MRTA Elements --
 const startDateInput = document.getElementById('start_date');
 const endDateInput = document.getElementById('end_date');
 const hasMrtaOptionInput = document.getElementById('has_mrta_option');
@@ -42,13 +41,10 @@ const interestRateYr1MrtaInput = document.getElementById('interest_rate_yr1_mrta
 const interestRateYr2MrtaInput = document.getElementById('interest_rate_yr2_mrta');
 const interestRateYr3MrtaInput = document.getElementById('interest_rate_yr3_mrta');
 const mrtaFields = document.getElementById('mrta-fields');
-
-// -- New Customer Type Elements --
 const interestRateAfterValueRetailInput = document.getElementById('interest_rate_after_value_retail');
 const interestRateAfterValueWelfareInput = document.getElementById('interest_rate_after_value_welfare');
 const interestRateAfterValueMrtaRetailInput = document.getElementById('interest_rate_after_value_mrta_retail');
 const interestRateAfterValueMrtaWelfareInput = document.getElementById('interest_rate_after_value_mrta_welfare');
-
 
 // ========== Event Listeners ==========
 hasMrtaOptionInput.addEventListener('change', () => {
@@ -79,31 +75,19 @@ async function loadAppData() {
 // ========== Auth gate ==========
 async function requireAdmin() {
   console.log('requireAdmin(): Verifying session...');
-
   const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-  if (sessionError || !session) {
-    console.log('Verification failed: No session found.');
-    showGate();
-    return false;
-  }
+  if (sessionError || !session) { showGate(); return false; }
   const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-  if (userError || !user) {
-    console.log('Verification failed: No user found.');
-    showGate();
-    return false;
-  }
-  console.log(`User found: ${user.email}`);
+  if (userError || !user) { showGate(); return false; }
   await ensureSelfProfile();
   const { data: prof, error: profError } = await supabaseClient
     .from('profiles').select('role,status').eq('id', user.id).single();
   if (profError || !prof || prof.role !== 'admin' || prof.status !== 'approved') {
-    console.log('Verification failed: User is not an approved admin.');
     await supabaseClient.auth.signOut();
     showToast('สิทธิ์ไม่เพียงพอ หรือยังไม่อนุมัติ', false);
     showGate();
     return false;
   }
-  console.log('Admin verified successfully.');
   showApp();
   return true;
 }
@@ -161,7 +145,7 @@ function renderPromotions(rows) {
   promoTableBody.innerHTML = (rows || []).map(p => `
     <tr>
       <td>${p.bank_name ?? '-'}</td>
-      <td>${p.promotion_name ?? '-'}</td>
+      <td>${p.promotion_name ?? '-'}<br><small class="muted">${p.loan_type ?? 'ทั่วไป'}</small></td>
       <td>${avg3y(p) ?? '-'}</td>
       <td class="toolbar">
         <button class="btn warning edit-btn" data-id="${p.id}">แก้ไข</button>
@@ -182,10 +166,10 @@ function clearForm(){
 promoForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!bankSelect.value) return showToast('กรุณาเลือกธนาคาร', false);
-
   const payload = {
     bank_id: Number(bankSelect.value),
     promotion_name: promotionNameInput.value.trim(),
+    loan_type: loanTypeSelect.value, // <-- บันทึกค่าใหม่
     interest_rate_yr1: N(interestRateYr1Input.value),
     interest_rate_yr2: N(interestRateYr2Input.value),
     interest_rate_yr3: N(interestRateYr3Input.value),
@@ -204,13 +188,11 @@ promoForm.addEventListener('submit', async (e) => {
     interest_rate_yr1_mrta: N(interestRateYr1MrtaInput.value),
     interest_rate_yr2_mrta: N(interestRateYr2MrtaInput.value),
     interest_rate_yr3_mrta: N(interestRateYr3MrtaInput.value),
-    // New/Renamed Fields
     interest_rate_after_value_retail: N(interestRateAfterValueRetailInput.value),
     interest_rate_after_value_welfare: N(interestRateAfterValueWelfareInput.value),
     interest_rate_after_value_mrta_retail: N(interestRateAfterValueMrtaRetailInput.value),
     interest_rate_after_value_mrta_welfare: N(interestRateAfterValueMrtaWelfareInput.value),
   };
-
   submitBtn.disabled = true;
   try {
     if (promoIdInput.value) {
@@ -241,6 +223,7 @@ document.addEventListener('click', async (e) => {
     promoIdInput.value = p.id;
     bankSelect.value = p.bank_id;
     promotionNameInput.value = p.promotion_name || '';
+    loanTypeSelect.value = p.loan_type || 'ทั่วไป'; // <-- แสดงค่าตอนแก้ไข
     interestRateYr1Input.value = p.interest_rate_yr1 ?? '';
     interestRateYr2Input.value = p.interest_rate_yr2 ?? '';
     interestRateYr3Input.value = p.interest_rate_yr3 ?? '';
@@ -259,8 +242,6 @@ document.addEventListener('click', async (e) => {
     interestRateYr1MrtaInput.value = p.interest_rate_yr1_mrta ?? '';
     interestRateYr2MrtaInput.value = p.interest_rate_yr2_mrta ?? '';
     interestRateYr3MrtaInput.value = p.interest_rate_yr3_mrta ?? '';
-    
-    // Populate New/Renamed Fields
     interestRateAfterValueRetailInput.value = p.interest_rate_after_value_retail ?? '';
     interestRateAfterValueWelfareInput.value = p.interest_rate_after_value_welfare ?? '';
     interestRateAfterValueMrtaRetailInput.value = p.interest_rate_after_value_mrta_retail ?? '';
@@ -270,7 +251,6 @@ document.addEventListener('click', async (e) => {
     submitBtn.textContent = 'บันทึกการแก้ไข';
     promoForm.scrollIntoView({ behavior: 'smooth' });
   }
-
   if (btn.classList.contains('delete-btn')) {
     const id = Number(btn.dataset.id);
     if (!confirm('ลบโปรโมชันนี้ใช่ไหม?')) return;
@@ -287,9 +267,7 @@ async function doLogin(email, password) {
   try {
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
-      const msg = /invalid login credentials/i.test(error.message)
-        ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
-        : `ล็อกอินไม่สำเร็จ: ${error.message}`;
+      const msg = /invalid login credentials/i.test(error.message) ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' : `ล็อกอินไม่สำเร็จ: ${error.message}`;
       showToast(msg, false);
     }
   } finally {

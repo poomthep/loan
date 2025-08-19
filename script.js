@@ -1,4 +1,4 @@
-// --- script.js (เวอร์ชันรองรับลูกค้าสวัสดิการ/รายย่อย) ---
+// --- script.js (เวอร์ชันเพิ่มประเภทสินเชื่อ) ---
 const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
 
@@ -12,12 +12,13 @@ const loadingSpinner = document.getElementById('loading-spinner');
 const filterBankInput = document.getElementById('filterBank');
 const sortOrderSelect = document.getElementById('sortOrder');
 
+const loanPurposeSelect = document.getElementById('loanPurpose'); // <-- Element ใหม่
 const professionSelect = document.getElementById('profession');
 const userAgeInput = document.getElementById('userAge');
 const monthlyIncomeInput = document.getElementById('monthlyIncome');
 const monthlyDebtInput = document.getElementById('monthlyDebt');
 const wantsMRTAInput = document.getElementById('wantsMRTA');
-const customerTypeSelect = document.getElementById('customerType'); // <-- Element ใหม่
+const customerTypeSelect = document.getElementById('customerType');
 
 let allOffers = [];
 let currentResults = [];
@@ -85,7 +86,7 @@ function renderResults(resultsToRender) {
     });
     resultsContainer.innerHTML = comparisonTableHtml + offersHtml;
     if (resultsToRender.length === 0) {
-        resultsContainer.innerHTML = `<div class="result-card"><p>ไม่พบโปรโมชันที่เหมาะสมกับคุณสมบัติของคุณ หรือโปรโมชันหมดอายุแล้ว</p></div>`;
+        resultsContainer.innerHTML = `<div class="result-card"><p>ไม่พบโปรโมชันที่เหมาะสมกับคุณสมบัติของคุณ</p></div>`;
     }
 }
 
@@ -97,7 +98,8 @@ function analyzeAndFilterOffers() {
     const requestedLoanAmount = parseFloat(loanAmountInput.value);
     const requestedLoanTerm = parseInt(loanTermInput.value) || 0;
     const userWantsMRTA = wantsMRTAInput.checked;
-    const customerType = customerTypeSelect.value; // <-- อ่านค่าประเภทลูกค้า
+    const customerType = customerTypeSelect.value;
+    const loanPurpose = loanPurposeSelect.value; // <-- อ่านค่าวัตถุประสงค์
 
     if (isNaN(userAge) || isNaN(monthlyIncome) || isNaN(requestedLoanAmount)) {
         alert('กรุณากรอกข้อมูลผู้กู้ และข้อมูลสินเชื่อให้ครบถ้วน');
@@ -111,19 +113,29 @@ function analyzeAndFilterOffers() {
         const hasNotExpired = offer.end_date ? new Date(offer.end_date) >= today : true;
         return hasStarted && hasNotExpired;
     });
+    
+    // --- ส่วนที่เพิ่มเข้ามา ---
+    const purposeFilteredOffers = activeOffers.filter(offer => {
+        // ถ้าโปรโมชันไม่ได้กำหนดประเภท (เป็น null) หรือเป็น "ทั่วไป" ให้แสดงสำหรับทุกวัตถุประสงค์
+        if (!offer.loan_type || offer.loan_type === 'ทั่วไป') {
+            return true;
+        }
+        // ถ้ากำหนดประเภทไว้ ให้แสดงเมื่อประเภทตรงกับที่ผู้ใช้เลือก
+        return offer.loan_type === loanPurpose;
+    });
+    // --- จบส่วนที่เพิ่มเข้ามา ---
 
     currentResults = [];
-    activeOffers.forEach(offer => {
+    purposeFilteredOffers.forEach(offer => { // <-- ใช้ purposeFilteredOffers แทน activeOffers
         let isMRTAApplied = false;
         let rate1 = offer.interest_rate_yr1;
         let rate2 = offer.interest_rate_yr2;
         let rate3 = offer.interest_rate_yr3;
         
-        // --- ส่วนที่แก้ไข ---
         let rateAfterValue;
         if (customerType === 'welfare') {
             rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_welfare : offer.interest_rate_after_value_welfare;
-        } else { // default to retail
+        } else {
             rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_retail : offer.interest_rate_after_value_retail;
         }
 
@@ -137,7 +149,6 @@ function analyzeAndFilterOffers() {
         if (rate1 === null || rate2 === null || rate3 === null) return;
         
         const rateAfter = `MRR - ${Number(rateAfterValue || 0).toFixed(2)}%`;
-        // --- จบส่วนที่แก้ไข ---
         
         const dsrValue = (offer.dsr_limit || 40) / 100;
         const maxAffordablePayment = (monthlyIncome * dsrValue) - monthlyDebt;
@@ -202,7 +213,6 @@ async function fetchAndDisplayInitialData() {
 compareBtn.addEventListener('click', analyzeAndFilterOffers);
 sortOrderSelect.addEventListener('change', sortAndRenderResults);
 filterBankInput.addEventListener('input', sortAndRenderResults);
-
 resultsContainer.addEventListener('click', function(event) {
     const button = event.target;
     if (button.classList.contains('toggle-schedule-btn')) {

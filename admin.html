@@ -58,7 +58,7 @@
         <form id="promo-form">
           <input type="hidden" id="promo-id" />
           
-          <div class="grid-2">
+          <div class="grid-3">
             <div class="form-group">
               <label for="bank_id">ธนาคาร</label>
               <select id="bank_id" required>
@@ -68,6 +68,15 @@
             <div class="form-group">
               <label for="promotion_name">ชื่อโปรโมชัน</label>
               <input type="text" id="promotion_name" required placeholder="เช่น สินเชื่อบ้านสุขใจ ปี 2568" />
+            </div>
+            <div class="form-group">
+              <label for="loan_type">ประเภทสินเชื่อ</label>
+              <select id="loan_type">
+                <option value="ทั่วไป">ทั่วไป (ทุกวัตถุประสงค์)</option>
+                <option value="ซื้อใหม่">ซื้อบ้านใหม่/คอนโด</option>
+                <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
+                <option value="นโยบายรัฐ">นโยบายรัฐ</option>
+              </select>
             </div>
           </div>
           
@@ -147,7 +156,6 @@
   </main>
 
   <div id="toast" class="toast"></div>
-
   <script>
     let deferredPrompt = null;
     const installBtn = document.getElementById('installBtn');
@@ -171,7 +179,6 @@
       installBtn.disabled = false;
     });
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin.js"></script>
 </body>
