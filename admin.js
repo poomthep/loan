@@ -229,7 +229,7 @@ document.addEventListener('click', async (e) => {
     const id = Number(btn.dataset.id);
     const { data: p, error } = await supabaseClient.from('promotions').select('*').eq('id', id).single();
     if (error) { console.error(error); return showToast('โหลดข้อมูลโปรโมชันล้มเหลว', false); }
-    
+
     promoIdInput.value = p.id;
     bankSelect.value = p.bank_id;
     promotionNameInput.value = p.promotion_name || '';
@@ -256,7 +256,7 @@ document.addEventListener('click', async (e) => {
     interestRateAfterValueWelfareInput.value = p.interest_rate_after_value_welfare ?? '';
     interestRateAfterValueMrtaRetailInput.value = p.interest_rate_after_value_mrta_retail ?? '';
     interestRateAfterValueMrtaWelfareInput.value = p.interest_rate_after_value_mrta_welfare ?? '';
-    
+
     mrtaFields.style.display = hasMrtaOptionInput.checked ? 'block' : 'none';
     submitBtn.textContent = 'บันทึกการแก้ไข';
     promoForm.scrollIntoView({ behavior: 'smooth' });
