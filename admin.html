@@ -1,185 +1,334 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบจัดการโปรโมชัน (Admin)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ระบบจัดการโปรโมชัน | Admin Console</title>
   <meta name="theme-color" content="#0ea5e9" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M20 42l6 6 18-18-6-6-18 18zM40 16l8 8' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" href="/icons/icon-192.png" />
+
+  <!-- Minimal modern, mobile-first styles -->
+  <style>
+    :root{
+      --brand:#0ea5e9; /* sky-500 */
+      --brand-dark:#0284c7; /* sky-600 */
+      --ink:#0f172a; /* slate-900 */
+      --muted:#64748b; /* slate-500 */
+      --bg:#f8fafc; /* slate-50 */
+      --card:#ffffff;
+      --ok:#111827;
+      --bad:#b91c1c;
+      --radius:16px;
+      --shadow:0 8px 24px rgba(2,8,23,.08);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg); color:var(--ink);
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      background:linear-gradient(90deg, var(--brand), #22c55e);
+      color:white; box-shadow:var(--shadow);
+    }
+    .bar{
+      max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+    }
+    .brand .logo{
+      width:36px;height:36px;border-radius:12px;background:white;color:var(--brand);
+      display:grid;place-items:center;font-weight:900; box-shadow: inset 0 0 0 2px rgba(0,0,0,.04);
+    }
+    .grow{ flex:1; }
+    .btn{
+      appearance:none; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      background:white; color:var(--ink); box-shadow:var(--shadow);
+    }
+    .btn.primary{ background:var(--brand); color:#fff; }
+    .btn.warning{ background:#f59e0b; color:#111; }
+    .btn.danger{ background:#ef4444; color:#fff; }
+    .btn.ghost{ background:transparent; color:white; box-shadow:none; border:2px solid rgba(255,255,255,.35) }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    main{ max-width:1100px; margin:20px auto; padding:0 16px 40px; }
+
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;
+    }
+
+    .grid{
+      display:grid; gap:12px;
+      grid-template-columns:repeat(12, 1fr);
+    }
+    .col-12{ grid-column:span 12; }
+    .col-6{ grid-column:span 6; }
+    .col-4{ grid-column:span 4; }
+    .col-3{ grid-column:span 3; }
+
+    @media (max-width: 900px){
+      .col-6,.col-4,.col-3{ grid-column:span 12; }
+    }
+
+    label{ font-size:.9rem; color:var(--muted); display:block; margin-bottom:6px; }
+    input, select, textarea{
+      width:100%; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; font:inherit; background:#fff;
+    }
+    textarea{ min-height:64px; }
+    .muted{ color:var(--muted); }
+
+    table{ width:100%; border-collapse:separate; border-spacing:0 8px; }
+    thead th{ text-align:left; font-size:.85rem; color:var(--muted); font-weight:800; padding:6px 10px; }
+    tbody tr{ background:white; box-shadow:var(--shadow); }
+    tbody td{ padding:12px 10px; vertical-align:top; }
+    td.toolbar{ width:160px; }
+    td.toolbar .btn{ padding:8px 10px; border-radius:10px; }
+
+    /* Gate / Loader */
+    #loader, #auth-gate, #admin-app { display:none; }
+    .center{
+      display:grid; place-items:center; min-height:60vh;
+    }
+    .spinner{
+      width:56px; height:56px; border-radius:50%;
+      border:6px solid rgba(2,8,23,.12);
+      border-top-color:white;
+      animation:spin 1s linear infinite;
+      box-shadow:var(--shadow);
+    }
+    .loader-card{
+      background:linear-gradient(180deg, var(--brand), var(--brand-dark));
+      color:white; padding:24px; border-radius:var(--radius); text-align:center; box-shadow:var(--shadow);
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    #toast{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:20px; padding:10px 14px; color:white; background:var(--ok);
+      border-radius:12px; display:none; z-index:50; box-shadow:var(--shadow); font-weight:700;
+    }
+    .section-title{ margin:6px 0 14px; font-weight:800; }
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .mrta-wrap{ display:none; }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap">
+
+  <header>
+    <div class="bar">
       <div class="brand">
-        <span class="logo">🏦</span>
-        <div class="titles">
-          <h1>ระบบจัดการโปรโมชัน</h1>
-          <small class="muted">Admin Console</small>
-        </div>
+        <div class="logo">PA</div>
+        <div>ระบบจัดการโปรโมชัน</div>
       </div>
-      <div class="top-actions">
-        <button id="installBtn" class="btn ghost hide">ติดตั้งแอป</button>
-        <button id="signOutBtn" class="btn ghost">ออกจากระบบ</button>
-      </div>
+      <div class="grow"></div>
+      <button id="signOutBtn" class="btn ghost">ออกจากระบบ</button>
     </div>
   </header>
 
-  <main class="wrap">
-    <div id="loader" class="card" style="text-align: center; padding: 40px;">
-      <p>กำลังตรวจสอบสิทธิ์...</p>
+  <!-- Loader -->
+  <div id="loader" class="center">
+    <div class="loader-card">
+      <div class="spinner" style="margin:0 auto 14px;"></div>
+      <div>กำลังตรวจสอบสิทธิ...</div>
     </div>
+  </div>
 
-    <section id="auth-gate" class="card gate" style="display:none;">
-      <h2>เข้าสู่ระบบ Admin</h2>
-      <form id="loginForm">
-        <div class="grid-2">
-          <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="loginEmail" name="email" placeholder="your@email.com" required autocomplete="email">
-          </div>
-          <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="loginPassword" name="password" placeholder="••••••••" required autocomplete="current-password">
-          </div>
+  <!-- Auth Gate -->
+  <main id="auth-gate" class="center">
+    <div class="card" style="width:min(560px, 100%);">
+      <h2 class="section-title">เข้าสู่ระบบผู้ดูแล</h2>
+      <form id="loginForm" class="grid">
+        <div class="col-12">
+          <label>อีเมล</label>
+          <input type="email" name="email" required placeholder="name@example.com" />
         </div>
-        <div class="toolbar">
-          <button class="btn primary" id="loginBtn" type="submit">เข้าสู่ระบบ</button>
-          <span class="muted">* ต้องเป็นบัญชีแอดมินที่ได้รับอนุมัติ</span>
+        <div class="col-12">
+          <label>รหัสผ่าน</label>
+          <input type="password" name="password" required placeholder="••••••••" />
+        </div>
+        <div class="col-12 actions">
+          <button id="loginBtn" class="btn primary" type="submit">เข้าสู่ระบบ</button>
         </div>
       </form>
-    </section>
+      <p class="muted" style="margin-top:10px;">บัญชีของคุณจะต้องได้รับการอนุมัติเป็น “admin” จึงจะเข้าได้</p>
+    </div>
+  </main>
 
-    <section id="admin-app" style="display:none;">
-      <div class="card">
-        <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
-        <form id="promo-form">
+  <!-- Admin App -->
+  <main id="admin-app">
+    <div class="grid">
+      <!-- Form -->
+      <section class="col-12 card">
+        <h2 class="section-title">เพิ่ม/แก้ไข โปรโมชัน</h2>
+        <form id="promo-form" class="grid" autocomplete="off">
           <input type="hidden" id="promo-id" />
-          
-          <div class="grid-3">
-            <div class="form-group">
-              <label for="bank_id">ธนาคาร</label>
-              <select id="bank_id" required>
-                <option value="">-- กรุณาเลือกธนาคาร --</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="promotion_name">ชื่อโปรโมชัน</label>
-              <input type="text" id="promotion_name" required placeholder="เช่น สินเชื่อบ้านสุขใจ ปี 2568" />
-            </div>
-            <div class="form-group">
-              <label for="loan_type">ประเภทสินเชื่อ</label>
-              <select id="loan_type">
-                <option value="ทั่วไป">ทั่วไป (ทุกวัตถุประสงค์)</option>
-                <option value="ซื้อใหม่">ซื้อบ้านใหม่/คอนโด</option>
-                <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
-                <option value="นโยบายรัฐ">นโยบายรัฐ</option>
-              </select>
-            </div>
+
+          <div class="col-6">
+            <label>ธนาคาร</label>
+            <select id="bank_id" required></select>
           </div>
-          
-          <hr style="margin: 20px 0; border-color: #eee;">
-          <h4>อัตราดอกเบี้ยปกติ (MRR - X%)</h4>
-          <div class="grid-4">
-            <div class="form-group"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%)</label><input type="number" id="interest_rate_yr1" step="0.01" /></div>
-            <div class="form-group"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%)</label><input type="number" id="interest_rate_yr2" step="0.01" /></div>
-            <div class="form-group"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%)</label><input type="number" id="interest_rate_yr3" step="0.01" /></div>
-            <div class="form-group"></div>
-            <div class="form-group"><label for="interest_rate_after_value_retail">หลัง 3 ปี (รายย่อย)</label><input type="number" id="interest_rate_after_value_retail" step="0.01" placeholder="เช่น 0.50" /></div>
-            <div class="form-group"><label for="interest_rate_after_value_welfare">หลัง 3 ปี (สวัสดิการ)</label><input type="number" id="interest_rate_after_value_welfare" step="0.01" placeholder="เช่น 1.00" /></div>
+          <div class="col-6">
+            <label>ชื่อโปรโมชัน</label>
+            <input id="promotion_name" placeholder="เช่น Home For All 2025" />
           </div>
-          
-          <hr style="margin: 20px 0; border-color: #eee;">
-          <h4>
-            <label class="checkbox" style="font-size: 1rem;">
-              <input type="checkbox" id="has_mrta_option" />
-              มีตัวเลือกทำประกัน MRTA (เพื่อลดดอกเบี้ย)
+
+          <div class="col-4">
+            <label>ประเภทสินเชื่อ</label>
+            <select id="loan_type">
+              <option value="ทั่วไป">ทั่วไป</option>
+              <option value="สวัสดิการ">สวัสดิการ</option>
+              <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
+              <option value="โครงการพิเศษ">โครงการพิเศษ</option>
+            </select>
+          </div>
+          <div class="col-4">
+            <label>เริ่มใช้</label>
+            <input id="start_date" type="date" />
+          </div>
+          <div class="col-4">
+            <label>สิ้นสุด</label>
+            <input id="end_date" type="date" />
+          </div>
+
+          <div class="col-3">
+            <label>ดอกเบี้ยปี 1 (%)</label>
+            <input id="interest_rate_yr1" type="number" step="0.01" />
+          </div>
+          <div class="col-3">
+            <label>ดอกเบี้ยปี 2 (%)</label>
+            <input id="interest_rate_yr2" type="number" step="0.01" />
+          </div>
+          <div class="col-3">
+            <label>ดอกเบี้ยปี 3 (%)</label>
+            <input id="interest_rate_yr3" type="number" step="0.01" />
+          </div>
+
+          <div class="col-3">
+            <label>Max LTV (%)</label>
+            <input id="max_ltv" type="number" step="1" />
+          </div>
+
+          <div class="col-3">
+            <label>DSR Limit (%)</label>
+            <input id="dsr_limit" type="number" step="1" />
+          </div>
+          <div class="col-3">
+            <label>รายได้ต่อกู้ 1 ลบ. (บ/ด)</label>
+            <input id="income_per_million" type="number" step="1" />
+          </div>
+          <div class="col-3">
+            <label>ค่าครองชีพขั้นต่ำ (บ/ด)</label>
+            <input id="min_living_expense" type="number" step="1" />
+          </div>
+
+          <div class="col-3">
+            <label>อายุงานสูงสุด (สัญญา)</label>
+            <input id="max_loan_tenure" type="number" step="1" />
+          </div>
+          <div class="col-3">
+            <label>อายุผู้กู้สูงสุด (พนักงาน)</label>
+            <input id="max_age_salaried" type="number" step="1" />
+          </div>
+          <div class="col-3">
+            <label>อายุผู้กู้สูงสุด (ธุรกิจ)</label>
+            <input id="max_age_business" type="number" step="1" />
+          </div>
+          <div class="col-3">
+            <label>ยกเว้นค่าจดจำนอง?</label>
+            <input id="waive_mortgage_fee" type="checkbox" />
+          </div>
+
+          <div class="col-12">
+            <label class="actions" style="align-items:center; gap:8px;">
+              <input id="has_mrta_option" type="checkbox" />
+              มีตัวเลือกซื้อ MRTA
             </label>
-          </h4>
-          <div id="mrta-fields" style="display:none;">
-            <div class="grid-4">
-                <div class="form-group"><label for="interest_rate_yr1_mrta">ดอกเบี้ยปีที่ 1 (MRTA)</label><input type="number" id="interest_rate_yr1_mrta" step="0.01" /></div>
-                <div class="form-group"><label for="interest_rate_yr2_mrta">ดอกเบี้ยปีที่ 2 (MRTA)</label><input type="number" id="interest_rate_yr2_mrta" step="0.01" /></div>
-                <div class="form-group"><label for="interest_rate_yr3_mrta">ดอกเบี้ยปีที่ 3 (MRTA)</label><input type="number" id="interest_rate_yr3_mrta" step="0.01" /></div>
-                <div class="form-group"></div>
-                <div class="form-group"><label for="interest_rate_after_value_mrta_retail">หลัง 3 ปี (MRTA-รายย่อย)</label><input type="number" id="interest_rate_after_value_mrta_retail" step="0.01" placeholder="เช่น 0.75" /></div>
-                <div class="form-group"><label for="interest_rate_after_value_mrta_welfare">หลัง 3 ปี (MRTA-สวัสดิการ)</label><input type="number" id="interest_rate_after_value_mrta_welfare" step="0.01" placeholder="เช่น 1.25" /></div>
+          </div>
+
+          <div id="mrta-fields" class="grid mrta-wrap">
+            <div class="col-3">
+              <label>ปี1 (MRTA) %</label>
+              <input id="interest_rate_yr1_mrta" type="number" step="0.01" />
+            </div>
+            <div class="col-3">
+              <label>ปี2 (MRTA) %</label>
+              <input id="interest_rate_yr2_mrta" type="number" step="0.01" />
+            </div>
+            <div class="col-3">
+              <label>ปี3 (MRTA) %</label>
+              <input id="interest_rate_yr3_mrta" type="number" step="0.01" />
+            </div>
+
+            <div class="col-3"></div>
+            <div class="col-3">
+              <label>หลัง 3 ปี: รีเทล (%)</label>
+              <input id="interest_rate_after_value_retail" type="number" step="0.01" />
+            </div>
+            <div class="col-3">
+              <label>หลัง 3 ปี: สวัสดิการ (%)</label>
+              <input id="interest_rate_after_value_welfare" type="number" step="0.01" />
+            </div>
+            <div class="col-3">
+              <label>หลัง 3 ปี: รีเทล+MRTA (%)</label>
+              <input id="interest_rate_after_value_mrta_retail" type="number" step="0.01" />
+            </div>
+            <div class="col-3">
+              <label>หลัง 3 ปี: สวัดิการ+MRTA (%)</label>
+              <input id="interest_rate_after_value_mrta_welfare" type="number" step="0.01" />
             </div>
           </div>
 
-          <hr style="margin: 20px 0; border-color: #eee;">
-          <h4>เงื่อนไขอื่นๆ</h4>
-          <div class="grid-4">
-            <div class="form-group"><label for="max_ltv">LTV สูงสุด (%)</label><input type="number" id="max_ltv" step="1" /></div>
-            <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" step="1" placeholder="เช่น 40" /></div>
-            <div class="form-group"><label for="income_per_million">รายได้ต่อ 1 ล้านบาท (บาท)</label><input type="number" id="income_per_million" step="100" /></div>
-            <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ (บาท)</label><input type="number" id="min_living_expense" step="100" /></div>
-            <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" step="1" /></div>
-            <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สิ้นสุด (พนง.)</label><input type="number" id="max_age_salaried" step="1" /></div>
-            <div class="form-group"><label for="max_age_business">อายุผู้กู้สิ้นสุด (ธุรกิจ)</label><input type="number" id="max_age_business" step="1" /></div>
-            <div class="form-group checkbox">
-              <label><input type="checkbox" id="waive_mortgage_fee" /> ยกเว้นค่าจดจำนอง</label>
-            </div>
-            <div class="form-group"><label for="start_date">วันที่เริ่มโปรโมชัน</label><input type="date" id="start_date" /></div>
-            <div class="form-group"><label for="end_date">วันที่สิ้นสุดโปรโมชัน</label><input type="date" id="end_date" /></div>
+          <div class="col-12">
+            <label>หมายเหตุ</label>
+            <textarea id="notes" placeholder="รายละเอียดพิเศษ เงื่อนไข ฯลฯ"></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="notes">หมายเหตุ</label>
-            <textarea id="notes" rows="3" placeholder="เงื่อนไขเพิ่มเติม / เอกสาร"></textarea>
-          </div>
-
-          <div class="toolbar sticky">
-            <div class="left">
-              <button class="btn primary" id="submitBtn" type="submit">บันทึกโปรโมชัน</button>
-              <button type="button" class="btn" id="clearBtn">ล้างฟอร์ม</button>
-            </div>
-            <span class="muted">* แก้ไข: คลิก “แก้ไข” ในตาราง แล้วเลื่อนขึ้นมาแก้ฟอร์ม</span>
+          <div class="col-12 actions">
+            <button id="submitBtn" class="btn primary" type="submit">บันทึกโปรโมชัน</button>
+            <button id="clearBtn" class="btn" type="button">ล้างฟอร์ม</button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <div class="card">
-        <h2>รายการโปรโมชัน</h2>
-        <div class="table-wrap">
-          <table class="table">
+      <!-- Table -->
+      <section class="col-12 card">
+        <h2 class="section-title">รายการโปรโมชัน</h2>
+        <div style="overflow:auto;">
+          <table>
             <thead>
-              <tr><th>ธนาคาร</th><th>ชื่อโปรโมชัน</th><th>Avg 3Y (%)</th><th style="text-align:right;">จัดการ</th></tr>
+              <tr>
+                <th>ธนาคาร</th>
+                <th>โปรโมชัน</th>
+                <th>เฉลี่ย 3 ปี (%)</th>
+                <th>จัดการ</th>
+              </tr>
             </thead>
             <tbody id="promo-table-body"></tbody>
           </table>
         </div>
-      </div>
-    </section>
+        <p class="muted">* ค่าเฉลี่ย 3 ปี จะคิดจากช่องที่มีข้อมูลเท่านั้น</p>
+      </section>
+    </div>
   </main>
 
-  <div id="toast" class="toast"></div>
-  <script>
-    let deferredPrompt = null;
-    const installBtn = document.getElementById('installBtn');
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(console.warn);
-      });
-    }
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.classList.remove('hide');
-    });
-    installBtn?.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      installBtn.disabled = true;
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installBtn.classList.add('hide');
-      installBtn.disabled = false;
-    });
-  </script>
+  <div id="toast"></div>
+
+  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js"></script>
+  <!-- App scripts -->
+  <script src="/js/admin.js"></script>
+
+  <!-- Register basic Service Worker for A2HS -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+  </script>
 </body>
 </html>
