@@ -55,6 +55,7 @@
     .section-title{ margin:6px 0 14px; font-weight:800; } .actions{ display:flex; gap:8px; flex-wrap:wrap; }
     .mrta-wrap{ display:none; }
     .devbar{ position:fixed; right:12px; bottom:12px; z-index:60; display:flex; gap:8px; }
+    .flag{ position:fixed; left:12px; bottom:12px; background:#111827; color:#fff; padding:6px 10px; border-radius:10px; font-size:.8rem; box-shadow:var(--shadow); opacity:.85; }
   </style>
 </head>
 <body>
@@ -182,10 +183,11 @@
     </div>
   </main>
 
-  <!-- Dev helper (ทดสอบเท่านั้น) -->
+  <!-- Dev helper -->
   <div class="devbar">
     <button id="devModeBtn" class="btn">DEV MODE: OFF</button>
   </div>
+  <div id="flag" class="flag" style="display:none;"></div>
 
   <div id="toast"></div>
 
@@ -194,15 +196,15 @@
 
   <!-- Inline App -->
   <script>
-  // --- admin.js v12.3 (inline) ---
+  // --- admin.js v12.4 (inline, with timeout & devmode persist) ---
   (function(){
     const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
-    const ADMIN_EMAIL_ALLOWLIST = []; // ใส่อีเมลที่ให้ผ่านอัตโนมัติถ้าต้องการ (ช่วงทดสอบ)
+    const DEV_KEY = 'promoAdminDevMode';
 
     // Elements
     const $ = id => document.getElementById(id);
-    const app = $('admin-app'), gate = $('auth-gate'), loader = $('loader'), toast = $('toast');
+    const app = $('admin-app'), gate = $('auth-gate'), loader = $('loader'), toast = $('toast'), flag = $('flag');
     const loginForm = $('loginForm'), loginBtn = $('loginBtn'), signOutBtn = $('signOutBtn');
     const bankSelect = $('bank_id'), promoForm = $('promo-form'), promoTableBody = $('promo-table-body');
     const promoIdInput = $('promo-id'), promotionNameInput = $('promotion_name'), loanTypeSelect = $('loan_type');
@@ -221,17 +223,21 @@
     const N = v => (v === '' || v === null || typeof v === 'undefined' ? null : Number(v));
     const D = v => (v === '' || v === null ? null : v);
     const showToast = (m, ok=true)=>{ toast.textContent=m; toast.style.background = ok ? '#111827' : '#b91c1c'; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 2000); };
-    const showGate = ()=>{ loader.style.display='none'; app.style.display='none'; gate.style.display='grid'; };
-    const showApp  = ()=>{ loader.style.display='none'; gate.style.display='none'; app.style.display='block'; };
-    const showLoader = ()=>{ loader.style.display='grid'; gate.style.display='none'; app.style.display='none'; };
+    const showGate = ()=>{ loader.style.display='none'; app.style.display='none'; gate.style.display='grid'; flag.textContent='STATUS: GATE'; flag.style.display='block'; };
+    const showApp  = ()=>{ loader.style.display='none'; gate.style.display='none'; app.style.display='block'; flag.textContent='STATUS: APP'; flag.style.display='block'; };
+    const showLoader = (txt='กำลังตรวจสอบสิทธิ...')=>{ loader.querySelector('.loader-card div:last-child').textContent = txt; loader.style.display='grid'; gate.style.display='none'; app.style.display='none'; flag.textContent='STATUS: LOADER'; flag.style.display='block'; };
 
-    // State
-    let DEV_MODE = false;
-    devModeBtn.addEventListener('click', ()=>{
-      DEV_MODE = !DEV_MODE;
+    // Dev mode (persist)
+    let DEV_MODE = localStorage.getItem(DEV_KEY) === '1';
+    function renderDev(){
       devModeBtn.textContent = `DEV MODE: ${DEV_MODE ? 'ON' : 'OFF'}`;
+      devModeBtn.style.background = DEV_MODE ? '#22c55e' : '';
+    }
+    devModeBtn.addEventListener('click', ()=>{
+      DEV_MODE = !DEV_MODE; localStorage.setItem(DEV_KEY, DEV_MODE ? '1' : '0'); renderDev();
       showToast(`Dev mode ${DEV_MODE ? 'เปิด' : 'ปิด'}`);
     });
+    renderDev();
 
     // Supabase
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -242,7 +248,6 @@
       mrtaFields.classList.toggle('mrta-wrap', !hasMrtaOptionInput.checked);
     });
     clearBtn.addEventListener('click', ()=> clearForm());
-
     async function doLogin(email, password){
       loginBtn.disabled=true;
       try{
@@ -254,7 +259,7 @@
       } finally { loginBtn.disabled=false; }
     }
     loginForm?.addEventListener('submit', async (e)=>{ e.preventDefault(); await doLogin(loginForm.email.value.trim(), loginForm.password.value); });
-    signOutBtn?.addEventListener('click', async ()=>{ showLoader(); await supabaseClient.auth.signOut(); });
+    signOutBtn?.addEventListener('click', async ()=>{ showLoader('กำลังออกจากระบบ...'); await supabaseClient.auth.signOut(); });
 
     // ====== Admin gate ======
     async function ensureSelfProfile(){
@@ -262,41 +267,32 @@
       const { data:have, error:selErr } = await supabaseClient.from('profiles').select('id').eq('id', user.id).maybeSingle();
       if(selErr){ console.warn('[profiles.select] error:', selErr.message); }
       if(!have){
-        console.log('[profiles] creating self profile…');
         const payload = { id:user.id, email:user.email, role:'user', status:'pending' };
         const { error:insErr } = await supabaseClient.from('profiles').insert(payload);
         if(insErr){ console.warn('[profiles.insert] error:', insErr.message); }
       }
     }
-
-    async function isApprovedAdmin(){
-      const { data:{ user } } = await supabaseClient.auth.getUser();
-      if(!user) return false;
-      if(DEV_MODE || ADMIN_EMAIL_ALLOWLIST.includes(user.email)) return true; // allow during dev
-      const { data: prof, error } = await supabaseClient.from('profiles')
-        .select('role,status').eq('id', user.id).single();
-      if(error){ console.error('[profiles.single] ', error.message); return false; }
-      return (prof && prof.role === 'admin' && prof.status === 'approved');
+    async function checkApprovedAdmin(){
+      try{
+        const { data:{ user } } = await supabaseClient.auth.getUser();
+        if(!user) return false;
+        const { data: prof, error } = await supabaseClient.from('profiles')
+          .select('role,status').eq('id', user.id).maybeSingle();
+        if(error){ console.error('[profiles.maybeSingle] ', error.message); return false; }
+        return (prof && prof.role === 'admin' && prof.status === 'approved');
+      }catch(e){ console.error('checkApprovedAdmin error:', e.message); return false; }
     }
-
     async function requireAdminWithTimeout(ms=8000){
       console.log('requireAdmin(): start');
       const { data:{ session } } = await supabaseClient.auth.getSession();
-      if(!session){ console.log('requireAdmin(): no session'); return 'NO_SESSION'; }
-
+      if(!session){ console.log('requireAdmin(): NO_SESSION'); return 'NO_SESSION'; }
       await ensureSelfProfile();
-
-      // timeout guard
-      const result = await Promise.race([
-        (async ()=>{
-          const ok = await isApprovedAdmin();
-          return ok ? 'OK' : 'NOT_APPROVED';
-        })(),
-        new Promise(res=> setTimeout(()=>res('TIMEOUT'), ms))
+      const res = await Promise.race([
+        (async()=> (await checkApprovedAdmin()) ? 'OK' : 'NOT_APPROVED')(),
+        new Promise(r=> setTimeout(()=>r('TIMEOUT'), ms))
       ]);
-
-      console.log('requireAdmin(): result =', result);
-      return result;
+      console.log('requireAdmin(): result =', res);
+      return res;
     }
 
     async function populateBankSelect(){
@@ -307,12 +303,10 @@
         const opt = document.createElement('option'); opt.value=b.id; opt.textContent=b.bank_name; bankSelect.appendChild(opt);
       });
     }
-
     function avg3y(p){
       const nums = [p.interest_rate_yr1, p.interest_rate_yr2, p.interest_rate_yr3].map(v=>v==null?NaN:parseFloat(v)).filter(Number.isFinite);
       if(!nums.length) return null; return (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(2);
     }
-
     async function fetchPromotions(){
       const [banksRes, promosRes] = await Promise.all([
         supabaseClient.from('banks').select('id, bank_name'),
@@ -406,7 +400,14 @@
 
     // ===== Boot sequence =====
     async function boot(){
-      console.log('boot(): start'); showLoader();
+      console.log('boot(): start');
+      showLoader();
+      // DEV MODE: ข้ามการเช็คสิทธิ และโหลดข้อมูลทันที
+      if(DEV_MODE){
+        console.log('boot(): DEV_MODE true -> skip gate');
+        await populateBankSelect(); await fetchPromotions(); return showApp();
+      }
+
       const { data:{ session } } = await supabaseClient.auth.getSession();
       if(session){
         const result = await requireAdminWithTimeout(8000);
@@ -421,6 +422,7 @@
 
     supabaseClient.auth.onAuthStateChange(async (event, session)=>{
       console.log('Auth event:', event);
+      if(DEV_MODE){ await populateBankSelect(); await fetchPromotions(); return showApp(); }
       if(!session){ return showGate(); }
       const result = await requireAdminWithTimeout(8000);
       if(result === 'OK'){ await populateBankSelect(); await fetchPromotions(); showApp(); }
