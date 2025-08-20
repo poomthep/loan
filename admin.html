@@ -322,8 +322,8 @@
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
         // [CONFIG] แทนที่ค่าเหล่านี้ด้วย Supabase URL และ Anon Key ของคุณ
-const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
+        const SUPABASE_URL = '{{SUPABASE_URL}}'; 
+        const SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
 
         if (SUPABASE_URL === '{{SUPABASE_URL}}' || SUPABASE_ANON_KEY === '{{SUPABASE_ANON_KEY}}') {
             alert('กรุณาตั้งค่า SUPABASE_URL และ SUPABASE_ANON_KEY ในไฟล์ admin.html');
@@ -385,6 +385,19 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             const logDebug = (message) => {
                 console.log(message);
                 debugLog.textContent += message + '\n';
+            };
+
+            // [SYNC] ฟังก์ชันสำหรับเช็ค Session แบบเงียบๆ ไม่กระทบ UI
+            const checkSessionOnFocus = async () => {
+                console.log('[SYNC] Checking session status...');
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    console.log('[SYNC] Session lost. Redirecting to login.');
+                    showToast('เซสชันหมดอายุ กรุณาล็อกอินใหม่', true);
+                    showView('gate');
+                } else {
+                    console.log('[SYNC] Session is still active.');
+                }
             };
 
             // --- Auth & Boot Logic ---
@@ -689,8 +702,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             const handleVisibilityOrFocus = () => {
                 clearTimeout(state.debounceTimer);
                 state.debounceTimer = setTimeout(() => {
-                    console.log('[SYNC] Window focused or became visible. Checking session.');
-                    boot(true);
+                    // เปลี่ยนจาก boot(true) เป็น checkSessionOnFocus() เพื่อไม่ให้หน้าจอรีเฟรชข้อมูล
+                    checkSessionOnFocus();
                 }, 1200);
             };
 
@@ -700,10 +713,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                     handleVisibilityOrFocus();
                 }
             });
+            
             window.addEventListener('storage', (e) => {
                 if (e.key && e.key.includes('supabase.auth.token')) {
-                    console.log('[SYNC] Storage event detected for auth token. Resyncing.');
-                    boot(true);
+                    console.log('[SYNC] Storage event detected for auth token. Checking session.');
+                    // เปลี่ยนจาก boot(true) เป็น checkSessionOnFocus() เพื่อประสบการณ์ใช้งานที่ดีขึ้น
+                    checkSessionOnFocus();
                 }
             });
 
