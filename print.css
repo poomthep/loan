@@ -1,0 +1,43 @@
+@page {
+    size: A4;
+    margin: 20mm;
+}
+body.print-window {
+    background-color: white !important;
+    color: black !important;
+    font-size: 10pt;
+}
+.print-hide,
+body:not(.print-window) .user-info-container,
+body:not(.print-window) h2,
+body:not(.print-window) .input-group,
+body:not(.print-window) #compareBtn,
+body:not(.print-window) .controls-container,
+body:not(.print-window) .toggle-schedule-btn,
+body:not(.print-window) .print-table-btn {
+    display: none !important;
+}
+.container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+h1, h2 { text-align: center; }
+.result-card {
+    border: none;
+    box-shadow: none;
+    page-break-inside: avoid;
+    margin-top: 15px;
+}
+.amortization-table-container {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 1px solid #ccc;
+}
+table {
+    font-size: 8pt;
+    width: 100%;
+}
