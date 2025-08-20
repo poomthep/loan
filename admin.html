@@ -496,14 +496,21 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
             // --- Rendering ---
             const renderBanksDropdown = () => {
-                bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>';
-                state.banks.forEach(bank => {
-                    const option = document.createElement('option');
-                    option.value = bank.id;
-                    option.textContent = bank.name;
-                    bankSelect.appendChild(option);
-                });
-            };
+    // [ADD] 1. จำค่าที่ถูกเลือกไว้ก่อน (ถ้ามี)
+    const selectedValue = bankSelect.value;
+
+    bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>';
+    state.banks.forEach(bank => {
+        const option = document.createElement('option');
+        option.value = bank.id;
+        option.textContent = bank.name;
+        bankSelect.appendChild(option);
+    });
+
+    // [ADD] 2. คืนค่าที่เลือกไว้กลับไปเหมือนเดิม
+    bankSelect.value = selectedValue;
+};
+
 
             const renderPromotionsTable = (promotions) => {
                 promotionsTableBody.innerHTML = '';
