@@ -8,37 +8,21 @@
     <meta name="theme-color" content="#34495e">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --danger-color: #e74c3c;
-            --success-color: #2ecc71;
-            --light-gray: #ecf0f1;
-            --dark-gray: #7f8c8d;
-            --text-color: #34495e;
-            --bg-color: #ffffff;
+            --primary-color: #3498db; --secondary-color: #2c3e50; --danger-color: #e74c3c;
+            --success-color: #2ecc71; --light-gray: #ecf0f1; --dark-gray: #7f8c8d;
+            --text-color: #34495e; --bg-color: #ffffff;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            background-color: var(--light-gray);
-            color: var(--text-color);
-            line-height: 1.6;
+            margin: 0; background-color: var(--light-gray); color: var(--text-color); line-height: 1.6;
         }
         .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: var(--bg-color);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            max-width: 1200px; margin: 20px auto; padding: 20px;
+            background-color: var(--bg-color); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px;
         }
         .view { display: none; }
         .view.active { display: block; }
         #gate { max-width: 400px; margin: 50px auto; }
-        #loader { text-align: center; padding: 50px; }
-        #loader .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #debug-log { font-family: monospace; font-size: 0.8em; color: var(--dark-gray); margin-top: 15px; white-space: pre-wrap; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--light-gray); padding-bottom: 10px; margin-bottom: 20px; }
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px 20px; }
         fieldset { border: 1px solid #ddd; border-radius: 4px; padding: 15px; grid-column: 1 / -1; }
@@ -82,28 +66,10 @@
     <div id="gate" class="view container active">
         <h2>เข้าสู่ระบบผู้ดูแล</h2>
         <form id="login-form">
-            <div class="form-group full-width">
-                <label for="email">อีเมล</label>
-                <input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="username">
-            </div>
-            <div class="form-group full-width">
-                <label for="password">รหัสผ่าน</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password">
-            </div>
-            <div class="form-actions">
-                <button type="submit" id="login-btn" class="btn-primary">เข้าสู่ระบบ</button>
-            </div>
+            <div class="form-group full-width"><label for="email">อีเมล</label><input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="username"></div>
+            <div class="form-group full-width"><label for="password">รหัสผ่าน</label><input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password"></div>
+            <div class="form-actions"><button type="submit" id="login-btn" class="btn-primary">เข้าสู่ระบบ</button></div>
         </form>
-    </div>
-
-    <div id="loader" class="view container">
-        <div class="spinner"></div>
-        <p>กำลังตรวจสอบสิทธิ์ผู้ใช้...</p>
-        <div id="debug-log"></div>
-        <div class="form-actions" style="justify-content: center;">
-            <button id="retry-boot-btn" class="btn-secondary">ลองใหม่</button>
-            <button id="force-reload-btn" class="btn-danger">โหลดใหม่ (แก้ค้าง)</button>
-        </div>
     </div>
 
     <div id="app" class="view container">
@@ -111,7 +77,6 @@
             <h1>จัดการโปรโมชันสินเชื่อบ้าน</h1>
             <button id="logout-btn" class="btn-secondary">ออกจากระบบ</button>
         </header>
-
         <form id="promotion-form">
             <h2 class="full-width">เพิ่ม/แก้ไขโปรโมชัน</h2>
             <fieldset>
@@ -173,16 +138,10 @@
             <div class="form-group full-width"><label for="notes">หมายเหตุ</label><input type="text" id="notes" name="notes" placeholder="เงื่อนไขเพิ่มเติม"></div>
             <div class="form-actions full-width"><button type="submit" id="save-btn" class="btn-primary">บันทึกโปรโมชัน</button><button type="button" id="clear-btn" class="btn-secondary">ล้างฟอร์ม</button></div>
         </form>
-
         <hr style="margin: 40px 0;">
-
         <div class="table-controls">
-            <div class="form-group">
-                <label for="search-input">ค้นหา</label>
-                <input type="search" id="search-input" placeholder="ค้นหาโปรโมชันหรือธนาคาร...">
-            </div>
+            <div class="form-group"><label for="search-input">ค้นหา</label><input type="search" id="search-input" placeholder="ค้นหาโปรโมชันหรือธนาคาร..."></div>
         </div>
-
         <div class="table-wrapper">
             <table id="promotions-table">
                 <thead>
@@ -197,7 +156,6 @@
             </table>
         </div>
     </div>
-    
     <div id="toast"></div>
 
     <script type="module">
@@ -213,7 +171,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         (async () => {
-            const views = { gate: document.getElementById('gate'), loader: document.getElementById('loader'), app: document.getElementById('app') };
+            const views = { gate: document.getElementById('gate'), app: document.getElementById('app') };
             const loginForm = document.getElementById('login-form');
             const logoutBtn = document.getElementById('logout-btn');
             const promotionForm = document.getElementById('promotion-form');
@@ -225,9 +183,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             const hasMrtaCheckbox = document.getElementById('has_mrta_option');
             const mrtaFields = document.getElementById('mrta-fields');
             const toast = document.getElementById('toast');
-            const debugLog = document.getElementById('debug-log');
-            const retryBootBtn = document.getElementById('retry-boot-btn');
-            const forceReloadBtn = document.getElementById('force-reload-btn');
             const searchInput = document.getElementById('search-input');
 
             let state = {
@@ -254,11 +209,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                 if (views[viewName]) views[viewName].classList.add('active');
             };
 
-            const logDebug = (message) => {
-                console.log(message);
-                debugLog.textContent += message + '\n';
-            };
-
             const checkSessionOnFocus = async () => {
                 console.log('[SYNC] Checking session status...');
                 const { data: { session } } = await supabase.auth.getSession();
@@ -272,8 +222,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             };
 
             const handleBootStuck = () => {
-                console.error('[BOOT] Watchdog triggered: Boot process took too long (>9s).');
-                logDebug('ERROR: กระบวนการค้าง/ใช้เวลานานเกินไป');
+                console.error('[BOOT] Watchdog triggered: Boot process took too long.');
                 showView('gate');
             };
 
@@ -281,41 +230,35 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                 clearTimeout(state.watchdogTimer);
                 state.watchdogTimer = setTimeout(handleBootStuck, 9000);
                 try {
-                    logDebug('step1: getSession()');
-                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                    if (sessionError) throw new Error(`Session Error: ${sessionError.message}`);
+                    console.log('[AUTH] Step 1: getSession()');
+                    const { data: { session } } = await supabase.auth.getSession();
                     if (!session) throw new Error('No active session.');
-                    logDebug(`step1: result=OK (user=${session.user.email})`);
-                    logDebug('step2: getUser()');
-                    const { data: { user }, error: userError } = await supabase.auth.getUser();
-                    if (userError) throw new Error(`User Error: ${userError.message}`);
+                    
+                    console.log('[AUTH] Step 2: getUser()');
+                    const { data: { user } } = await supabase.auth.getUser();
                     if (!user) throw new Error('User not found.');
-                    logDebug(`step2: result=OK (uid=${user.id})`);
-                    logDebug('step3: check profiles table...');
+
+                    console.log('[AUTH] Step 3: check profiles table...');
                     const profilePromise = supabase.from('profiles').select('role, status').eq('id', user.id).single();
                     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 7000));
                     const { data: profile, error: profileError } = await Promise.race([profilePromise, timeoutPromise]);
                     if (profileError) throw profileError;
+
                     if (!profile || profile.role !== 'admin' || profile.status !== 'approved') {
                         throw new Error('Access Denied: Not an approved admin.');
                     }
-                    logDebug(`step3: result=OK (role=${profile.role}, status=${profile.status})`);
                     clearTimeout(state.watchdogTimer);
                     return true;
                 } catch (error) {
                     clearTimeout(state.watchdogTimer);
                     console.error('[AUTH] Admin check failed:', error.message);
-                    logDebug(`ERROR: ${error.message}`);
                     await supabase.auth.signOut();
                     return false;
                 }
             };
 
-            const boot = async (isResync = false) => {
-                if (!isResync) console.log('[BOOT] Initializing Admin Console...');
-                else console.log('[BOOT] Resyncing session...');
-                showView('loader');
-                debugLog.textContent = '';
+            const boot = async () => {
+                console.log('[BOOT] Initializing Admin Console...');
                 const isAdmin = await requireAdminFast();
                 if (isAdmin) {
                     showView('app');
@@ -394,9 +337,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             const renderPromotionsTable = (promotions) => {
                 promotionsThead.querySelectorAll('th.sortable').forEach(th => {
                     th.classList.remove('asc', 'desc');
-                    if (th.dataset.sortKey === state.sortKey) {
-                        th.classList.add(state.sortDir);
-                    }
+                    if (th.dataset.sortKey === state.sortKey) th.classList.add(state.sortDir);
                 });
                 promotionsTableBody.innerHTML = '';
                 if (!promotions || promotions.length === 0) {
@@ -434,11 +375,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             }
 
             const clearForm = () => {
-                promotionForm.reset();
-                state.isEditing = false;
-                state.editingId = null;
-                saveBtn.textContent = 'บันทึกโปรโมชัน';
-                saveBtn.classList.replace('btn-secondary', 'btn-primary');
+                promotionForm.reset(); state.isEditing = false; state.editingId = null;
+                saveBtn.textContent = 'บันทึกโปรโมชัน'; saveBtn.classList.replace('btn-secondary', 'btn-primary');
                 hasMrtaCheckbox.dispatchEvent(new Event('change'));
                 promotionForm.querySelector('input').focus();
             };
@@ -452,10 +390,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                         else el.value = promo[key] ?? '';
                     }
                 });
-                state.isEditing = true;
-                state.editingId = promo.id;
-                saveBtn.textContent = 'บันทึกการแก้ไข';
-                saveBtn.classList.replace('btn-primary', 'btn-secondary');
+                state.isEditing = true; state.editingId = promo.id;
+                saveBtn.textContent = 'บันทึกการแก้ไข'; saveBtn.classList.replace('btn-primary', 'btn-secondary');
                 hasMrtaCheckbox.dispatchEvent(new Event('change'));
                 window.scrollTo(0, 0);
             };
@@ -474,14 +410,11 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                 if (!formData.has('waive_mortgage_fee')) promoData.waive_mortgage_fee = false;
                 if (!formData.has('has_mrta_option')) promoData.has_mrta_option = false;
                 if (!formData.has('other_income_continuity_required')) promoData.other_income_continuity_required = false;
-
                 const validationErrors = validateForm(promoData);
                 if (validationErrors.length > 0) {
                     alert('กรุณาแก้ไขข้อผิดพลาด:\n- ' + validationErrors.join('\n- '));
-                    saveBtn.disabled = false;
-                    return;
+                    saveBtn.disabled = false; return;
                 }
-
                 try {
                     let result;
                     if (state.isEditing) {
@@ -491,8 +424,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                     }
                     if (result.error) throw result.error;
                     showToast(state.isEditing ? 'แก้ไขโปรโมชันสำเร็จ' : 'เพิ่มโปรโมชันสำเร็จ');
-                    clearForm();
-                    await fetchPromotions();
+                    clearForm(); await fetchPromotions();
                 } catch (error) {
                     console.error('[DATA] Form submission error:', error);
                     showToast(`เกิดข้อผิดพลาด: ${error.message}`, true);
@@ -519,48 +451,48 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = loginForm.email.value;
-                const password = loginForm.password.value;
                 const loginBtn = document.getElementById('login-btn');
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) showToast(error.message, true);
-                else { showToast('เข้าสู่ระบบสำเร็จ'); await boot(); }
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'เข้าสู่ระบบ';
+                loginBtn.disabled = true; loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+                const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email.value, password: loginForm.password.value });
+                if (error) {
+                    showToast(error.message, true);
+                    loginBtn.disabled = false; loginBtn.textContent = 'เข้าสู่ระบบ';
+                } else {
+                    showToast('เข้าสู่ระบบสำเร็จ'); // onAuthStateChange will handle the rest
+                }
             });
 
-            logoutBtn.addEventListener('click', async () => { await supabase.auth.signOut(); showToast('ออกจากระบบแล้ว'); showView('gate'); });
+            logoutBtn.addEventListener('click', async () => { await supabase.auth.signOut(); });
             clearBtn.addEventListener('click', clearForm);
             hasMrtaCheckbox.addEventListener('change', (e) => { mrtaFields.classList.toggle('hidden', !e.target.checked); });
-            retryBootBtn.addEventListener('click', () => boot());
-            forceReloadBtn.addEventListener('click', async () => {
-                logDebug("Attempting to force reload...");
-                try {
-                    if ('serviceWorker' in navigator) {
-                        const registrations = await navigator.serviceWorker.getRegistrations();
-                        for (const registration of registrations) await registration.unregister();
-                        logDebug("Unregistered all SW.");
-                    }
-                    if (window.caches) {
-                        const keys = await window.caches.keys();
-                        await Promise.all(keys.map(key => window.caches.delete(key)));
-                        logDebug("All caches cleared.");
-                    }
-                } catch (error) { logDebug(`Error during cleanup: ${error.message}`);
-                } finally { logDebug("Reloading page..."); window.location.reload(true); }
-            });
-
+            
             supabase.auth.onAuthStateChange((event, session) => {
                 console.log(`[AUTH] onAuthStateChange event: ${event}`);
-                if (event === 'SIGNED_IN') boot(); else if (event === 'SIGNED_OUT') showView('gate');
+                if (event === 'SIGNED_IN') {
+                    boot();
+                } else if (event === 'SIGNED_OUT') {
+                    showToast('ออกจากระบบแล้ว');
+                    showView('gate');
+                }
             });
 
             const handleVisibilityOrFocus = () => { clearTimeout(state.debounceTimer); state.debounceTimer = setTimeout(() => { checkSessionOnFocus(); }, 1200); };
             window.addEventListener('focus', handleVisibilityOrFocus);
             window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') handleVisibilityOrFocus(); });
             window.addEventListener('storage', (e) => { if (e.key && e.key.includes('supabase.auth.token')) checkSessionOnFocus(); });
+
+            searchInput.addEventListener('input', () => { state.searchTerm = searchInput.value; renderFilteredAndSortedPromotions(); });
+            promotionsThead.addEventListener('click', (e) => {
+                const header = e.target.closest('th.sortable');
+                if (!header) return;
+                const key = header.dataset.sortKey;
+                if (state.sortKey === key) {
+                    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    state.sortKey = key; state.sortDir = 'asc';
+                }
+                renderFilteredAndSortedPromotions();
+            });
 
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
