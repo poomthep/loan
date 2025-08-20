@@ -32,23 +32,14 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 8px;
         }
-        /* --- UI States --- */
         .view { display: none; }
         .view.active { display: block; }
-        
-        /* --- Gate (Login) --- */
         #gate { max-width: 400px; margin: 50px auto; }
-        
-        /* --- Loader --- */
         #loader { text-align: center; padding: 50px; }
         #loader .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #debug-log { font-family: monospace; font-size: 0.8em; color: var(--dark-gray); margin-top: 15px; white-space: pre-wrap; }
-
-        /* --- App (Admin) --- */
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--light-gray); padding-bottom: 10px; margin-bottom: 20px; }
-        
-        /* --- Forms --- */
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px 20px; }
         fieldset { border: 1px solid #ddd; border-radius: 4px; padding: 15px; grid-column: 1 / -1; }
         legend { font-weight: bold; padding: 0 10px; }
@@ -59,13 +50,9 @@
         .form-group--checkbox { flex-direction: row; align-items: center; }
         .form-group--checkbox input { margin-right: 10px; width: auto; }
         .form-actions { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px; }
-
-        /* --- Grid for complex fields --- */
         .sub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
         #mrta-fields.hidden { display: none; }
         .full-width { grid-column: 1 / -1; }
-
-        /* --- Table & Interactive Elements --- */
         .table-controls { margin: 20px 0; max-width: 400px; }
         .table-wrapper { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; }
@@ -77,8 +64,6 @@
         th.sortable.desc::after { content: '▼'; }
         .promo-name small { color: var(--dark-gray); display: block; font-size: 0.85em; }
         .actions button { margin-right: 5px; }
-
-        /* --- Buttons --- */
         button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.2s; }
         button:disabled { cursor: not-allowed; opacity: 0.6; }
         .btn-primary { background-color: var(--primary-color); color: white; }
@@ -87,8 +72,6 @@
         .btn-secondary:hover:not(:disabled) { background-color: #6c7a89; }
         .btn-danger { background-color: var(--danger-color); color: white; }
         .btn-danger:hover:not(:disabled) { background-color: #c0392b; }
-
-        /* --- Toast --- */
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--secondary-color); color: white; padding: 12px 25px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s; z-index: 1000; }
         #toast.show { visibility: visible; opacity: 1; }
         #toast.error { background-color: var(--danger-color); }
@@ -101,11 +84,11 @@
         <form id="login-form">
             <div class="form-group full-width">
                 <label for="email">อีเมล</label>
-                <input type="email" id="email" name="email" required placeholder="name@example.com">
+                <input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="username">
             </div>
             <div class="form-group full-width">
                 <label for="password">รหัสผ่าน</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••">
+                <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password">
             </div>
             <div class="form-actions">
                 <button type="submit" id="login-btn" class="btn-primary">เข้าสู่ระบบ</button>
@@ -131,149 +114,64 @@
 
         <form id="promotion-form">
             <h2 class="full-width">เพิ่ม/แก้ไขโปรโมชัน</h2>
-            
             <fieldset>
                 <legend>ข้อมูลโปรโมชันหลัก</legend>
                 <div class="sub-grid">
-                    <div class="form-group">
-                        <label for="bank_id">ธนาคาร</label>
-                        <select id="bank_id" name="bank_id" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="promotion_name">ชื่อโปรโมชัน</label>
-                        <input type="text" id="promotion_name" name="promotion_name" required placeholder="เช่น สินเชื่อบ้านใหม่ ดอกเบี้ยพิเศษ">
-                    </div>
-                    <div class="form-group">
-                        <label for="loan_type">ประเภทสินเชื่อ</label>
-                        <select id="loan_type" name="loan_type" required>
-                            <option value="ทั่วไป">ทั่วไป</option>
-                            <option value="สวัสดิการ">สวัสดิการ</option>
-                            <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
-                            <option value="โครงการพิเศษ">โครงการพิเศษ</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="start_date">วันที่เริ่ม</label>
-                        <input type="date" id="start_date" name="start_date">
-                    </div>
-                    <div class="form-group">
-                        <label for="end_date">วันที่สิ้นสุด</label>
-                        <input type="date" id="end_date" name="end_date">
-                    </div>
+                    <div class="form-group"><label for="bank_id">ธนาคาร</label><select id="bank_id" name="bank_id" required></select></div>
+                    <div class="form-group"><label for="promotion_name">ชื่อโปรโมชัน</label><input type="text" id="promotion_name" name="promotion_name" required placeholder="เช่น สินเชื่อบ้านใหม่ ดอกเบี้ยพิเศษ"></div>
+                    <div class="form-group"><label for="loan_type">ประเภทสินเชื่อ</label><select id="loan_type" name="loan_type" required><option value="ทั่วไป">ทั่วไป</option><option value="สวัสดิการ">สวัสดิการ</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="โครงการพิเศษ">โครงการพิเศษ</option></select></div>
+                    <div class="form-group"><label for="start_date">วันที่เริ่ม</label><input type="date" id="start_date" name="start_date"></div>
+                    <div class="form-group"><label for="end_date">วันที่สิ้นสุด</label><input type="date" id="end_date" name="end_date"></div>
                 </div>
             </fieldset>
-
             <fieldset>
                 <legend>อัตราดอกเบี้ยและเงื่อนไขการเงิน</legend>
                 <div class="sub-grid">
-                    <div class="form-group">
-                        <label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%)</label>
-                        <input type="number" step="0.01" id="interest_rate_yr1" name="interest_rate_yr1" placeholder="เช่น 2.75">
-                    </div>
-                    <div class="form-group">
-                        <label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%)</label>
-                        <input type="number" step="0.01" id="interest_rate_yr2" name="interest_rate_yr2" placeholder="เช่น 3.50">
-                    </div>
-                    <div class="form-group">
-                        <label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%)</label>
-                        <input type="number" step="0.01" id="interest_rate_yr3" name="interest_rate_yr3" placeholder="เช่น 4.25">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_ltv">Max LTV (%)</label>
-                        <input type="number" id="max_ltv" name="max_ltv" placeholder="เช่น 100">
-                    </div>
-                    <div class="form-group">
-                        <label for="ltv_range_text">LTV (ข้อความ)</label>
-                        <input type="text" id="ltv_range_text" name="ltv_range_text" placeholder="เช่น 95% - 100%">
-                    </div>
-                    <div class="form-group">
-                        <label for="dsr_limit">DSR Limit (%)</label>
-                        <input type="number" id="dsr_limit" name="dsr_limit" placeholder="เช่น 70">
-                    </div>
-                     <div class="form-group">
-                        <label for="income_per_million">รายได้ต่อกู้ 1 ลบ./ด.</label>
-                        <input type="number" id="income_per_million" name="income_per_million" placeholder="เช่น 15000">
-                    </div>
-                    <div class="form-group">
-                        <label for="min_living_expense">ค่าครองชีพขั้นต่ำ/ด.</label>
-                        <input type="number" id="min_living_expense" name="min_living_expense" placeholder="เช่น 12000">
-                    </div>
+                    <div class="form-group"><label for="interest_rate_yr1">ดอกเบี้ยปีที่ 1 (%)</label><input type="number" step="0.01" id="interest_rate_yr1" name="interest_rate_yr1" placeholder="เช่น 2.75"></div>
+                    <div class="form-group"><label for="interest_rate_yr2">ดอกเบี้ยปีที่ 2 (%)</label><input type="number" step="0.01" id="interest_rate_yr2" name="interest_rate_yr2" placeholder="เช่น 3.50"></div>
+                    <div class="form-group"><label for="interest_rate_yr3">ดอกเบี้ยปีที่ 3 (%)</label><input type="number" step="0.01" id="interest_rate_yr3" name="interest_rate_yr3" placeholder="เช่น 4.25"></div>
+                    <div class="form-group"><label for="max_ltv">Max LTV (%)</label><input type="number" id="max_ltv" name="max_ltv" placeholder="เช่น 100"></div>
+                    <div class="form-group"><label for="ltv_range_text">LTV (ข้อความ)</label><input type="text" id="ltv_range_text" name="ltv_range_text" placeholder="เช่น 95% - 100%"></div>
+                    <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" name="dsr_limit" placeholder="เช่น 70"></div>
+                    <div class="form-group"><label for="income_per_million">รายได้ต่อกู้ 1 ลบ./ด.</label><input type="number" id="income_per_million" name="income_per_million" placeholder="เช่น 15000"></div>
+                    <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ/ด.</label><input type="number" id="min_living_expense" name="min_living_expense" placeholder="เช่น 12000"></div>
                 </div>
             </fieldset>
-            
             <fieldset>
                 <legend>เงื่อนไขการพิจารณา (Underwriting)</legend>
                 <div class="sub-grid">
-                    <div class="form-group">
-                        <label for="max_income">รายได้สูงสุดผู้กู้ (บาท/เดือน)</label>
-                        <input type="number" id="max_income" name="max_income" placeholder="เช่น 35000">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_loan_amount">วงเงินกู้สูงสุด (บาท)</label>
-                        <input type="number" id="max_loan_amount" name="max_loan_amount" placeholder="เช่น 3000000">
-                    </div>
-                    <div class="form-group">
-                        <label for="payslip_months_required">สลิปที่ต้องใช้ (เดือน)</label>
-                        <input type="number" id="payslip_months_required" name="payslip_months_required" placeholder="เช่น 3 หรือ 6">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label>
-                        <input type="number" id="max_loan_tenure" name="max_loan_tenure" placeholder="เช่น 30">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_age_salaried">อายุผู้กู้สูงสุด (พนักงาน)</label>
-                        <input type="number" id="max_age_salaried" name="max_age_salaried" placeholder="เช่น 60">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_age_business">อายุผู้กู้สูงสุด (ธุรกิจ)</label>
-                        <input type="number" id="max_age_business" name="max_age_business" placeholder="เช่น 65">
-                    </div>
+                    <div class="form-group"><label for="max_income">รายได้สูงสุดผู้กู้ (บาท/เดือน)</label><input type="number" id="max_income" name="max_income" placeholder="เช่น 35000"></div>
+                    <div class="form-group"><label for="max_loan_amount">วงเงินกู้สูงสุด (บาท)</label><input type="number" id="max_loan_amount" name="max_loan_amount" placeholder="เช่น 3000000"></div>
+                    <div class="form-group"><label for="payslip_months_required">สลิปที่ต้องใช้ (เดือน)</label><input type="number" id="payslip_months_required" name="payslip_months_required" placeholder="เช่น 3 หรือ 6"></div>
+                    <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" name="max_loan_tenure" placeholder="เช่น 30"></div>
+                    <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สูงสุด (พนักงาน)</label><input type="number" id="max_age_salaried" name="max_age_salaried" placeholder="เช่น 60"></div>
+                    <div class="form-group"><label for="max_age_business">อายุผู้กู้สูงสุด (ธุรกิจ)</label><input type="number" id="max_age_business" name="max_age_business" placeholder="เช่น 65"></div>
                 </div>
             </fieldset>
-
             <fieldset>
                 <legend>กฎการคำนวณรายได้อื่นๆ</legend>
                 <div class="sub-grid">
-                    <div class="form-group">
-                        <label for="other_income_calc_months">เดือนที่ใช้เฉลี่ยรายได้อื่น</label>
-                        <input type="number" id="other_income_calc_months" name="other_income_calc_months" placeholder="เช่น 3 หรือ 6">
-                    </div>
-                    <div class="form-group">
-                        <label for="other_income_factor">สัดส่วนที่นำมาคิด (0-1)</label>
-                        <input type="number" step="0.01" id="other_income_factor" name="other_income_factor" placeholder="เช่น 0.33 สำหรับ 1/3">
-                    </div>
-                    <div class="form-group form-group--checkbox" style="align-self: end;">
-                        <input type="checkbox" id="other_income_continuity_required" name="other_income_continuity_required">
-                        <label for="other_income_continuity_required">รายได้อื่นต้องต่อเนื่อง</label>
-                    </div>
+                    <div class="form-group"><label for="other_income_calc_months">เดือนที่ใช้เฉลี่ยรายได้อื่น</label><input type="number" id="other_income_calc_months" name="other_income_calc_months" placeholder="เช่น 3 หรือ 6"></div>
+                    <div class="form-group"><label for="other_income_factor">สัดส่วนที่นำมาคิด (0-1)</label><input type="number" step="0.01" id="other_income_factor" name="other_income_factor" placeholder="เช่น 0.33 สำหรับ 1/3"></div>
+                    <div class="form-group form-group--checkbox" style="align-self: end;"><input type="checkbox" id="other_income_continuity_required" name="other_income_continuity_required"><label for="other_income_continuity_required">รายได้อื่นต้องต่อเนื่อง</label></div>
                 </div>
             </fieldset>
-
-            <div class="form-group form-group--checkbox full-width">
-                <input type="checkbox" id="waive_mortgage_fee" name="waive_mortgage_fee">
-                <label for="waive_mortgage_fee">ยกเว้นค่าจดจำนอง</label>
-            </div>
-            
-            <div class="form-group form-group--checkbox full-width">
-                <input type="checkbox" id="has_mrta_option" name="has_mrta_option">
-                <label for="has_mrta_option">มีตัวเลือก MRTA (แสดงฟิลด์เพิ่มเติม)</label>
-            </div>
-
+            <div class="form-group form-group--checkbox full-width"><input type="checkbox" id="waive_mortgage_fee" name="waive_mortgage_fee"><label for="waive_mortgage_fee">ยกเว้นค่าจดจำนอง</label></div>
+            <div class="form-group form-group--checkbox full-width"><input type="checkbox" id="has_mrta_option" name="has_mrta_option"><label for="has_mrta_option">มีตัวเลือก MRTA (แสดงฟิลด์เพิ่มเติม)</label></div>
             <fieldset id="mrta-fields" class="full-width hidden">
                 <legend>ดอกเบี้ยและอัตรา (กรณี MRTA)</legend>
                 <div class="sub-grid">
-                    </div>
+                    <div class="form-group"><label for="interest_rate_yr1_mrta">ดอกเบี้ยปี 1 (MRTA)</label><input type="number" step="0.01" id="interest_rate_yr1_mrta" name="interest_rate_yr1_mrta"></div>
+                    <div class="form-group"><label for="interest_rate_yr2_mrta">ดอกเบี้ยปี 2 (MRTA)</label><input type="number" step="0.01" id="interest_rate_yr2_mrta" name="interest_rate_yr2_mrta"></div>
+                    <div class="form-group"><label for="interest_rate_yr3_mrta">ดอกเบี้ยปี 3 (MRTA)</label><input type="number" step="0.01" id="interest_rate_yr3_mrta" name="interest_rate_yr3_mrta"></div>
+                    <div class="form-group"><label for="interest_rate_after_value_retail">หลัง 3 ปี (รีเทล)</label><input type="text" id="interest_rate_after_value_retail" name="interest_rate_after_value_retail" placeholder="เช่น MRR-1.5"></div>
+                    <div class="form-group"><label for="interest_rate_after_value_welfare">หลัง 3 ปี (สวัสดิการ)</label><input type="text" id="interest_rate_after_value_welfare" name="interest_rate_after_value_welfare" placeholder="เช่น MRR-2.0"></div>
+                    <div class="form-group"><label for="interest_rate_after_value_mrta_retail">หลัง 3 ปี (รีเทล+MRTA)</label><input type="text" id="interest_rate_after_value_mrta_retail" name="interest_rate_after_value_mrta_retail" placeholder="เช่น MRR-1.75"></div>
+                    <div class="form-group"><label for="interest_rate_after_value_mrta_welfare">หลัง 3 ปี (สวัสดิการ+MRTA)</label><input type="text" id="interest_rate_after_value_mrta_welfare" name="interest_rate_after_value_mrta_welfare" placeholder="เช่น MRR-2.25"></div>
+                </div>
             </fieldset>
-
-            <div class="form-group full-width">
-                <label for="notes">หมายเหตุ</label>
-                <input type="text" id="notes" name="notes" placeholder="เงื่อนไขเพิ่มเติม">
-            </div>
-
-            <div class="form-actions full-width">
-                <button type="submit" id="save-btn" class="btn-primary">บันทึกโปรโมชัน</button>
-                <button type="button" id="clear-btn" class="btn-secondary">ล้างฟอร์ม</button>
-            </div>
+            <div class="form-group full-width"><label for="notes">หมายเหตุ</label><input type="text" id="notes" name="notes" placeholder="เงื่อนไขเพิ่มเติม"></div>
+            <div class="form-actions full-width"><button type="submit" id="save-btn" class="btn-primary">บันทึกโปรโมชัน</button><button type="button" id="clear-btn" class="btn-secondary">ล้างฟอร์ม</button></div>
         </form>
 
         <hr style="margin: 40px 0;">
@@ -295,8 +193,7 @@
                         <th>จัดการ</th>
                     </tr>
                 </thead>
-                <tbody>
-                    </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
@@ -306,8 +203,8 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-		const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
-		const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
+const SUPABASE_URL = 'https://kpsferwaplnkzrbqoghv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y';
 
         if (SUPABASE_URL === '{{SUPABASE_URL}}' || SUPABASE_ANON_KEY === '{{SUPABASE_ANON_KEY}}') {
             alert('กรุณาตั้งค่า SUPABASE_URL และ SUPABASE_ANON_KEY ในไฟล์ admin.html');
@@ -316,7 +213,6 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         (async () => {
-            // --- DOM Elements ---
             const views = { gate: document.getElementById('gate'), loader: document.getElementById('loader'), app: document.getElementById('app') };
             const loginForm = document.getElementById('login-form');
             const logoutBtn = document.getElementById('logout-btn');
@@ -334,20 +230,11 @@
             const forceReloadBtn = document.getElementById('force-reload-btn');
             const searchInput = document.getElementById('search-input');
 
-            // --- State Management ---
             let state = {
-                isEditing: false,
-                editingId: null,
-                watchdogTimer: null,
-                debounceTimer: null,
-                banks: [],
-                promotions: [], // Master list of promotions
-                searchTerm: '',
-                sortKey: 'created_at',
-                sortDir: 'desc'
+                isEditing: false, editingId: null, watchdogTimer: null, debounceTimer: null,
+                banks: [], promotions: [], searchTerm: '', sortKey: 'created_at', sortDir: 'desc'
             };
 
-            // --- Helper Functions ---
             const N = v => (v === '' || v === null || isNaN(parseFloat(v))) ? null : parseFloat(v);
             const D = v => (v === '' || v === null) ? null : v;
             const avg3y = p => {
@@ -384,19 +271,76 @@
                 }
             };
 
-            // --- Auth & Boot Logic ---
             const handleBootStuck = () => {
                 console.error('[BOOT] Watchdog triggered: Boot process took too long (>9s).');
                 logDebug('ERROR: กระบวนการค้าง/ใช้เวลานานเกินไป');
                 showView('gate');
             };
 
-            const requireAdminFast = async () => { /* ... (same as before) ... */ };
-            const boot = async (isResync = false) => { /* ... (same as before) ... */ };
-            const initializeApp = async () => { /* ... (same as before) ... */ };
+            const requireAdminFast = async () => {
+                clearTimeout(state.watchdogTimer);
+                state.watchdogTimer = setTimeout(handleBootStuck, 9000);
+                try {
+                    logDebug('step1: getSession()');
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError) throw new Error(`Session Error: ${sessionError.message}`);
+                    if (!session) throw new Error('No active session.');
+                    logDebug(`step1: result=OK (user=${session.user.email})`);
+                    logDebug('step2: getUser()');
+                    const { data: { user }, error: userError } = await supabase.auth.getUser();
+                    if (userError) throw new Error(`User Error: ${userError.message}`);
+                    if (!user) throw new Error('User not found.');
+                    logDebug(`step2: result=OK (uid=${user.id})`);
+                    logDebug('step3: check profiles table...');
+                    const profilePromise = supabase.from('profiles').select('role, status').eq('id', user.id).single();
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 7000));
+                    const { data: profile, error: profileError } = await Promise.race([profilePromise, timeoutPromise]);
+                    if (profileError) throw profileError;
+                    if (!profile || profile.role !== 'admin' || profile.status !== 'approved') {
+                        throw new Error('Access Denied: Not an approved admin.');
+                    }
+                    logDebug(`step3: result=OK (role=${profile.role}, status=${profile.status})`);
+                    clearTimeout(state.watchdogTimer);
+                    return true;
+                } catch (error) {
+                    clearTimeout(state.watchdogTimer);
+                    console.error('[AUTH] Admin check failed:', error.message);
+                    logDebug(`ERROR: ${error.message}`);
+                    await supabase.auth.signOut();
+                    return false;
+                }
+            };
 
-            // --- Data Fetching ---
-            const fetchBanks = async () => { /* ... (same as before) ... */ };
+            const boot = async (isResync = false) => {
+                if (!isResync) console.log('[BOOT] Initializing Admin Console...');
+                else console.log('[BOOT] Resyncing session...');
+                showView('loader');
+                debugLog.textContent = '';
+                const isAdmin = await requireAdminFast();
+                if (isAdmin) {
+                    showView('app');
+                    await initializeApp();
+                } else {
+                    showView('gate');
+                }
+            };
+
+            const initializeApp = async () => {
+                console.log('[APP] Initializing...');
+                await Promise.all([fetchBanks(), fetchPromotions()]);
+            };
+
+            const fetchBanks = async () => {
+                console.log('[DATA] Fetching banks...');
+                const { data, error } = await supabase.from('banks').select('id, name').order('name');
+                if (error) {
+                    showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true);
+                    console.error('[DATA] Error fetching banks:', error);
+                    return;
+                }
+                state.banks = data;
+                renderBanksDropdown();
+            };
 
             const fetchPromotions = async () => {
                 console.log('[DATA] Fetching promotions...');
@@ -407,14 +351,11 @@
                     return;
                 }
                 state.promotions = data;
-                renderFilteredAndSortedPromotions(); // New central render function
+                renderFilteredAndSortedPromotions();
             };
 
-            // --- NEW: Rendering Logic for Search & Sort ---
             const renderFilteredAndSortedPromotions = () => {
                 let promotionsToRender = [...state.promotions];
-
-                // 1. Filter
                 if (state.searchTerm) {
                     const lowerCaseSearch = state.searchTerm.toLowerCase();
                     promotionsToRender = promotionsToRender.filter(p => {
@@ -423,37 +364,21 @@
                         return bankName.includes(lowerCaseSearch) || promoName.includes(lowerCaseSearch);
                     });
                 }
-
-                // 2. Sort
                 promotionsToRender.sort((a, b) => {
                     let valA, valB;
                     switch (state.sortKey) {
-                        case 'bank_name':
-                            valA = a.banks?.name || '';
-                            valB = b.banks?.name || '';
-                            break;
-                        case 'promotion_name':
-                            valA = a.promotion_name || '';
-                            valB = b.promotion_name || '';
-                            break;
-                        case 'avg_3y':
-                            valA = avg3y(a) ?? -1; // Use -1 for nulls to sort them at the beginning
-                            valB = avg3y(b) ?? -1;
-                            break;
-                        default:
-                            valA = a[state.sortKey];
-                            valB = b[state.sortKey];
+                        case 'bank_name': valA = a.banks?.name || ''; valB = b.banks?.name || ''; break;
+                        case 'promotion_name': valA = a.promotion_name || ''; valB = b.promotion_name || ''; break;
+                        case 'avg_3y': valA = avg3y(a) ?? -1; valB = avg3y(b) ?? -1; break;
+                        default: valA = a[state.sortKey]; valB = b[state.sortKey];
                     }
-
                     if (valA < valB) return state.sortDir === 'asc' ? -1 : 1;
                     if (valA > valB) return state.sortDir === 'asc' ? 1 : -1;
                     return 0;
                 });
-                
                 renderPromotionsTable(promotionsToRender);
             };
 
-            // --- Rendering ---
             const renderBanksDropdown = () => {
                 const selectedValue = bankSelect.value;
                 bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>';
@@ -467,14 +392,12 @@
             };
 
             const renderPromotionsTable = (promotions) => {
-                // Update header visuals
                 promotionsThead.querySelectorAll('th.sortable').forEach(th => {
                     th.classList.remove('asc', 'desc');
                     if (th.dataset.sortKey === state.sortKey) {
                         th.classList.add(state.sortDir);
                     }
                 });
-
                 promotionsTableBody.innerHTML = '';
                 if (!promotions || promotions.length === 0) {
                     promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ไม่พบข้อมูลโปรโมชันที่ตรงกัน</td></tr>';
@@ -485,35 +408,22 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${p.banks ? p.banks.name : 'N/A'}</td>
-                        <td class="promo-name">
-                            ${p.promotion_name}
-                            <small>${p.loan_type}</small>
-                        </td>
+                        <td class="promo-name">${p.promotion_name}<small>${p.loan_type}</small></td>
                         <td>${avg !== null ? avg.toFixed(2) : 'N/A'}</td>
                         <td class="actions">
                             <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button>
                             <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button>
-                        </td>
-                    `;
+                        </td>`;
                     promotionsTableBody.appendChild(tr);
                 });
             };
-
-            // --- Form & CRUD Logic ---
+            
             const validateForm = (formData) => {
                 const errors = [];
-                const numericFields = [
-                    'interest_rate_yr1', 'interest_rate_yr2', 'interest_rate_yr3', 'max_ltv', 'dsr_limit',
-                    'income_per_million', 'min_living_expense', 'max_loan_tenure', 'max_age_salaried', 'max_age_business',
-                    'max_income', 'max_loan_amount', 'payslip_months_required', 'other_income_calc_months', 'other_income_factor'
-                ];
-
-                // Date validation
+                const numericFields = ['interest_rate_yr1', 'interest_rate_yr2', 'interest_rate_yr3', 'max_ltv', 'dsr_limit', 'income_per_million', 'min_living_expense', 'max_loan_tenure', 'max_age_salaried', 'max_age_business', 'max_income', 'max_loan_amount', 'payslip_months_required', 'other_income_calc_months', 'other_income_factor'];
                 if (formData.start_date && formData.end_date && new Date(formData.end_date) < new Date(formData.start_date)) {
                     errors.push('วันที่สิ้นสุดต้องไม่เกิดก่อนวันที่เริ่ม');
                 }
-
-                // Negative number validation
                 for (const field of numericFields) {
                     if (formData[field] !== null && formData[field] < 0) {
                         const label = document.querySelector(`label[for=${field}]`)?.textContent || field;
@@ -523,16 +433,38 @@
                 return errors;
             }
 
-            const clearForm = () => { /* ... (same as before) ... */ };
-            const populateForm = (promo) => { /* ... (same as before) ... */ };
+            const clearForm = () => {
+                promotionForm.reset();
+                state.isEditing = false;
+                state.editingId = null;
+                saveBtn.textContent = 'บันทึกโปรโมชัน';
+                saveBtn.classList.replace('btn-secondary', 'btn-primary');
+                hasMrtaCheckbox.dispatchEvent(new Event('change'));
+                promotionForm.querySelector('input').focus();
+            };
+
+            const populateForm = (promo) => {
+                Object.keys(promo).forEach(key => {
+                    const el = document.getElementById(key);
+                    if (el) {
+                        if (el.type === 'checkbox') el.checked = promo[key];
+                        else if (el.type === 'date') el.value = promo[key] ? new Date(promo[key]).toISOString().split('T')[0] : '';
+                        else el.value = promo[key] ?? '';
+                    }
+                });
+                state.isEditing = true;
+                state.editingId = promo.id;
+                saveBtn.textContent = 'บันทึกการแก้ไข';
+                saveBtn.classList.replace('btn-primary', 'btn-secondary');
+                hasMrtaCheckbox.dispatchEvent(new Event('change'));
+                window.scrollTo(0, 0);
+            };
 
             promotionForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 saveBtn.disabled = true;
-
                 const formData = new FormData(promotionForm);
                 const promoData = {};
-                
                 for (const [key, value] of formData.entries()) {
                     const el = document.getElementById(key);
                     if (el.type === 'number') promoData[key] = N(value);
@@ -543,12 +475,11 @@
                 if (!formData.has('has_mrta_option')) promoData.has_mrta_option = false;
                 if (!formData.has('other_income_continuity_required')) promoData.other_income_continuity_required = false;
 
-                // NEW: Run validation before submitting
                 const validationErrors = validateForm(promoData);
                 if (validationErrors.length > 0) {
                     alert('กรุณาแก้ไขข้อผิดพลาด:\n- ' + validationErrors.join('\n- '));
                     saveBtn.disabled = false;
-                    return; // Stop submission
+                    return;
                 }
 
                 try {
@@ -558,12 +489,10 @@
                     } else {
                         result = await supabase.from('promotions').insert([promoData]);
                     }
-
                     if (result.error) throw result.error;
-                    
                     showToast(state.isEditing ? 'แก้ไขโปรโมชันสำเร็จ' : 'เพิ่มโปรโมชันสำเร็จ');
                     clearForm();
-                    await fetchPromotions(); // Refresh table
+                    await fetchPromotions();
                 } catch (error) {
                     console.error('[DATA] Form submission error:', error);
                     showToast(`เกิดข้อผิดพลาด: ${error.message}`, true);
@@ -572,51 +501,75 @@
                 }
             });
 
-            promotionsTableBody.addEventListener('click', async (e) => { /* ... (same as before) ... */ });
-
-            // --- Event Listeners ---
-            loginForm.addEventListener('submit', async (e) => { /* ... (same as before) ... */ });
-            logoutBtn.addEventListener('click', async () => { /* ... (same as before) ... */ });
-            clearBtn.addEventListener('click', clearForm);
-            hasMrtaCheckbox.addEventListener('change', (e) => { /* ... (same as before) ... */ });
-            retryBootBtn.addEventListener('click', () => boot());
-            forceReloadBtn.addEventListener('click', async () => { /* ... (same as before) ... */ });
-            supabase.auth.onAuthStateChange((event, session) => { /* ... (same as before) ... */ });
-
-            const handleVisibilityOrFocus = () => {
-                clearTimeout(state.debounceTimer);
-                state.debounceTimer = setTimeout(() => { checkSessionOnFocus(); }, 1200);
-            };
-
-            window.addEventListener('focus', handleVisibilityOrFocus);
-            window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { handleVisibilityOrFocus(); } });
-            window.addEventListener('storage', (e) => { if (e.key && e.key.includes('supabase.auth.token')) { checkSessionOnFocus(); } });
-
-            // --- NEW: Event listeners for Search and Sort ---
-            searchInput.addEventListener('input', () => {
-                state.searchTerm = searchInput.value;
-                renderFilteredAndSortedPromotions();
-            });
-
-            promotionsThead.addEventListener('click', (e) => {
-                const header = e.target.closest('th.sortable');
-                if (!header) return;
-
-                const key = header.dataset.sortKey;
-                if (state.sortKey === key) {
-                    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-                } else {
-                    state.sortKey = key;
-                    state.sortDir = 'asc';
+            promotionsTableBody.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('edit-btn')) {
+                    const id = e.target.dataset.id;
+                    const { data, error } = await supabase.from('promotions').select('*').eq('id', id).single();
+                    if (error) showToast('ไม่พบข้อมูลโปรโมชัน', true); else populateForm(data);
                 }
-                renderFilteredAndSortedPromotions();
+                if (e.target.classList.contains('delete-btn')) {
+                    const id = e.target.dataset.id;
+                    if (confirm('คุณต้องการลบโปรโมชันนี้ใช่หรือไม่?')) {
+                        const { error } = await supabase.from('promotions').delete().eq('id', id);
+                        if (error) showToast('ลบไม่สำเร็จ: ' + error.message, true);
+                        else { showToast('ลบโปรโมชันสำเร็จแล้ว'); fetchPromotions(); }
+                    }
+                }
             });
 
-            if ('serviceWorker' in navigator) { /* ... (same as before) ... */ }
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = loginForm.email.value;
+                const password = loginForm.password.value;
+                const loginBtn = document.getElementById('login-btn');
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) showToast(error.message, true);
+                else { showToast('เข้าสู่ระบบสำเร็จ'); await boot(); }
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'เข้าสู่ระบบ';
+            });
 
-            // --- Initial Load ---
+            logoutBtn.addEventListener('click', async () => { await supabase.auth.signOut(); showToast('ออกจากระบบแล้ว'); showView('gate'); });
+            clearBtn.addEventListener('click', clearForm);
+            hasMrtaCheckbox.addEventListener('change', (e) => { mrtaFields.classList.toggle('hidden', !e.target.checked); });
+            retryBootBtn.addEventListener('click', () => boot());
+            forceReloadBtn.addEventListener('click', async () => {
+                logDebug("Attempting to force reload...");
+                try {
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (const registration of registrations) await registration.unregister();
+                        logDebug("Unregistered all SW.");
+                    }
+                    if (window.caches) {
+                        const keys = await window.caches.keys();
+                        await Promise.all(keys.map(key => window.caches.delete(key)));
+                        logDebug("All caches cleared.");
+                    }
+                } catch (error) { logDebug(`Error during cleanup: ${error.message}`);
+                } finally { logDebug("Reloading page..."); window.location.reload(true); }
+            });
+
+            supabase.auth.onAuthStateChange((event, session) => {
+                console.log(`[AUTH] onAuthStateChange event: ${event}`);
+                if (event === 'SIGNED_IN') boot(); else if (event === 'SIGNED_OUT') showView('gate');
+            });
+
+            const handleVisibilityOrFocus = () => { clearTimeout(state.debounceTimer); state.debounceTimer = setTimeout(() => { checkSessionOnFocus(); }, 1200); };
+            window.addEventListener('focus', handleVisibilityOrFocus);
+            window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') handleVisibilityOrFocus(); });
+            window.addEventListener('storage', (e) => { if (e.key && e.key.includes('supabase.auth.token')) checkSessionOnFocus(); });
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js').then(reg => console.log('[SW] Registered.', reg.scope)).catch(err => console.error('[SW] Registration failed:', err));
+                });
+                navigator.serviceWorker.addEventListener('controllerchange', () => { console.log('[SW] New worker activated. Reloading...'); window.location.reload(); });
+            }
+
             boot();
-
         })();
     </script>
 </body>
