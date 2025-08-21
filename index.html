@@ -14,20 +14,12 @@
     <div class="user-info-container">
         <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
         <div class="input-grid">
-            <div class="form-group">
-                <label for="loanPurpose">วัตถุประสงค์ในการกู้:</label>
-                <select id="loanPurpose">
-                    <option value="ทั้งหมด">-- ทุกวัตถุประสงค์ --</option>
-                    <option value="ซื้อใหม่">ซื้อบ้านใหม่/คอนโด</option>
-                    <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
-                    <option value="นโยบายรัฐ">สินเชื่อนโยบายรัฐ</option>
-                </select>
-            </div>
+            <div class="form-group"><label for="loanPurpose">วัตถุประสงค์ในการกู้:</label><select id="loanPurpose"><option value="ทั้งหมด">-- ทุกวัตถุประสงค์ --</option><option value="ซื้อใหม่">ซื้อบ้านใหม่/คอนโด</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="นโยบายรัฐ">สินเชื่อนโยบายรัฐ</option></select></div>
             <div class="form-group"><label for="profession">อาชีพ:</label><select id="profession"><option value="salaried">พนักงานประจำ</option><option value="government">ข้าราชการ</option><option value="business">เจ้าของกิจการ / อาชีพอิสระ</option></select></div>
             <div class="form-group"><label for="customerType">ประเภทลูกค้า:</label><select id="customerType"><option value="retail">ลูกค้ารายย่อยทั่วไป</option><option value="welfare">ลูกค้าสวัสดิการ</option></select></div>
-            <div class="form-group"><label for="userAge">อายุ (ปี):</label><input type="number" id="userAge" placeholder="เช่น 30"></div>
-            <div class="form-group"><label for="monthlyIncome">รายได้/เดือน (บาท):</label><input type="number" id="monthlyIncome" placeholder="เช่น 50000"></div>
-            <div class="form-group"><label for="monthlyDebt">หนี้สินอื่นๆ/เดือน (บาท):</label><input type="number" id="monthlyDebt" placeholder="เช่น 10000" value="0"></div>
+            <div class="form-group"><label for="userAge">อายุ (ปี):</label><input type="number" id="userAge" placeholder="เช่น 30" inputmode="numeric" pattern="[0-9]*"></div>
+            <div class="form-group"><label for="monthlyIncome">รายได้/เดือน (บาท):</label><input type="number" id="monthlyIncome" placeholder="เช่น 50000" inputmode="decimal" pattern="[0-9]*"></div>
+            <div class="form-group"><label for="monthlyDebt">หนี้สินอื่นๆ/เดือน (บาท):</label><input type="number" id="monthlyDebt" placeholder="เช่น 10000" value="0" inputmode="decimal" pattern="[0-9]*"></div>
         </div>
         <div class="form-group checkbox-group">
             <input type="checkbox" id="wantsMRTA">
@@ -40,11 +32,11 @@
     <h2>กรอกข้อมูลสินเชื่อที่ต้องการ</h2>
     <div class="input-group">
         <label for="loanAmount">วงเงินกู้ที่ต้องการ (บาท):</label>
-        <input type="number" id="loanAmount" value="2000000">
+        <input type="number" id="loanAmount" value="2000000" inputmode="decimal" pattern="[0-9]*">
     </div>
     <div class="input-group">
         <label for="loanTerm">ระยะเวลากู้ที่ต้องการ (ปี):</label>
-        <input type="number" id="loanTerm" placeholder="สูงสุดตามเงื่อนไข">
+        <input type="number" id="loanTerm" placeholder="สูงสุดตามเงื่อนไข" inputmode="numeric" pattern="[0-9]*">
     </div>
 
     <button id="compareBtn" class="btn btn-primary">วิเคราะห์และเปรียบเทียบโปรโมชัน</button>

@@ -1,4 +1,4 @@
-// --- script.js (เวอร์ชันแสดงรายละเอียดการคำนวณ) ---
+// --- script.js (เวอร์ชันแสดงทุกหัวข้อในตารางเปรียบเทียบ) ---
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -45,29 +45,89 @@ function generateAmortizationTable(principal, annualRate, years) {
     return { tableHtml };
 }
 
+// CHANGED: อัปเดตฟังก์ชันนี้ทั้งหมดเพื่อแสดงทุกหัวข้อ
 function renderComparisonTable(topResults) {
     if (topResults.length < 2) return '';
     const formatCurrency = (num) => num.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+    
     let tableHtml = `<div class="result-card" style="background-color: #f8f9fa;"><h2 style="text-align:center;">ตารางสรุปเปรียบเทียบ ${topResults.length} อันดับแรก</h2><table class="comparison-table" style="width: 100%; text-align: center;"><thead><tr><th style="text-align: left;">หัวข้อ</th>`;
     topResults.forEach(result => {
         tableHtml += `<th>${result.banks.name} ${result.isMRTAApplied ? '<span style="color:#0284c7;font-size:0.8em;">(MRTA)</span>' : ''}</th>`;
     });
     tableHtml += `</tr></thead><tbody>`;
+
+    // Row: ชื่อโปรโมชัน
+    tableHtml += `<tr><td style="text-align: left;">ชื่อโปรโมชัน</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.promotion_name || 'N/A'}</td>`; });
+    tableHtml += `</tr>`;
+    
+    // Row: ประเภทสินเชื่อ
+    tableHtml += `<tr><td style="text-align: left;">ประเภทสินเชื่อ</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.loan_type || 'N/A'}</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: อัตราดอกเบี้ยเฉลี่ย 3 ปีแรก
     tableHtml += `<tr><td style="text-align: left;">อัตราดอกเบี้ยเฉลี่ย 3 ปีแรก</td>`;
     topResults.forEach(result => { tableHtml += `<td><strong>${result.avgInterest3yr.toFixed(2)}%</strong></td>`; });
     tableHtml += `</tr>`;
+
+    // Row: ค่างวดประมาณ/เดือน
     tableHtml += `<tr><td style="text-align: left;">ค่างวดประมาณ/เดือน</td>`;
     topResults.forEach(result => {
         const payment = calculateMonthlyPayment(result.loanAmountToCalculate, result.avgInterest3yr, result.finalLoanTerm);
         tableHtml += `<td>${formatCurrency(payment)}</td>`;
     });
     tableHtml += `</tr>`;
-    tableHtml += `<tr><td style="text-align: left;">วงเงินกู้สูงสุด (ที่อนุมัติได้)</td>`;
+
+    // Row: วงเงินกู้สูงสุด (ที่อนุมัติได้)
+    tableHtml += `<tr><td style="text-align: left;">วงเงินกู้สูงสุด (ที่คุณกู้ได้)</td>`;
     topResults.forEach(result => { tableHtml += `<td>${formatCurrency(result.finalMaxPossibleLoan)}</td>`; });
     tableHtml += `</tr>`;
+
+    // Row: วงเงินสูงสุดของโครงการ
+    tableHtml += `<tr><td style="text-align: left;">วงเงินสูงสุด (ของโครงการ)</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.max_loan_amount ? formatCurrency(result.max_loan_amount) : 'ไม่ระบุ'}</td>`; });
+    tableHtml += `</tr>`;
+    
+    // Row: ระยะเวลากู้ (สูงสุด)
+    tableHtml += `<tr><td style="text-align: left;">ระยะเวลากู้ (สูงสุด)</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.finalLoanTerm} ปี</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: LTV สูงสุด
+    tableHtml += `<tr><td style="text-align: left;">LTV สูงสุด</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.max_ltv ? `${result.max_ltv}%` : 'N/A'}</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: DSR Limit
+    tableHtml += `<tr><td style="text-align: left;">DSR Limit</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.dsr_limit ? `${result.dsr_limit}%` : 'N/A'}</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: จำกัดรายได้สูงสุด
+    tableHtml += `<tr><td style="text-align: left;">จำกัดรายได้สูงสุด</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.max_income ? formatCurrency(result.max_income) : 'ไม่จำกัด'}</td>`; });
+    tableHtml += `</tr>`;
+    
+    // Row: ยกเว้นค่าจดจำนอง
+    tableHtml += `<tr><td style="text-align: left;">ยกเว้นค่าจดจำนอง</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.waive_mortgage_fee ? '✅ มี' : '❌ ไม่มี'}</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: มีตัวเลือก MRTA
+    tableHtml += `<tr><td style="text-align: left;">มีตัวเลือก MRTA</td>`;
+    topResults.forEach(result => { tableHtml += `<td>${result.has_mrta_option ? '✅ มี' : '❌ ไม่มี'}</td>`; });
+    tableHtml += `</tr>`;
+
+    // Row: หมายเหตุ
+    tableHtml += `<tr><td style="text-align: left;">หมายเหตุ</td>`;
+    topResults.forEach(result => { tableHtml += `<td style="font-size: 0.9em;">${result.notes || '-'}</td>`; });
+    tableHtml += `</tr>`;
+
     tableHtml += `</tbody></table></div>`;
     return tableHtml;
 }
+
 
 function renderResults(resultsToRender) {
     resultsContainer.innerHTML = ''; 
@@ -82,8 +142,6 @@ function renderResults(resultsToRender) {
         const totalInterest = totalPaid - offer.loanAmountToCalculate;
         const mrtaBadge = offer.isMRTAApplied ? '<span style="background:#e0f2fe; color:#0c4a6e; padding: 3px 8px; border-radius: 99px; font-size: 0.8em; font-weight: bold;">ดอกเบี้ยรวม MRTA</span>' : '';
         const endDateText = offer.end_date ? `<p style="font-size:0.9em; color:#555;">* โปรโมชันถึงวันที่: ${new Date(offer.end_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>` : '';
-        
-        // CHANGED: สร้างส่วน HTML สำหรับแสดงรายละเอียดการคำนวณ
         const calculationBreakdownHtml = `
             <div class="calculation-breakdown">
                 <p>คำนวณจาก (เลือกค่าน้อยที่สุด):</p>
@@ -93,7 +151,6 @@ function renderResults(resultsToRender) {
                 </ul>
             </div>
         `;
-
         offersHtml += `<div class="result-card"><h3>${offer.banks.name}</h3><p><strong>โปรโมชัน:</strong> ${offer.promotion_name} ${mrtaBadge}</p>${endDateText}${offer.eligibilityNote}<p>วงเงินกู้สูงสุดที่คาดว่าจะได้รับ: <strong>${formatCurrency(offer.finalMaxPossibleLoan)}</strong> บาท</p>${calculationBreakdownHtml}<p><strong>อัตราดอกเบี้ยเฉลี่ย 3 ปี: ${offer.avgInterest3yr.toFixed(2)} %</strong></p><ul><li>ปีที่ 1: ${offer.rate1.toFixed(2)}%</li><li>ปีที่ 2: ${offer.rate2.toFixed(2)}%</li><li>ปีที่ 3: ${offer.rate3.toFixed(2)}%</li><li>ปีต่อไป: ${offer.rateAfter}</li></ul><hr><p><strong>ค่างวดประมาณ (สำหรับ ${offer.finalLoanTerm} ปี): ${monthlyPayment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท/เดือน</strong></p><p style="color: #dc3545; font-weight: bold; display: none;">จากวงเงิน ${formatCurrency(offer.loanAmountToCalculate)} บาท | ดอกเบี้ยทั้งหมด: ${formatCurrency(totalInterest)} บาท</p><div class="button-group" style="margin-top: 15px; display: flex; gap: 10px;"><button class="btn btn-secondary toggle-schedule-btn" data-target-id="table-container-${index}" data-amount="${offer.loanAmountToCalculate}" data-rate="${offer.avgInterest3yr}" data-term="${offer.finalLoanTerm}">แสดง/ซ่อนตารางผ่อน</button></div><div class="amortization-table-container" id="table-container-${index}" style="display: none;"></div></div>`;
     });
     resultsContainer.innerHTML = comparisonTableHtml + offersHtml;
@@ -103,87 +160,91 @@ function renderResults(resultsToRender) {
 }
 
 function analyzeAndFilterOffers() {
-    const userAge = parseInt(userAgeInput.value);
-    const profession = professionSelect.value;
-    const monthlyIncome = parseFloat(monthlyIncomeInput.value);
-    const monthlyDebt = parseFloat(monthlyDebtInput.value) || 0;
-    const requestedLoanAmount = parseFloat(loanAmountInput.value);
-    const requestedLoanTerm = parseInt(loanTermInput.value) || 0;
-    const userWantsMRTA = wantsMRTAInput.checked;
-    const customerType = customerTypeSelect.value;
-    const loanPurpose = loanPurposeSelect.value; 
+    loadingSpinner.style.display = 'block';
+    resultsContainer.innerHTML = '';
+    setTimeout(() => {
+        const userAge = parseInt(userAgeInput.value);
+        const monthlyIncome = parseFloat(monthlyIncomeInput.value);
+        const monthlyDebt = parseFloat(monthlyDebtInput.value) || 0;
+        const requestedLoanAmount = parseFloat(loanAmountInput.value);
+        const requestedLoanTerm = parseInt(loanTermInput.value) || 0;
+        const userWantsMRTA = wantsMRTAInput.checked;
+        const customerType = customerTypeSelect.value;
+        const loanPurpose = loanPurposeSelect.value; 
 
-    if (isNaN(userAge) || isNaN(monthlyIncome) || isNaN(requestedLoanAmount)) {
-        alert('กรุณากรอกข้อมูลผู้กู้ และข้อมูลสินเชื่อให้ครบถ้วน');
-        return;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const activeOffers = allOffers.filter(offer => {
-        const hasStarted = offer.start_date ? new Date(offer.start_date) <= today : true;
-        const hasNotExpired = offer.end_date ? new Date(offer.end_date) >= today : true;
-        return hasStarted && hasNotExpired;
-    });
-    
-    const purposeFilteredOffers = activeOffers.filter(offer => {
-        const type = offer.loan_type;
-        switch (loanPurpose) {
-            case 'ทั้งหมด': return true; 
-            case 'ซื้อใหม่': return type === 'ทั่วไป' || type === 'โครงการพิเศษ' || !type;
-            case 'รีไฟแนนซ์': return type === 'รีไฟแนนซ์' || type === 'ทั่วไป';
-            case 'นโยบายรัฐ': return type === 'สวัสดิการ' || type === 'โครงการพิเศษ';
-            default: return true;
+        if (isNaN(userAge) || isNaN(monthlyIncome) || isNaN(requestedLoanAmount)) {
+            alert('กรุณากรอกข้อมูลผู้กู้ และข้อมูลสินเชื่อให้ครบถ้วน');
+            loadingSpinner.style.display = 'none';
+            return;
         }
-    });
 
-    currentResults = [];
-    purposeFilteredOffers.forEach(offer => {
-        let isMRTAApplied = false;
-        let rate1 = offer.interest_rate_yr1;
-        let rate2 = offer.interest_rate_yr2;
-        let rate3 = offer.interest_rate_yr3;
-        let rateAfterValue;
-        if (customerType === 'welfare') { rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_welfare : offer.interest_rate_after_value_welfare; } 
-        else { rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_retail : offer.interest_rate_after_value_retail; }
-        if (userWantsMRTA && offer.has_mrta_option && offer.interest_rate_yr1_mrta !== null) {
-            isMRTAApplied = true;
-            rate1 = offer.interest_rate_yr1_mrta;
-            rate2 = offer.interest_rate_yr2_mrta;
-            rate3 = offer.interest_rate_yr3_mrta;
-        }
-        if (rate1 === null || rate2 === null || rate3 === null) return;
-        const rateAfter = `MRR - ${Number(rateAfterValue || 0).toFixed(2)}%`;
-        const dsrValue = (offer.dsr_limit || 40) / 100;
-        const maxAffordablePayment = (monthlyIncome * dsrValue) - monthlyDebt;
-        if (maxAffordablePayment <= 0) return;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activeOffers = allOffers.filter(offer => {
+            const hasStarted = offer.start_date ? new Date(offer.start_date) <= today : true;
+            const hasNotExpired = offer.end_date ? new Date(offer.end_date) >= today : true;
+            return hasStarted && hasNotExpired;
+        });
         
-        const maxLoanByDSR = maxAffordablePayment * 150; 
-        let maxLoanByIncome = Infinity;
-        if (offer.income_per_million > 0) {
-            const netIncomeAfterExpenses = monthlyIncome - (offer.min_living_expense || 0) - monthlyDebt;
-            if (netIncomeAfterExpenses > 0) { maxLoanByIncome = (netIncomeAfterExpenses / offer.income_per_million) * 1000000; }
-        }
-        const finalMaxPossibleLoan = Math.min(maxLoanByDSR, maxLoanByIncome);
+        const purposeFilteredOffers = activeOffers.filter(offer => {
+            const type = offer.loan_type;
+            switch (loanPurpose) {
+                case 'ทั้งหมด': return true; 
+                case 'ซื้อใหม่': return type === 'ทั่วไป' || type === 'โครงการพิเศษ' || !type;
+                case 'รีไฟแนนซ์': return type === 'รีไฟแนนซ์' || type === 'ทั่วไป';
+                case 'นโยบายรัฐ': return type === 'สวัสดิการ' || type === 'โครงการพิเศษ';
+                default: return true;
+            }
+        });
 
-        let eligibilityNote = '';
-        let loanAmountToCalculate = requestedLoanAmount;
-        if (requestedLoanAmount > finalMaxPossibleLoan) {
-            loanAmountToCalculate = finalMaxPossibleLoan;
-            eligibilityNote += `<p style="color: #856404;"><strong>ข้อควรระวัง:</strong> วงเงินที่ต้องการสูงเกินไป โปรแกรมจึงคำนวณจากวงเงินสูงสุดที่เป็นไปได้</p>`;
-        }
-        const maxRepaymentAge = (profession === 'business' || profession === 'government') ? offer.max_age_business : offer.max_age_salaried;
-        const tenureByAge = maxRepaymentAge - userAge;
-        let finalLoanTerm;
-        if (requestedLoanTerm > 0) { finalLoanTerm = Math.min(requestedLoanTerm, offer.max_loan_tenure, tenureByAge); } 
-        else { finalLoanTerm = Math.min(offer.max_loan_tenure, tenureByAge); }
-        if (finalLoanTerm <= 0) return;
-        const avgInterest3yr = (rate1 + rate2 + rate3) / 3;
+        currentResults = [];
+        purposeFilteredOffers.forEach(offer => {
+            let isMRTAApplied = false;
+            let rate1 = offer.interest_rate_yr1;
+            let rate2 = offer.interest_rate_yr2;
+            let rate3 = offer.interest_rate_yr3;
+            let rateAfterValue;
+            if (customerType === 'welfare') { rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_welfare : offer.interest_rate_after_value_welfare; } 
+            else { rateAfterValue = userWantsMRTA && offer.has_mrta_option ? offer.interest_rate_after_value_mrta_retail : offer.interest_rate_after_value_retail; }
+            if (userWantsMRTA && offer.has_mrta_option && offer.interest_rate_yr1_mrta !== null) {
+                isMRTAApplied = true;
+                rate1 = offer.interest_rate_yr1_mrta;
+                rate2 = offer.interest_rate_yr2_mrta;
+                rate3 = offer.interest_rate_yr3_mrta;
+            }
+            if (rate1 === null || rate2 === null || rate3 === null) return;
+            const rateAfter = `MRR - ${Number(rateAfterValue || 0).toFixed(2)}%`;
+            const dsrValue = (offer.dsr_limit || 40) / 100;
+            const maxAffordablePayment = (monthlyIncome * dsrValue) - monthlyDebt;
+            if (maxAffordablePayment <= 0) return;
+            const maxLoanByDSR = maxAffordablePayment * 150; 
+            let maxLoanByIncome = Infinity;
+            if (offer.income_per_million > 0) {
+                const netIncomeAfterExpenses = monthlyIncome - (offer.min_living_expense || 0) - monthlyDebt;
+                if (netIncomeAfterExpenses > 0) { maxLoanByIncome = (netIncomeAfterExpenses / offer.income_per_million) * 1000000; }
+            }
+            const finalMaxPossibleLoan = Math.min(maxLoanByDSR, maxLoanByIncome);
+            let eligibilityNote = '';
+            let loanAmountToCalculate = requestedLoanAmount;
+            if (requestedLoanAmount > finalMaxPossibleLoan) {
+                loanAmountToCalculate = finalMaxPossibleLoan;
+                eligibilityNote += `<p style="color: #856404;"><strong>ข้อควรระวัง:</strong> วงเงินที่ต้องการสูงเกินไป โปรแกรมจึงคำนวณจากวงเงินสูงสุดที่เป็นไปได้</p>`;
+            }
+            const maxRepaymentAge = (profession === 'business' || profession === 'government') ? offer.max_age_business : offer.max_age_salaried;
+            const tenureByAge = maxRepaymentAge - userAge;
+            let finalLoanTerm;
+            if (requestedLoanTerm > 0) { finalLoanTerm = Math.min(requestedLoanTerm, offer.max_loan_tenure, tenureByAge); } 
+            else { finalLoanTerm = Math.min(offer.max_loan_tenure, tenureByAge); }
+            if (finalLoanTerm <= 0) return;
+            const avgInterest3yr = (rate1 + rate2 + rate3) / 3;
+            currentResults.push({ ...offer, finalLoanTerm, avgInterest3yr, loanAmountToCalculate, eligibilityNote, finalMaxPossibleLoan, isMRTAApplied, rate1, rate2, rate3, rateAfter, maxLoanByDSR, maxLoanByIncome });
+        });
 
-        // CHANGED: ส่งค่าที่คำนวณทั้ง 2 แบบเข้าไปใน object ด้วย
-        currentResults.push({ ...offer, finalLoanTerm, avgInterest3yr, loanAmountToCalculate, eligibilityNote, finalMaxPossibleLoan, isMRTAApplied, rate1, rate2, rate3, rateAfter, maxLoanByDSR, maxLoanByIncome });
-    });
-    sortAndRenderResults();
+        sortAndRenderResults();
+
+        loadingSpinner.style.display = 'none';
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
 }
 
 function sortAndRenderResults() {
@@ -249,6 +310,20 @@ resultsContainer.addEventListener('click', function(event) {
         printWindow.focus();
         setTimeout(() => { printWindow.print(); }, 500);
     }
+});
+const formElements = Array.from(document.querySelectorAll('.user-info-container input, .user-info-container select, .input-group input'));
+formElements.forEach((element, index) => {
+    element.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const nextElement = formElements[index + 1];
+            if (nextElement) {
+                nextElement.focus();
+            } else {
+                compareBtn.click();
+            }
+        }
+    });
 });
 
 fetchAndDisplayInitialData();
