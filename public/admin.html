@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผงควบคุมโปรโมชันสินเชื่อ</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#34495e">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <div id="gate" class="view container active">
+        <h2>เข้าสู่ระบบผู้ดูแล</h2>
+        <form id="login-form" autocomplete="on">
+            <div class="form-group full-width"><label for="email">อีเมล</label><input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="username"></div>
+            <div class="form-group full-width"><label for="password">รหัสผ่าน</label><input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password"></div>
+            <div class="form-actions"><button type="submit" id="login-btn" class="btn-primary">เข้าสู่ระบบ</button></div>
+        </form>
+    </div>
+
+    <div id="app" class="view container">
+        <header>
+            <h1>จัดการโปรโมชันสินเชื่อบ้าน</h1>
+            <button id="logout-btn" class="btn-secondary">ออกจากระบบ</button>
+        </header>
+
+        <form id="promotion-form">
+            <h2 class="full-width">เพิ่ม/แก้ไขโปรโมชัน</h2>
+            <fieldset>
+                <legend>ข้อมูลโปรโมชันหลัก</legend>
+                <div class="sub-grid">
+                    <div class="form-group"><label for="bank_id">ธนาคาร</label><select id="bank_id" name="bank_id" required></select></div>
+                    <div class="form-group"><label for="promotion_name">ชื่อโปรโมชัน</label><input type="text" id="promotion_name" name="promotion_name" required placeholder="เช่น สินเชื่อบ้านใหม่ ดอกเบี้ยพิเศษ"></div>
+                    <div class="form-group"><label for="loan_type">ประเภทสินเชื่อ</label><select id="loan_type" name="loan_type" required><option value="ทั่วไป">ทั่วไป</option><option value="สวัสดิการ">สวัสดิการ</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="โครงการพิเศษ">โครงการพิเศษ</option></select></div>
+                    <div class="form-group"><label for="start_date">วันที่เริ่ม</label><input type="date" id="start_date" name="start_date"></div>
+                    <div class="form-group"><label for="end_date">วันที่สิ้นสุด</label><input type="date" id="end_date" name="end_date"></div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>โครงสร้างอัตราดอกเบี้ย</legend>
+                <div id="interest-rates-container"></div>
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <button type="button" id="add-rate-year-btn" class="btn-secondary">เพิ่มปีดอกเบี้ย (+)</button>
+                    <span style="font-size: 0.9em; color: var(--dark-gray);">*ดอกเบี้ยปีสุดท้ายคืออัตราตลอดอายุสัญญา</span>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>เงื่อนไขการเงิน</legend>
+                <div class="sub-grid">
+                    <div class="form-group"><label for="max_ltv">Max LTV (%)</label><input type="number" id="max_ltv" name="max_ltv" placeholder="เช่น 100"></div>
+                    <div class="form-group"><label for="ltv_range_text">LTV (ข้อความ)</label><input type="text" id="ltv_range_text" name="ltv_range_text" placeholder="เช่น 95% - 100%"></div>
+                    <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" name="dsr_limit" placeholder="เช่น 70"></div>
+                    <div class="form-group"><label for="income_per_million">รายได้ต่อกู้ 1 ลบ./ด.</label><input type="number" id="income_per_million" name="income_per_million" placeholder="เช่น 15000"></div>
+                    <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ/ด.</label><input type="number" id="min_living_expense" name="min_living_expense" placeholder="เช่น 12000"></div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>เงื่อนไขการพิจารณา (Underwriting)</legend>
+                <div class="sub-grid">
+                    <div class="form-group"><label for="max_income">รายได้สูงสุดผู้กู้ (บาท/เดือน)</label><input type="number" id="max_income" name="max_income" placeholder="เช่น 35000"></div>
+                    <div class="form-group"><label for="max_loan_amount">วงเงินกู้สูงสุด (บาท)</label><input type="number" id="max_loan_amount" name="max_loan_amount" placeholder="เช่น 3000000"></div>
+                    <div class="form-group"><label for="payslip_months_required">สลิปที่ต้องใช้ (เดือน)</label><input type="number" id="payslip_months_required" name="payslip_months_required" placeholder="เช่น 3 หรือ 6"></div>
+                    <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" name="max_loan_tenure" placeholder="เช่น 30"></div>
+                    <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สูงสุด (พนักงาน)</label><input type="number" id="max_age_salaried" name="max_age_salaried" placeholder="เช่น 60"></div>
+                    <div class="form-group"><label for="max_age_business">อายุผู้กู้สูงสุด (ธุรกิจ)</label><input type="number" id="max_age_business" name="max_age_business" placeholder="เช่น 65"></div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>กฎการคำนวณรายได้อื่นๆ</legend>
+                <div class="sub-grid">
+                    <div class="form-group"><label for="other_income_calc_months">เดือนที่ใช้เฉลี่ยรายได้อื่น</label><input type="number" id="other_income_calc_months" name="other_income_calc_months" placeholder="เช่น 3 หรือ 6"></div>
+                    <div class="form-group"><label for="other_income_factor">สัดส่วนที่นำมาคิด (0-1)</label><input type="number" step="0.01" id="other_income_factor" name="other_income_factor" placeholder="เช่น 0.33 สำหรับ 1/3"></div>
+                    <div class="form-group form-group--checkbox" style="align-self: end;"><input type="checkbox" id="other_income_continuity_required" name="other_income_continuity_required"><label for="other_income_continuity_required">รายได้อื่นต้องต่อเนื่อง</label></div>
+                </div>
+            </fieldset>
+
+            <div class="form-group form-group--checkbox full-width"><input type="checkbox" id="waive_mortgage_fee" name="waive_mortgage_fee"><label for="waive_mortgage_fee">ยกเว้นค่าจดจำนอง</label></div>
+            <div class="form-group form-group--checkbox full-width"><input type="checkbox" id="has_mrta_option" name="has_mrta_option"><label for="has_mrta_option">มีตัวเลือก MRTA</label></div>
+            
+            <div class="form-group full-width"><label for="notes">หมายเหตุ</label><input type="text" id="notes" name="notes" placeholder="เงื่อนไขเพิ่มเติม"></div>
+            
+            <div class="form-actions full-width">
+                <button type="submit" id="save-btn" class="btn-primary">บันทึกโปรโมชัน</button>
+                <button type="button" id="clear-btn" class="btn-secondary">ล้างฟอร์ม</button>
+            </div>
+        </form>
+
+        <hr style="margin: 40px 0;">
+        <div class="table-controls">
+            <div class="form-group"><label for="search-input">ค้นหา</label><input type="search" id="search-input" placeholder="ค้นหาโปรโมชันหรือธนาคาร..."></div>
+        </div>
+        <div class="table-wrapper">
+            <table id="promotions-table">
+                <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปี (%)</th><th>จัดการ</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="toast"></div>
+
+    <div id="confirm-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <p id="modal-text">คุณแน่ใจหรือไม่?</p>
+            <div class="modal-actions">
+                <button id="modal-cancel-btn" class="btn-secondary">ยกเลิก</button>
+                <button id="modal-confirm-btn" class="btn-danger">ยืนยันลบ</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="supabase-client.js"></script>
+    <script type="module" src="admin.js"></script>
+    <script type="module" src="session-guard.js"></script>
+</body>
+</html>
