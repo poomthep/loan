@@ -2,5 +2,7 @@
   "name": "loan-project",
   "private": true,
   "type": "module",
-  "scripts": {}
+  "scripts": {
+    "build": "node -e \"process.exit(0)\""
+  }
 }
