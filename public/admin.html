@@ -23,7 +23,12 @@
         <header>
             <h1>จัดการโปรโมชันสินเชื่อบ้าน</h1>
             <button id="logout-btn" class="btn-secondary">ออกจากระบบ</button>
-        </header>
+        
+            <nav class="admin-nav">
+              <button id="nav-promotions-btn" class="btn-secondary">โปรโมชัน</button>
+              <button id="nav-rates-btn" class="btn-secondary">อัตรามาตรฐาน</button>
+            </nav>
+            </header>
 
         <form id="promotion-form">
             <h2 class="full-width">เพิ่ม/แก้ไขโปรโมชัน</h2>
@@ -104,7 +109,57 @@
     
     <div id="toast"></div>
 
-    <div id="confirm-modal" class="modal-backdrop">
+    
+    <!-- ===== Base Rates Panel (MRR/MLR/MOR) ===== -->
+    <section id="rates-panel" class="container card" style="display:none; margin-top:16px;">
+      <h2>อัตรามาตรฐานรายธนาคาร (MRR / MLR / MOR)</h2>
+      <p class="muted">จัดเก็บประวัติรายวันใน <code>base_rates</code> และอัปเดตค่า <code>banks.current_*</code> ด้วยปุ่ม "ใช้ค่าล่าสุด"</p>
+
+      <div class="toolbar" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <label>ธนาคาร</label>
+        <select id="rates-bank-select"></select>
+
+        <label>ชนิด</label>
+        <select id="rates-type-select">
+          <option value="MRR">MRR</option>
+          <option value="MLR">MLR</option>
+          <option value="MOR">MOR</option>
+        </select>
+
+        <label>อัตรา (%)</label>
+        <input id="rates-value" type="number" step="0.001" placeholder="8.100" style="width:110px;">
+
+        <label>วันที่มีผล</label>
+        <input id="rates-date" type="date">
+
+        <input id="rates-source" type="url" placeholder="แหล่งข้อมูล (URL)" style="min-width:260px;">
+        <button id="rates-add-btn" class="btn-primary">เพิ่มรายการ</button>
+
+        <span class="muted">|</span>
+        <button id="apply-latest-one" class="btn-secondary">ใช้ค่าล่าสุด (ธนาคารนี้)</button>
+        <button id="apply-latest-all" class="btn-secondary">ใช้ค่าล่าสุด (ทั้งหมด)</button>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <table class="table" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left;">วันที่มีผล</th>
+              <th>ชนิด</th>
+              <th class="num">อัตรา (%)</th>
+              <th>ที่มา</th>
+            </tr>
+          </thead>
+          <tbody id="rates-history-rows"></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:10px; padding:10px;">
+        <div id="latest-summary" class="muted"></div>
+      </div>
+    </section>
+
+<div id="confirm-modal" class="modal-backdrop">
         <div class="modal-content">
             <p id="modal-text">คุณแน่ใจหรือไม่?</p>
             <div class="modal-actions">
@@ -116,6 +171,31 @@
 
     <script type="module" src="supabase-client.js"></script>
     <script type="module" src="admin.js"></script>
+    <script type="module" src="admin-rates.js"></script>
     <script type="module" src="session-guard.js"></script>
+
+    <script>
+      (function(){
+        const ratesPanel = document.getElementById('rates-panel');
+        const appMain = document.getElementById('app');
+        const promosSection = document.getElementById('promotion-form')?.closest('section') || appMain.querySelector('section');
+        function showPromos(){
+          if (promosSection) promosSection.style.display = '';
+          if (ratesPanel) ratesPanel.style.display = 'none';
+          document.getElementById('nav-promotions-btn')?.classList.add('active');
+          document.getElementById('nav-rates-btn')?.classList.remove('active');
+        }
+        function showRates(){
+          if (promosSection) promosSection.style.display = 'none';
+          if (ratesPanel) ratesPanel.style.display = '';
+          document.getElementById('nav-promotions-btn')?.classList.remove('active');
+          document.getElementById('nav-rates-btn')?.classList.add('active');
+        }
+        window.toggleRatesPanel = { showPromos, showRates };
+        document.getElementById('nav-promotions-btn')?.addEventListener('click', showPromos);
+        document.getElementById('nav-rates-btn')?.addEventListener('click', showRates);
+      })();
+    </script>
+
 </body>
 </html>
