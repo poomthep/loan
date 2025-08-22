@@ -13,6 +13,25 @@
 
     <h1>เครื่องมือวิเคราะห์สินเชื่อบ้าน 🏡</h1>
 
+    <!-- Base+Spread Controls (MRR/MLR/MOR) -->
+    <fieldset class="print-hide" style="margin:12px 0; padding:12px;">
+      <legend>โหมดอัตรามาตรฐาน</legend>
+      <label class="inline" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="use_base_rate">
+        <span>ใช้อัตรามาตรฐาน (MRR/MLR/MOR) + สเปรด</span>
+      </label>
+      <div id="base-rate-row" style="display:none; gap:8px; align-items:center; margin-top:8px;">
+        <label for="base_rate_type">ชนิดอัตรา:</label>
+        <select id="base_rate_type">
+          <option value="MRR">MRR</option>
+          <option value="MLR">MLR</option>
+          <option value="MOR">MOR</option>
+        </select>
+        <span class="muted" id="base_rate_hint">* จะบวกกับสเปรดในโปรโมชันของแต่ละธนาคาร</span>
+      </div>
+    </fieldset>
+
+
     <div class="user-info-container">
         <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
         <div class="input-grid">

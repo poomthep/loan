@@ -13,13 +13,53 @@ function collectUserInputs() {
     return { loanAmount, loanTermYears };
 }
 
+
+// === Base+Spread (MRR/MLR/MOR) helpers ===
+function getBaseToggle() {
+  const useBase = document.getElementById('use_base_rate')?.checked ?? false;
+  const baseType = document.getElementById('base_rate_type')?.value || 'MRR';
+  return { useBase, baseType };
+}
+
+function getBaseFromBankObj(bankObj, baseType) {
+  if (!bankObj) return null;
+  const map = {
+    MRR: bankObj.current_mrr,
+    MLR: bankObj.current_mlr,
+    MOR: bankObj.current_mor,
+  };
+  const v = Number(map[baseType]);
+  return Number.isFinite(v) ? v : null;
+}
+
+function setupBaseUI() {
+  const useBaseEl = document.getElementById('use_base_rate');
+  const row = document.getElementById('base-rate-row');
+  if (!useBaseEl || !row) return;
+  const sync = () => { row.style.display = useBaseEl.checked ? 'flex' : 'none'; };
+  useBaseEl.addEventListener('change', sync);
+  sync();
+}
+
 function analyzeOffers(list, loanAmount, years) {
+    const { useBase, baseType } = getBaseToggle();
     const months = Math.max(12, Math.round((years ?? 30) * 12));
     const out = [];
     for (const o of list) {
         const first3 = calc.parseFirst3Numeric(o.interest_rates);
         if (!first3.length) continue;
-        const avgInterest3yr = calc.average(first3);
+        let avgInterest3yr;
+        if (useBase) {
+            const base = getBaseFromBankObj(o.banks, baseType);
+            if (base !== null) {
+                const effective = first3.map(s => base + Number(s));
+                avgInterest3yr = calc.average(effective);
+            } else {
+                avgInterest3yr = calc.average(first3);
+            }
+        } else {
+            avgInterest3yr = calc.average(first3);
+        }
         const estMonthly = calc.pmt(loanAmount, avgInterest3yr, months);
         out.push({ ...o, avgInterest3yr, estMonthly });
     }
@@ -103,6 +143,7 @@ function selfTests() {
 }
 
 function boot() {
+    setupBaseUI();
     attachEvents();
     selfTests();
     // If we have cache and the page just loaded while offline, render it for better UX

@@ -64,3 +64,5 @@ function buildAmortization(P, annualPct, years, maxRows = 24) {
 }
 
 export const calc = { pmt, parseFirst3Numeric, average, buildAmortization };
+
+export { pmt };

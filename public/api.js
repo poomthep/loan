@@ -5,15 +5,20 @@ let client = null;
 
 async function getClient() {
     if (client) return client;
-    // ใช้ dynamic import เพื่อให้ Supabase client โหลดเมื่อจำเป็นเท่านั้น
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
     client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return client;
 }
 
+/**
+ * ดึงรายการโปรโมชัน พร้อมข้อมูลธนาคาร (รวมอัตรามาตรฐานปัจจุบัน)
+ */
 async function fetchPromotions() {
     const sb = await getClient();
-    return sb.from('promotions').select('*, banks(name)').order('created_at', { ascending: false });
+    return sb
+      .from('promotions')
+      .select('*, bank_id, banks(name, current_mrr, current_mlr, current_mor)')
+      .order('created_at', { ascending: false });
 }
 
 export const api = { fetchPromotions };
