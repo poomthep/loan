@@ -1,12 +1,11 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join } from 'path';
 
-// This script runs during the Vercel build
 const url = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_ANON_KEY;
 
 if (!url || !key) {
-  console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY');
+  console.error('Missing Supabase environment variables');
   process.exit(1);
 }
 
@@ -17,5 +16,4 @@ const configContent = `
 
 const outputPath = join(process.cwd(), 'public', 'config.js');
 writeFileSync(outputPath, configContent, 'utf8');
-
-console.log('Successfully created config.js in public directory.');
+console.log('Successfully created config.js');
