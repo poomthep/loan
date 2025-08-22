@@ -1,14 +1,64 @@
-// admin-rates.js — base_rates history + apply-latest to banks.current_*
+\
+// admin-rates.js — clean UI + base_rates history + "apply latest"
+// This file now also handles tab toggling and CSS injection so the "อัตรามาตรฐาน" tab is clean.
 import { supabase } from './supabase-client.js';
 
+// --- CSS injection to hide unrelated sections when rates tab is active ---
+(function injectStyles(){
+  const css = `
+    /* Hide all top-level containers when viewing rates, except the #rates-panel */
+    #app.show-rates .container:not(#rates-panel),
+    #app.show-rates section:not(#rates-panel) {
+      display: none !important;
+    }
+    /* Always hide rates-panel in promotions mode */
+    #app.show-promotions #rates-panel {
+      display: none !important;
+    }
+    /* Active tab styling (optional, adjust to your theme) */
+    .admin-nav button.active {
+      outline: 2px solid #4067d8;
+      background: rgba(64,103,216,.15);
+    }
+  `;
+  const style = document.createElement('style');
+  style.setAttribute('data-admin-rates-css','true');
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
+
+// --- Utilities ---
 const el = (id) => document.getElementById(id);
 const N = (v) => (v === '' || v === null || isNaN(parseFloat(v))) ? null : Number(parseFloat(v).toFixed(3));
+const fmtRate = (n) => (n==null || isNaN(n)) ? '-' : Number(n).toFixed(3);
+const fmtDate = (d) => { if (!d) return '-'; try { return new Date(d).toISOString().slice(0,10);} catch { return d; } };
 
+// --- Tab toggle (clean) ---
+function showPromotions(){
+  const app = el('app');
+  if (!app) return;
+  app.classList.add('show-promotions');
+  app.classList.remove('show-rates');
+  el('nav-promotions-btn')?.classList.add('active');
+  el('nav-rates-btn')?.classList.remove('active');
+}
+
+function showRates(){
+  const app = el('app');
+  if (!app) return;
+  app.classList.add('show-rates');
+  app.classList.remove('show-promotions');
+  el('nav-promotions-btn')?.classList.remove('active');
+  el('nav-rates-btn')?.classList.add('active');
+  // Ensure our panel is visible
+  const panel = el('rates-panel');
+  if (panel) panel.style.display = '';
+}
+
+// --- Data state ---
 const state = { banks: [], history: [] };
 
-function fmtRate(n){ return (n==null || isNaN(n)) ? '-' : Number(n).toFixed(3); }
-function fmtDate(d){ if (!d) return '-'; try { return new Date(d).toISOString().slice(0,10);} catch { return d; } }
-
+// --- Data ops ---
 async function fetchBanks(){
   const { data, error } = await supabase.from('banks')
     .select('id, name, current_mrr, current_mlr, current_mor, base_updated_at')
@@ -30,6 +80,7 @@ async function fetchHistory(bankId){
   renderLatestSummary(bankId);
 }
 
+// --- Rendering ---
 function latestByType(){
   const latest = { MRR: null, MLR: null, MOR: null };
   for (const t of ['MRR','MLR','MOR']) latest[t] = state.history.find(r => r.rate_type === t) || null;
@@ -63,6 +114,7 @@ function renderLatestSummary(bankId){
   elSum.textContent = `ล่าสุดจาก base_rates → ${parts.join(' | ')} ${cur}`;
 }
 
+// --- Actions ---
 async function addHistory(){
   const bankId = Number(el('rates-bank-select').value);
   const type = el('rates-type-select').value;
@@ -103,7 +155,7 @@ async function applyLatestAll(){
       .order('effective_from', { ascending: false });
     if (error) { console.error(error); continue; }
     const hist = data || [];
-    const pick = (t) => { const row = hist.find(r => r.rate_type === t); return row ? row.rate : null; };
+    const pick = (t) => { const row = hist.find(r => r.rate_type === t); return row ? r.rate : null; };
     const patch = {
       current_mrr: pick('MRR'),
       current_mlr: pick('MLR'),
@@ -118,22 +170,30 @@ async function applyLatestAll(){
   renderLatestSummary(curId);
 }
 
+// --- Boot ---
 function attachEvents(){
   el('rates-add-btn')?.addEventListener('click', addHistory);
   el('apply-latest-one')?.addEventListener('click', applyLatestOne);
   el('apply-latest-all')?.addEventListener('click', applyLatestAll);
   el('rates-bank-select')?.addEventListener('change', (e)=> fetchHistory(Number(e.target.value)));
+
+  // Tab buttons
+  el('nav-promotions-btn')?.addEventListener('click', showPromotions);
+  el('nav-rates-btn')?.addEventListener('click', async () => {
+    showRates();
+    // Boot data after first open
+    if (!state.banks.length) {
+      const today = new Date().toISOString().slice(0,10);
+      if (el('rates-date')) el('rates-date').value = today;
+      await fetchBanks();
+      const sel = el('rates-bank-select');
+      if (sel && sel.options.length) { sel.value = sel.options[0].value; await fetchHistory(Number(sel.value)); }
+    }
+  }, { once: true });
 }
 
-async function bootRates(){
-  const today = new Date().toISOString().slice(0,10);
-  if (el('rates-date')) el('rates-date').value = today;
-  await fetchBanks();
-  const sel = el('rates-bank-select');
-  if (sel && sel.options.length) { sel.value = sel.options[0].value; await fetchHistory(Number(sel.value)); }
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', () => {
   attachEvents();
-  document.getElementById('nav-rates-btn')?.addEventListener('click', () => { bootRates(); }, { once: true });
+  // Default to promotions view (clean)
+  showPromotions();
 });
