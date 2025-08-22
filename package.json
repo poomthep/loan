@@ -2,6 +2,7 @@
   "name": "loan-project",
   "private": true,
   "type": "module",
-  "scripts": {},
-  "devDependencies": {}
+  "scripts": {
+    "build": "node vercel-build.js"
+  }
 }
