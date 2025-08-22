@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node inject-env.js",
-    "vercel-build": "node inject-env.js"
+    "vercel-build": "node inject-env.js && ls -la"
   },
   "devDependencies": {}
 }
