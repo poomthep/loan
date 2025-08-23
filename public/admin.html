@@ -4,16 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>โปรโมชันสินเชื่อ (Admin)</title>
-  <link rel="stylesheet" href="/admin-mobile.css?v=4">
+  <link rel="stylesheet" href="/admin-mobile.css?v=5">
   <style>
     :root{--bg:#0b1020;--card:#121a2f;--text:#e7eefc;--muted:#9fb1d1;--line:#1f2a44;--btn:#1b2745;--btn2:#1d3a6a}
     *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
     body{margin:0;background:var(--bg);color:var(--text)}
     header{position:sticky;top:0;z-index:10;background:#0b1020;border-bottom:1px solid var(--line)}
     .wrap{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center}
-    .brand{font-size:18px;margin:0}
-    .spacer{flex:1}
-    .nav{display:flex;gap:8px;flex-wrap:wrap}
+    .brand{font-size:18px;margin:0;flex:1}
+    .nav{display:none;gap:8px;flex-wrap:wrap}              /* hidden by default */
+    #logout-btn{display:none}                              /* hidden by default */
+    .authed .nav{display:flex}                            /* show after login */
+    .authed #logout-btn{display:inline-flex}
     .nav a{background:var(--btn);border:1px solid #2b3961;border-radius:10px;color:var(--text);padding:8px 12px;text-decoration:none}
     .nav a.active{background:var(--btn2);border-color:#2d58a2}
     .btn{background:#1d3a6a;border:1px solid #2d58a2;border-radius:10px;color:#fff;padding:8px 12px;cursor:pointer}
@@ -24,7 +26,7 @@
     input, select, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3961;background:#0f1933;color:var(--text)}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid #1a2340;padding:10px;text-align:left}
-    @media(max-width:720px){ .grid{grid-template-columns:1fr} .nav{flex:1} .wrap{flex-wrap:wrap} }
+    @media(max-width:720px){ .grid{grid-template-columns:1fr} .wrap{flex-wrap:wrap} }
     /* Views */
     #gate, #app{display:none} #gate.active, #app.active{display:block}
     /* Toast */
@@ -40,11 +42,10 @@
   <header>
     <div class="wrap">
       <h1 class="brand">โปรโมชันสินเชื่อ (Admin)</h1>
-      <nav class="nav">
+      <nav class="nav" id="main-nav">
         <a href="/admin.html" class="active">โปรโมชัน</a>
         <a href="/admin_rates.html">อัตรามาตรฐาน</a>
       </nav>
-      <span class="spacer"></span>
       <button id="logout-btn" class="btn">ออกจากระบบ</button>
     </div>
   </header>
@@ -56,7 +57,7 @@
       <form id="login-form" class="grid">
         <div style="grid-column:1/-1">
           <label>อีเมล</label>
-          <input name="email" type="email" placeholder="name@example.com" required>
+          <input name="email" type="email" placeholder="name@example.com" required autocomplete="username">
         </div>
         <div style="grid-column:1/-1">
           <label>รหัสผ่าน</label>
@@ -108,7 +109,7 @@
     </div>
   </div>
 
-  <script type="module" src="/form-utils.js?v=4"></script>
-  <script type="module" src="/admin.js?v=patched-2"></script>
+  <script type="module" src="/form-utils.js?v=5"></script>
+  <script type="module" src="/admin.js?v=navhide"></script>
 </body>
 </html>

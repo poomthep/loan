@@ -4,16 +4,18 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>อัตรามาตรฐานรายธนาคาร (MRR / MLR / MOR)</title>
-  <link rel="stylesheet" href="/admin-mobile.css?v=4"/>
+  <link rel="stylesheet" href="/admin-mobile.css?v=5"/>
   <style>
     :root{--bg:#0b1020;--card:#121a2f;--text:#e7eefc;--muted:#9fb1d1;--line:#1f2a44;--btn:#1b2745;--btn2:#1d3a6a}
     *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
     body{margin:0;background:var(--bg);color:var(--text)}
     header{position:sticky;top:0;z-index:10;background:#0b1020;border-bottom:1px solid var(--line)}
     .wrap{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center}
-    .brand{font-size:18px;margin:0}
-    .spacer{flex:1}
-    .nav{display:flex;gap:8px;flex-wrap:wrap}
+    .brand{font-size:18px;margin:0;flex:1}
+    .nav{display:none;gap:8px;flex-wrap:wrap}
+    #logout-btn{display:none}
+    .authed .nav{display:flex}
+    .authed #logout-btn{display:inline-flex}
     .nav a{background:var(--btn);border:1px solid #2b3961;border-radius:10px;color:var(--text);padding:8px 12px;text-decoration:none}
     .nav a.active{background:var(--btn2);border-color:#2d58a2}
     .btn{background:#1d3a6a;border:1px solid #2d58a2;border-radius:10px;color:#fff;padding:8px 12px;cursor:pointer}
@@ -37,7 +39,6 @@
         <a href="/admin.html" title="โปรโมชัน">โปรโมชัน</a>
         <a href="/admin_rates.html" class="active" title="อัตรามาตรฐาน">อัตรามาตรฐาน</a>
       </nav>
-      <span class="spacer"></span>
       <button id="logout-btn" class="btn">ออกจากระบบ</button>
     </div>
   </header>
@@ -68,13 +69,19 @@
     </section>
   </main>
 
-  <script type="module" src="/session-guard-lite.js?v=4"></script>
-  <script type="module" src="/form-utils.js?v=4"></script>
+  <script type="module" src="/session-guard-lite.js?v=5"></script>
+  <script type="module" src="/form-utils.js?v=5"></script>
   <script type="module">
     import { supabase } from './supabase-client.js';
+    const set = (s)=> document.body.classList.toggle('authed', !!s);
+    (async ()=>{
+      const { data: { session } } = await supabase.auth.getSession();
+      set(session);
+    })();
+    supabase.auth.onAuthStateChange((_e, session)=> set(session));
     const btn = document.getElementById('logout-btn');
     if (btn) btn.addEventListener('click', () => supabase.auth.signOut());
   </script>
-  <script type="module" src="/admin-rates.js?v=navfix"></script>
+  <script type="module" src="/admin-rates.js?v=navhide"></script>
 </body>
 </html>
