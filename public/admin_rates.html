@@ -4,71 +4,42 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>อัตรามาตรฐานรายธนาคาร (MRR / MLR / MOR)</title>
-  
-  <link rel="stylesheet" href="/admin-mobile.css?v=6">
-  <style>
-    :root{--bg:#0b1020;--card:#121a2f;--text:#e7eefc;--muted:#9fb1d1;--line:#1f2a44;--btn:#1b2745;--btn2:#1d3a6a}
-    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
-    body{margin:0;background:var(--bg);color:var(--text)}
-    /* Stable header (no jumping, no wrapping) */
-    header{position:sticky;top:0;z-index:10;background:#0b1020;border-bottom:1px solid var(--line)}
-    .wrap{max-width:1100px;margin:0 auto;padding:10px 16px;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;min-height:56px}
-    .brand{margin:0;font-size:clamp(14px,2vw,18px);white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
-    .nav{display:flex;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-    .nav::-webkit-scrollbar{display:none}
-    .nav a{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;background:var(--btn);border:1px solid #2b3961;border-radius:10px;color:var(--text);text-decoration:none}
-    .nav a.active{background:var(--btn2);border-color:#2d58a2}
-    #logout-btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;background:#1d3a6a;border:1px solid #2d58a2;border-radius:10px;color:#fff;padding:0 12px;cursor:pointer}
-    main{max-width:1100px;margin:0 auto;padding:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3961;background:#0f1933;color:var(--text)}
-    @media(max-width:720px){ .grid{grid-template-columns:1fr} }
-    /* Gate/App views (for admin.html) */
-    #gate,#app{display:none} #gate.active,#app.active{display:block}
-    /* Toast */
-    #toast{position:fixed;right:16px;bottom:16px;background:#203153;border:1px solid #2d58a2;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(6px);transition:.2s}
-    #toast.show{opacity:1;transform:translateY(0)} #toast.error{background:#4a2030;border-color:#a43d4b}
-  </style>
-
-  <style>
-    /* Show nav only when authed on this page too */
-    .nav, #logout-btn { display:none }
-    body.authed .nav, body.authed #logout-btn { display:inline-flex }
-  </style>
+  <link rel="stylesheet" href="/admin-ui.css?v=1"/>
 </head>
 <body>
   <header>
-    <div class="wrap">
-      <!-- keep as a single line even on small screens -->
+    <div class="header-wrap">
       <h1 class="brand">อัตรามาตรฐานรายธนาคาร</h1>
       <nav class="nav">
         <a href="/admin.html">โปรโมชัน</a>
         <a href="/admin_rates.html" class="active">อัตรามาตรฐาน</a>
       </nav>
-      <button id="logout-btn">ออกจากระบบ</button>
+      <div class="logout-slot">
+        <button id="logout-btn" class="btn btn-primary btn-sm">ออกจากระบบ</button>
+      </div>
     </div>
   </header>
 
-  <main>
+  <main class="container">
     <section class="card" style="margin-bottom:12px">
-      <div class="grid" style="grid-template-columns:repeat(6, minmax(0,1fr));gap:10px">
-        <div><label>ธนาคาร</label><select id="rates-bank-select"></select></div>
-        <div><label>ชนิด</label><select id="rates-type-select"><option value="MRR">MRR</option><option value="MLR">MLR</option><option value="MOR">MOR</option></select></div>
-        <div><label>อัตรา (%)</label><input id="rates-value" type="text" inputmode="decimal" enterkeyhint="next" placeholder="8.100"></div>
-        <div><label>วันที่มีผล</label><input id="rates-date" type="date" enterkeyhint="next"></div>
-        <div><label>แหล่งข้อมูล (URL)</label><input id="rates-source" type="url" placeholder="https://..."></div>
-        <div style="display:flex;align-items:end"><a id="rates-add-btn" class="nav-btn" role="button" title="เพิ่มรายการ">เพิ่มรายการ</a></div>
+      <h2 class="section-title">จัดการค่ามาตรฐาน</h2>
+      <div class="form-grid" style="grid-template-columns:repeat(6,minmax(0,1fr))">
+        <div class="field"><label>ธนาคาร</label><select class="input" id="rates-bank-select"></select></div>
+        <div class="field"><label>ชนิด</label><select class="input" id="rates-type-select"><option value="MRR">MRR</option><option value="MLR">MLR</option><option value="MOR">MOR</option></select></div>
+        <div class="field"><label>อัตรา (%)</label><input class="input" id="rates-value" type="text" inputmode="decimal" enterkeyhint="next" placeholder="8.100"></div>
+        <div class="field"><label>วันที่มีผล</label><input class="input" id="rates-date" type="date" enterkeyhint="next"></div>
+        <div class="field"><label>แหล่งข้อมูล (URL)</label><input class="input" id="rates-source" type="url" placeholder="https://..."></div>
+        <div class="field" style="display:flex;align-items:end"><button id="rates-add-btn" class="btn btn-primary" title="เพิ่มรายการ">เพิ่มรายการ</button></div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="apply-latest-one" class="btn btn-secondary">ใช้ค่าล่าสุด (ธนาคารนี้)</button>
+        <button id="apply-latest-all" class="btn">ใช้ค่าล่าสุด (ทั้งหมด)</button>
       </div>
       <p class="muted" style="margin-top:8px">บันทึกประวัติลงตาราง <code>base_rates</code> และสามารถดึง “ค่าล่าสุด” ไปอัปเดต <code>banks.current_*</code> ได้</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <a id="apply-latest-one" class="nav-btn" role="button">ใช้ค่าล่าสุด (ธนาคารนี้)</a>
-        <a id="apply-latest-all" class="nav-btn" role="button">ใช้ค่าล่าสุด (ทั้งหมด)</a>
-      </div>
     </section>
 
     <section class="card">
+      <h2 class="section-title">ประวัติอัตรามาตรฐาน</h2>
       <table>
         <thead><tr><th style="min-width:120px">วันที่มีผล</th><th>ชนิด</th><th class="num">อัตรา (%)</th><th>ที่มา</th></tr></thead>
         <tbody id="rates-history-rows"></tbody>
@@ -77,8 +48,8 @@
     </section>
   </main>
 
-  <script type="module" src="/session-guard-lite.js?v=6"></script>
-  <script type="module" src="/form-utils.js?v=6"></script>
+  <script type="module" src="/session-guard-lite.js?v=7"></script>
+  <script type="module" src="/form-utils.js?v=7"></script>
   <script type="module">
     import { supabase } from './supabase-client.js';
     const set = (s)=> document.body.classList.toggle('authed', !!s);
@@ -86,6 +57,6 @@
     supabase.auth.onAuthStateChange((_e, session)=> set(session));
     document.getElementById('logout-btn')?.addEventListener('click', ()=> supabase.auth.signOut());
   </script>
-  <script type="module" src="/admin-rates.js?v=nowrap"></script>
+  <script type="module" src="/admin-rates.js?v=ui-consistent"></script>
 </body>
 </html>

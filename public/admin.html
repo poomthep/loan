@@ -4,93 +4,103 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>โปรโมชันสินเชื่อ (Admin)</title>
-  
-  <link rel="stylesheet" href="/admin-mobile.css?v=6">
-  <style>
-    :root{--bg:#0b1020;--card:#121a2f;--text:#e7eefc;--muted:#9fb1d1;--line:#1f2a44;--btn:#1b2745;--btn2:#1d3a6a}
-    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
-    body{margin:0;background:var(--bg);color:var(--text)}
-    /* Stable header (no jumping, no wrapping) */
-    header{position:sticky;top:0;z-index:10;background:#0b1020;border-bottom:1px solid var(--line)}
-    .wrap{max-width:1100px;margin:0 auto;padding:10px 16px;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;min-height:56px}
-    .brand{margin:0;font-size:clamp(14px,2vw,18px);white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
-    .nav{display:flex;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-    .nav::-webkit-scrollbar{display:none}
-    .nav a{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;background:var(--btn);border:1px solid #2b3961;border-radius:10px;color:var(--text);text-decoration:none}
-    .nav a.active{background:var(--btn2);border-color:#2d58a2}
-    #logout-btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;background:#1d3a6a;border:1px solid #2d58a2;border-radius:10px;color:#fff;padding:0 12px;cursor:pointer}
-    main{max-width:1100px;margin:0 auto;padding:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3961;background:#0f1933;color:var(--text)}
-    @media(max-width:720px){ .grid{grid-template-columns:1fr} }
-    /* Gate/App views (for admin.html) */
-    #gate,#app{display:none} #gate.active,#app.active{display:block}
-    /* Toast */
-    #toast{position:fixed;right:16px;bottom:16px;background:#203153;border:1px solid #2d58a2;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(6px);transition:.2s}
-    #toast.show{opacity:1;transform:translateY(0)} #toast.error{background:#4a2030;border-color:#a43d4b}
-  </style>
-
-  <style>
-    /* Hide nav & logout until login */
-    .nav, #logout-btn { display:none }
-    body.authed .nav, body.authed #logout-btn { display:inline-flex }
-  </style>
+  <link rel="stylesheet" href="/admin-ui.css?v=1">
 </head>
 <body>
   <header>
-    <div class="wrap">
+    <div class="header-wrap">
       <h1 class="brand">โปรโมชันสินเชื่อ (Admin)</h1>
       <nav class="nav">
         <a href="/admin.html" class="active">โปรโมชัน</a>
         <a href="/admin_rates.html">อัตรามาตรฐาน</a>
       </nav>
-      <button id="logout-btn">ออกจากระบบ</button>
+      <div class="logout-slot">
+        <button id="logout-btn" class="btn btn-primary btn-sm">ออกจากระบบ</button>
+      </div>
     </div>
   </header>
 
-  <main id="gate" class="active">
-    <section class="card" style="max-width:520px;margin:auto">
-      <h2 style="margin:4px 0 12px 0">เข้าสู่ระบบผู้ดูแล</h2>
-      <form id="login-form" class="grid">
-        <div style="grid-column:1/-1"><label>อีเมล</label><input name="email" type="email" placeholder="name@example.com" required autocomplete="username"></div>
-        <div style="grid-column:1/-1"><label>รหัสผ่าน</label><input name="password" type="password" placeholder="••••••••" required autocomplete="current-password"></div>
-        <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button id="login-btn" class="nav-btn">เข้าสู่ระบบ</button></div>
+  <!-- Gate (Login) -->
+  <main id="gate" class="container">
+    <section class="card" style="max-width:560px;margin:auto">
+      <h2 class="section-title">เข้าสู่ระบบผู้ดูแล</h2>
+      <form id="login-form" class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <label>อีเมล</label>
+          <input class="input" name="email" type="email" placeholder="name@example.com" required autocomplete="username">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>รหัสผ่าน</label>
+          <input class="input" name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button id="login-btn" class="btn btn-primary" type="submit">เข้าสู่ระบบ</button>
+        </div>
       </form>
     </section>
   </main>
 
-  <main id="app">
+  <!-- App (Promotions) -->
+  <main id="app" class="container" style="display:none">
     <section class="card" style="margin-bottom:12px">
+      <h2 class="section-title">เพิ่ม/แก้ไขโปรโมชัน</h2>
       <form id="promotion-form">
-        <div class="grid">
-          <div><label>ธนาคาร</label><select id="bank_id" name="bank_id"><option value="">-- เลือกธนาคาร --</option></select></div>
-          <div><label>ชื่อโปรโมชัน</label><input id="promotion_name" name="promotion_name" type="text" placeholder="เช่น สินเชื่อบ้านใหม่ ดอกพิเศษ"></div>
-          <div><label>ประเภทสินเชื่อ</label><select id="loan_type" name="loan_type"><option value="">ทั่วไป</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="บ้านใหม่">บ้านใหม่</option></select></div>
-          <div><label>วันที่เริ่ม</label><input id="start_date" name="start_date" type="date"></div>
-          <div><label>วันที่สิ้นสุด</label><input id="end_date" name="end_date" type="date"></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ธนาคาร</label>
+            <select class="input" id="bank_id" name="bank_id">
+              <option value="">-- เลือกธนาคาร --</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ชื่อโปรโมชัน</label>
+            <input class="input" id="promotion_name" name="promotion_name" type="text" placeholder="เช่น สินเชื่อบ้านใหม่ ดอกพิเศษ">
+          </div>
+          <div class="field">
+            <label>ประเภทสินเชื่อ</label>
+            <select class="input" id="loan_type" name="loan_type">
+              <option value="">ทั่วไป</option>
+              <option value="รีไฟแนนซ์">รีไฟแนนซ์</option>
+              <option value="บ้านใหม่">บ้านใหม่</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>วันที่เริ่ม</label>
+            <input class="input" id="start_date" name="start_date" type="date">
+          </div>
+          <div class="field">
+            <label>วันที่สิ้นสุด</label>
+            <input class="input" id="end_date" name="end_date" type="date">
+          </div>
         </div>
+
         <div style="margin-top:12px">
-          <label>โครงสร้างอัตราดอกเบี้ย</label>
-          <div id="interest-rates-container" class="grid"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-            <a id="add-rate-year-btn" class="nav-btn" role="button">เพิ่มปีอัตรา</a>
-            <a id="save-btn" class="nav-btn" role="button">บันทึกโปรโมชัน</a>
-            <a id="clear-btn" class="nav-btn" role="button">ล้างฟอร์ม</a>
+          <label class="muted">โครงสร้างอัตราดอกเบี้ย</label>
+          <div id="interest-rates-container"></div>
+          <div class="actions" style="margin-top:10px">
+            <button id="add-rate-year-btn" type="button" class="btn btn-secondary">เพิ่มปีอัตรา</button>
+            <button id="save-btn" type="submit" class="btn btn-primary">บันทึกโปรโมชัน</button>
+            <button id="clear-btn" type="button" class="btn">ล้างฟอร์ม</button>
           </div>
         </div>
       </form>
     </section>
+
     <section class="card">
-      <div class="muted" style="margin-bottom:8px">รายการโปรโมชันที่มีอยู่</div>
-      <table id="promotions-table"><thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปีแรก</th><th>การจัดการ</th></tr></thead><tbody></tbody></table>
+      <h2 class="section-title">รายการโปรโมชัน</h2>
+      <table id="promotions-table">
+        <thead>
+          <tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปีแรก</th><th>การจัดการ</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
   </main>
 
-  <div id="toast" role="status" aria-live="polite"></div>
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="/form-utils.js?v=6"></script>
-  <script type="module" src="/admin.js?v=nowrap"></script>
+  <script type="module" src="/form-utils.js?v=7"></script>
+  <script type="module" src="/admin.js?v=ui-consistent"></script>
 </body>
 </html>
