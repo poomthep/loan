@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>อัตรามาตรฐานรายธนาคาร (MRR / MLR / MOR)</title>
-  <link rel="stylesheet" href="/admin-ui.css?v=1"/>
+  <link rel="stylesheet" href="/admin-ui.css?v=cream1"/>
 </head>
 <body>
   <header>
@@ -48,15 +48,24 @@
     </section>
   </main>
 
-  <script type="module" src="/session-guard-lite.js?v=7"></script>
-  <script type="module" src="/form-utils.js?v=7"></script>
+  <script type="module" src="/session-guard-lite.js?v=cream1"></script>
   <script type="module">
     import { supabase } from './supabase-client.js';
-    const set = (s)=> document.body.classList.toggle('authed', !!s);
-    (async ()=>{ const { data: { session } } = await supabase.auth.getSession(); set(session); })();
-    supabase.auth.onAuthStateChange((_e, session)=> set(session));
-    document.getElementById('logout-btn')?.addEventListener('click', ()=> supabase.auth.signOut());
+    // Hard guard: only allow if logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.body.classList.remove('authed'); // ensure nav hidden
+      window.location.replace('/admin.html');
+    } else {
+      document.body.classList.add('authed');
+      document.getElementById('logout-btn')?.addEventListener('click', ()=> supabase.auth.signOut());
+      supabase.auth.onAuthStateChange((_e,s)=>{
+        document.body.classList.toggle('authed', !!s);
+        if (!s) window.location.replace('/admin.html');
+      });
+    }
   </script>
-  <script type="module" src="/admin-rates.js?v=ui-consistent"></script>
+  <script type="module" src="/form-utils.js?v=cream1"></script>
+  <script type="module" src="/admin-rates.js?v=cream1"></script>
 </body>
 </html>
