@@ -139,9 +139,9 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null,
         row.innerHTML = `
             <label>${labelText}</label>
             <div class="rate-inputs-group">
-                <input type="${inputType}" class="rate-input normal-rate" value="${normalRateValue}" placeholder="ปกติ (%)" title="อัตราดอกเบี้ยปกติ ปีที่ ${year}">
-                <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'};">
-            </div>
+               <input type="${inputType}" class="rate-input normal-rate" value="${normalRateValue}" placeholder="ปกติ (%)" title="อัตราดอกเบี้ยปกติ ปีที่ ${year}" ${inputType === 'number' ? 'step="0.01"' : ''}>
+                <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'}" ${inputType === 'number' ? 'step="0.01"' : ''}>
+           </div>
             ${isRemovable ? `<button type="button" class="btn-danger remove-rate-year-btn" tabindex="-1">ลบ</button>` : ''}
         `;
         ratesContainer.appendChild(row);
