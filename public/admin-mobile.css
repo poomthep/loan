@@ -1,12 +1,1 @@
-/* admin-mobile.css */
-@media (max-width: 900px){
-  .toolbar{ grid-template-columns: repeat(3, minmax(0,1fr)); }
-}
-@media (max-width: 640px){
-  .toolbar{ grid-template-columns: 1fr 1fr; }
-  .toolbar > div, .toolbar input, .toolbar select, .toolbar button{ width:100% }
-  .nav{ gap:6px }
-  .nav a{ flex:1 1 45%; text-align:center }
-  button{ padding:12px }
-  input, select{ padding:12px }
-}
+@media (max-width: 900px){.toolbar{grid-template-columns:repeat(3,minmax(0,1fr));}}@media (max-width: 640px){.toolbar{grid-template-columns:1fr 1fr;}.toolbar>div,.toolbar input,.toolbar select,.toolbar button{width:100%}.nav{gap:6px}.nav a{flex:1 1 45%;text-align:center}button{padding:12px}input,select{padding:12px}}
