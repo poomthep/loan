@@ -95,3 +95,12 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
     flex-grow: 1;
     padding: 10px 20px;
 }
+
+.rate-inputs-group {
+    display: flex;
+    flex-grow: 1;
+    gap: 10px;
+}
+.rate-inputs-group input {
+    width: 100%;
+}
