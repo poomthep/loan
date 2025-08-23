@@ -106,21 +106,26 @@ function initAppElements() {
 // UPDATED: renderInterestRateInputs to include MRTA fields
 function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null, null, ""], mrta: [null, null, null, ""] }) {
     ratesContainer.innerHTML = '';
-    const showMrta = hasMrtaOptionCheckbox.checked;
+    const showMrta = document.getElementById('has_mrta_option').checked;
 
-    // Ensure we have rate structures, even if null
     const normalRates = rates?.normal || [null, null, null, ""];
     const mrtaRates = rates?.mrta || [null, null, null, ""];
-    const numYears = Math.max(normalRates.length, mrtaRates.length);
+    
+    // Use normalRates length as the primary driver for the number of rows
+    const numYears = normalRates.length;
 
     for (let i = 0; i < numYears; i++) {
         const year = i + 1;
         const isLastRate = i === numYears - 1;
+        // CHANGED: Allow removal if there are more than 3 years, and it's not the very last input
+        const isRemovable = numYears > 3 && !isLastRate; 
+        
         const normalRateValue = normalRates[i] ?? '';
         const mrtaRateValue = mrtaRates[i] ?? '';
         
         const row = document.createElement('div');
         row.className = 'rate-year-row';
+        row.dataset.year = year;
 
         let labelText = `ปีที่ ${year}:`;
         let inputType = 'number';
@@ -137,6 +142,7 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null,
                 <input type="${inputType}" class="rate-input normal-rate" value="${normalRateValue}" placeholder="ปกติ (%)" title="อัตราดอกเบี้ยปกติ ปีที่ ${year}">
                 <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'};">
             </div>
+            ${isRemovable ? `<button type="button" class="btn-danger remove-rate-year-btn" tabindex="-1">ลบ</button>` : ''}
         `;
         ratesContainer.appendChild(row);
     }
