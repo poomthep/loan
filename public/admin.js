@@ -1,4 +1,4 @@
-// admin.js (NEW ARCHITECTURE)
+// admin.js (Corrected Architecture)
 import { supabase } from './supabase-client.js';
 import { scheduleSessionRefresh, setupVisibilityHandlers } from './session-guard.js';
 
@@ -42,11 +42,9 @@ async function isAdminAuthenticated(session) {
 }
 
 // --- View Initializers (The core of the fix) ---
-
-// This function runs ONLY when the login page is shown
 function initializeGateView() {
     const loginForm = document.getElementById('login-form');
-    loginForm.onsubmit = async (e) => { // Use onsubmit for simplicity, ensuring only one listener
+    loginForm.onsubmit = async (e) => {
         e.preventDefault();
         const loginBtn = document.getElementById('login-btn');
         loginBtn.disabled = true;
@@ -65,7 +63,6 @@ function initializeGateView() {
     };
 }
 
-// This function runs ONLY when the main app is shown
 function initializeAppView() {
     const appElements = {
         logoutBtn: document.getElementById('logout-btn'),
@@ -90,9 +87,13 @@ function initializeAppView() {
 async function boot(session) {
     console.log('[BOOT] Initializing...');
     if (await isAdminAuthenticated(session)) {
-        showView('app');
-        initializeAppView();
+        if (!appBooted) {
+            appBooted = true;
+            showView('app');
+            initializeAppView();
+        }
     } else {
+        appBooted = false;
         showView('gate');
         initializeGateView();
     }
@@ -165,11 +166,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     supabase.auth.onAuthStateChange((event, session) => {
         console.log(`[AUTH] Event: ${event}`);
-        // Centralized boot logic on every significant auth event
         boot(session);
     });
 
-    // Initial check on page load
     const { data: { session } } = await supabase.auth.getSession();
     boot(session);
 });
