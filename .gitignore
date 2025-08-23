@@ -1,7 +1,0 @@
-# Ignore generated config
-config.js
-
-# Local env files
-.env
-.env.*
-.env.local
