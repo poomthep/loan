@@ -44,3 +44,6 @@ tbody tr:hover{background:var(--table-hover)}
 .toast.error{background:#8b283b}
 .rate-year-row{background:#FFF5DB;border:1px dashed var(--line);padding:10px;border-radius:12px}
 .rate-year-row + .rate-year-row{margin-top:8px}
+/* NEW: view toggle rules */
+#gate, #app { display:none; }
+#gate.active, #app.active { display:block; }

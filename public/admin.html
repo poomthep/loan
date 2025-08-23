@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>โปรโมชันสินเชื่อ (Admin)</title>
-  <link rel="stylesheet" href="/admin-ui.css?v=cream1">
+  <link rel="stylesheet" href="/admin-ui.css?v=cream1b">
 </head>
 <body>
   <header>
@@ -20,7 +20,8 @@
     </div>
   </header>
 
-  <main id="gate" class="container">
+  <!-- Gate (Login) -->
+  <main id="gate" class="container active">
     <section class="card" style="max-width:560px;margin:auto">
       <h2 class="section-title">เข้าสู่ระบบผู้ดูแล</h2>
       <form id="login-form" class="form-grid">
@@ -39,7 +40,8 @@
     </section>
   </main>
 
-  <main id="app" class="container" style="display:none">
+  <!-- App (Promotions) -->
+  <main id="app" class="container">
     <section class="card" style="margin-bottom:12px">
       <h2 class="section-title">เพิ่ม/แก้ไขโปรโมชัน</h2>
       <form id="promotion-form">
@@ -97,7 +99,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="/form-utils.js?v=cream1"></script>
-  <script type="module" src="/admin.js?v=cream1"></script>
+  <script type="module" src="/form-utils.js?v=cream1b"></script>
+  <script type="module" src="/admin.js?v=viewtoggle"></script>
 </body>
 </html>
