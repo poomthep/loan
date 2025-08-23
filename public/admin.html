@@ -4,16 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>โปรโมชันสินเชื่อ (Admin)</title>
-  <link rel="stylesheet" href="/admin-ui.css?v=cream1b">
+  <link rel="stylesheet" href="/admin-ui.css?v=mrr-inline">
 </head>
 <body>
   <header>
     <div class="header-wrap">
       <h1 class="brand">โปรโมชันสินเชื่อ (Admin)</h1>
-      <nav class="nav">
-        <a href="/admin.html" class="active">โปรโมชัน</a>
-        <a href="/admin_rates.html">อัตรามาตรฐาน</a>
-      </nav>
       <div class="logout-slot">
         <button id="logout-btn" class="btn btn-primary btn-sm">ออกจากระบบ</button>
       </div>
@@ -40,8 +36,9 @@
     </section>
   </main>
 
-  <!-- App (Promotions) -->
+  <!-- App -->
   <main id="app" class="container">
+    <!-- Promotions -->
     <section class="card" style="margin-bottom:12px">
       <h2 class="section-title">เพิ่ม/แก้ไขโปรโมชัน</h2>
       <form id="promotion-form">
@@ -86,20 +83,39 @@
       </form>
     </section>
 
-    <section class="card">
+    <section class="card" style="margin-bottom:12px">
       <h2 class="section-title">รายการโปรโมชัน</h2>
       <table id="promotions-table">
-        <thead>
-          <tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปีแรก</th><th>การจัดการ</th></tr>
-        </thead>
+        <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปีแรก</th><th>การจัดการ</th></tr></thead>
         <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- MRR inline section -->
+    <section class="card" id="mrr-card">
+      <h2 class="section-title">อัตรามาตรฐาน MRR (บันทึกแบบรวบรัด)</h2>
+      <div class="form-grid" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+        <div class="field"><label>ธนาคาร</label><select class="input" id="mrr-bank"></select></div>
+        <div class="field"><label>อัตรา MRR (%)</label><input class="input" id="mrr-value" type="text" inputmode="decimal" enterkeyhint="next" placeholder="8.100"></div>
+        <div class="field"><label>วันที่มีผล</label><input class="input" id="mrr-date" type="date" enterkeyhint="next"></div>
+        <div class="field"><label>แหล่งข้อมูล (URL)</label><input class="input" id="mrr-source" type="url" placeholder="https://..."></div>
+        <div class="field" style="display:flex;align-items:end"><button id="mrr-add" class="btn btn-primary">เพิ่ม MRR</button></div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="mrr-apply-latest" class="btn btn-secondary">ใช้ MRR ล่าสุด (ธนาคารนี้)</button>
+      </div>
+      <p class="muted" id="mrr-latest" style="margin-top:8px"></p>
+
+      <table style="margin-top:10px">
+        <thead><tr><th style="min-width:120px">วันที่มีผล</th><th class="num">MRR (%)</th><th>ที่มา</th></tr></thead>
+        <tbody id="mrr-history-rows"></tbody>
       </table>
     </section>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="/form-utils.js?v=cream1b"></script>
-  <script type="module" src="/admin.js?v=viewtoggle"></script>
+  <script type="module" src="/form-utils.js?v=mrr-inline"></script>
+  <script type="module" src="/admin-mrr.js?v=1"></script>
 </body>
 </html>
