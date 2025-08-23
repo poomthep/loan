@@ -1,10 +1,9 @@
-// admin.js (Fixed event listener attachment timing)
+// admin.js (NEW ARCHITECTURE)
 import { supabase } from './supabase-client.js';
 import { scheduleSessionRefresh, setupVisibilityHandlers } from './session-guard.js';
 
-// --- DOM Elements (Get elements that are always present) ---
+// --- DOM Elements (Only get elements that are ALWAYS present) ---
 const views = { gate: document.getElementById('gate'), app: document.getElementById('app') };
-const loginForm = document.getElementById('login-form');
 const toast = document.getElementById('toast');
 
 // --- State & Utility Functions ---
@@ -21,25 +20,54 @@ async function loadInitialData(appElements) {
     await fetchBanks(appElements.bankSelect);
     await fetchPromotions(appElements.promotionsTableBody);
 }
-async function isAdminAuthenticated(session) { try { if (!session) { return false; } const user = session.user; const { data: profile, error: profileError } = await supabase.from('profiles').select('role, status').eq('id', user.id).single(); if (profileError) { throw profileError; } if (!profile || profile.role !== 'admin' || profile.status !== 'approved') { throw new Error('Access Denied'); } return true; } catch (error) { console.warn('[AUTH] Admin check failed:', error.message); await supabase.auth.signOut(); return false; } }
 
-async function boot(session) {
-    console.log('[BOOT] Initializing...');
-    if (await isAdminAuthenticated(session)) {
-        showView('app');
-        // --- MOVED: Get app-specific elements only when the app view is shown ---
-        const appElements = initAppElements();
-        setupAppEventListeners(appElements);
-        renderInterestRateInputs(appElements.ratesContainer);
-        await loadInitialData(appElements);
-    } else {
-        showView('gate');
+async function isAdminAuthenticated(session) {
+    try {
+        if (!session) { return false; }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+        
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
+        if (profileError) { throw profileError; }
+        
+        if (!profile || profile.role !== 'admin' || profile.status !== 'approved') {
+            throw new Error('Access Denied');
+        }
+        return true;
+    } catch (error) {
+        console.warn('[AUTH] Admin check failed:', error.message);
+        await supabase.auth.signOut();
+        return false;
     }
 }
 
-// --- NEW: Function to get elements from the app view ---
-function initAppElements() {
-    return {
+// --- View Initializers (The core of the fix) ---
+
+// This function runs ONLY when the login page is shown
+function initializeGateView() {
+    const loginForm = document.getElementById('login-form');
+    loginForm.onsubmit = async (e) => { // Use onsubmit for simplicity, ensuring only one listener
+        e.preventDefault();
+        const loginBtn = document.getElementById('login-btn');
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+        const { error } = await supabase.auth.signInWithPassword({
+            email: loginForm.email.value,
+            password: loginForm.password.value
+        });
+        if (error) {
+            showToast(error.message, true);
+        } else {
+            showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...');
+        }
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'เข้าสู่ระบบ';
+    };
+}
+
+// This function runs ONLY when the main app is shown
+function initializeAppView() {
+    const appElements = {
         logoutBtn: document.getElementById('logout-btn'),
         promotionForm: document.getElementById('promotion-form'),
         promotionsTableBody: document.querySelector('#promotions-table tbody'),
@@ -53,9 +81,24 @@ function initAppElements() {
         modalConfirmBtn: document.getElementById('modal-confirm-btn'),
         modalCancelBtn: document.getElementById('modal-cancel-btn'),
     };
+    setupAppEventListeners(appElements);
+    renderInterestRateInputs(appElements.ratesContainer);
+    loadInitialData(appElements);
 }
 
-// --- UI Rendering & Form Handling (Now accept elements as arguments) ---
+// --- Main Controller ---
+async function boot(session) {
+    console.log('[BOOT] Initializing...');
+    if (await isAdminAuthenticated(session)) {
+        showView('app');
+        initializeAppView();
+    } else {
+        showView('gate');
+        initializeGateView();
+    }
+}
+
+// --- UI Rendering & Form Handling ---
 function renderInterestRateInputs(ratesContainer, rates = [null, null, null, ""]) { ratesContainer.innerHTML = ''; rates.forEach((rate, index) => { const year = index + 1; const isLastRate = index === rates.length - 1; const isRemovable = rates.length > 3 && index < rates.length - 1; const row = document.createElement('div'); row.className = 'rate-year-row'; row.dataset.year = year; let labelText = `ปีที่ ${year} (%):`; let inputType = 'number'; let placeholder = 'เช่น 3.25'; if (isLastRate) { labelText = `ปีที่ ${year} เป็นต้นไป:`; inputType = 'text'; placeholder = 'เช่น MRR-1.50'; } row.innerHTML = ` <label for="rate_year_${year}">${labelText}</label> <input type="${inputType}" id="rate_year_${year}" class="rate-input" value="${rate ?? ''}" placeholder="${placeholder}" ${inputType === 'number' ? 'step="0.01"' : ''}> ${isRemovable ? `<button type="button" class="btn-danger remove-rate-year-btn" tabindex="-1">ลบ</button>` : ''} `; ratesContainer.appendChild(row); }); }
 function renderPromotionsTable(promotionsTableBody, promotions) { promotionsTableBody.innerHTML = ''; if (!promotions || promotions.length === 0) { promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; return; } promotions.forEach(p => { const rates = p.interest_rates || []; const firstThreeRates = rates.slice(0, 3).map(r => typeof r === 'number' ? r : N(r)).filter(r => r !== null); const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; const tr = document.createElement('tr'); tr.innerHTML = ` <td>${p.banks?.name || 'N/A'}</td> <td class="promo-name">${p.promotion_name}<small>${p.loan_type}</small></td> <td>${avg}</td> <td class="actions"> <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button> <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button> </td>`; promotionsTableBody.appendChild(tr); }); }
 async function fetchBanks(bankSelect) { const { data, error } = await supabase.from('banks').select('id, name').order('name'); if (error) { showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); return; } state.banks = data; bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>'; state.banks.forEach(bank => { const option = document.createElement('option'); option.value = bank.id; option.textContent = bank.name; bankSelect.appendChild(option); }); }
@@ -114,34 +157,19 @@ function setupAppEventListeners(appElements) {
     appElements.confirmModal.addEventListener('click', (e) => { if (e.target === appElements.confirmModal) { appElements.confirmModal.classList.remove('visible'); } });
 }
 
-function setupGlobalEventListeners() {
-    loginForm.addEventListener('submit', async (e) => { e.preventDefault(); const loginBtn = document.getElementById('login-btn'); loginBtn.disabled = true; loginBtn.textContent = 'กำลังเข้าสู่ระบบ...'; const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email.value, password: loginForm.password.value }); if (error) { showToast(error.message, true); } else { showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...'); } loginBtn.disabled = false; loginBtn.textContent = 'เข้าสู่ระบบ'; });
-    
-    supabase.auth.onAuthStateChange((event, session) => {
-        console.log(`[AUTH] Event: ${event}, Session available:`, !!session);
-        scheduleSessionRefresh(session);
-        // Only boot if the state is definitively signed in or out
-        if (event === 'SIGNED_IN') {
-            if (!appBooted) {
-                appBooted = true;
-                boot(session);
-            }
-        } else if (event === 'SIGNED_OUT') {
-            appBooted = false;
-            showView('gate');
-            showToast('ออกจากระบบแล้ว');
-        }
-    });
-}
-
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     try { if (location.hash.includes('access_token')) { history.replaceState(null, '', location.origin + location.pathname); } } catch (e) { console.warn('Could not clean URL hash'); }
     
-    setupGlobalEventListeners();
     setupVisibilityHandlers();
-    
+
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log(`[AUTH] Event: ${event}`);
+        // Centralized boot logic on every significant auth event
+        boot(session);
+    });
+
+    // Initial check on page load
     const { data: { session } } = await supabase.auth.getSession();
-    // Initial boot on page load
     boot(session);
 });
