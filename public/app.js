@@ -1,9 +1,9 @@
-// ชื่อไฟล์: app.js (ฉบับสมบูรณ์)
+// ชื่อไฟล์: app.js (ฉบับสมบูรณ์ อัปเดตล่าสุด)
 
 import { supabase } from './supabase-client.js';
 import { render } from './render.js';
 import { calc } from './calc.js';
-import { fmt } from './format.js'; // Import fmt เข้ามาด้วย
+import { fmt } from './format.js';
 
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
@@ -13,9 +13,9 @@ const modal = document.getElementById('details-modal');
 const modalContent = document.getElementById('modal-details-content');
 const closeModalBtn = modal.querySelector('.close-btn');
 
-// --- 2. State ของโปรแกรม (ย้าย processedOffers มาไว้ข้างนอก) ---
+// --- 2. State ของโปรแกรม ---
 let allPromotions = [];
-let processedOffers = []; // <--- FIX: ย้ายมาประกาศที่นี่
+let processedOffers = [];
 
 // --- 3. ฟังก์ชันหลัก ---
 
@@ -59,7 +59,6 @@ function handleAnalysis() {
     const totalMonthlyIncome = userInfo.salary + (userInfo.bonus / 12) + (userInfo.otherIncome / 6);
     const isCalculatingMaxLoan = loanInfo.amount <= 0;
 
-    // FIX: เปลี่ยนจาก const เป็นการ assign ค่าให้ตัวแปรที่อยู่ข้างนอก
     processedOffers = allPromotions.map(promo => {
         const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
@@ -83,9 +82,12 @@ function handleAnalysis() {
             const calculatedMaxLoan = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
             finalLoanAmount = Math.min(calculatedMaxLoan, promo.max_loan_amount || Infinity);
             
+            // ⭐ เพิ่มตัวแปรสำหรับแสดงในสูตร
             calculationDetails = {
                 totalMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
-                existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm
+                existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
+                monthlyRate: (avgInterest / 100) / 12, // 'r'
+                totalMonths: actualTerm * 12 // 'n'
             };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
@@ -120,14 +122,14 @@ function handleAnalysis() {
 
 // --- 4. Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
-    fetchAllPromotions(); // โหลดข้อมูลโปรโมชันเมื่อหน้าเว็บพร้อม
+    fetchAllPromotions();
     compareBtn.addEventListener('click', handleAnalysis);
 
-    // --- Modal Control ---
     function showModal(details) {
         if (!details || Object.keys(details).length === 0) {
             modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้</p>';
         } else {
+            // ⭐ เพิ่มส่วนแสดงสูตรและการแทนค่า
             modalContent.innerHTML = `
                 <p><span>รายได้รวมต่อเดือน:</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
                 <p><span>เงื่อนไข DSR ของโปรโมชัน:</span> <span>ไม่เกิน ${details.promoDSRLimit}%</span></p>
@@ -137,7 +139,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p><span>อัตราดอกเบี้ยเฉลี่ย (3 ปี) ที่ใช้คำนวณ:</span> <span>${details.avgInterest.toFixed(2)}%</span></p>
                 <p><span>ระยะเวลาที่ใช้คำนวณ:</span> <span>${details.actualTerm} ปี</span></p>
                 <hr>
-                <p><span>วงเงินกู้สูงสุดที่คำนวณได้:</span> <span>${fmt.baht(details.finalLoanAmount)}</span></p>
+                <div class="formula-display">
+                  <h4>สูตรที่ใช้: PV = PMT × [1 - (1 + r)<sup>-n</sup>] / r</h4>
+                  <p><span><b>การแทนค่า:</b></span> <span></span></p>
+                  <p><span>PMT (ค่างวด):</span> <span>${fmt.baht(details.maxAffordablePayment)}</span></p>
+                  <p><span>r (ดอกเบี้ย/เดือน):</span> <span>${details.monthlyRate.toFixed(6)}</span></p>
+                  <p><span>n (จำนวนงวด):</span> <span>${details.totalMonths}</span></p>
+                </div>
+                <hr>
+                <p><span><b>วงเงินกู้สูงสุดที่คำนวณได้:</b></span> <span><b>${fmt.baht(details.finalLoanAmount)}</b></span></p>
             `;
         }
         modal.style.display = 'block';
@@ -158,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 offerData.calculationDetails.finalLoanAmount = offerData.maxAffordableLoan;
                 showModal(offerData.calculationDetails);
             } else {
-                showModal({}); // แสดง Modal ว่างๆ ถ้าไม่มี details
+                showModal({});
             }
         }
     });
