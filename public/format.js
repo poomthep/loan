@@ -1,24 +1,26 @@
-// format.js - รวมฟังก์ชันการจัดรูปแบบตัวเลขและสกุลเงิน
+// ชื่อไฟล์: format.js
 
-const nf = new Intl.NumberFormat('th-TH');
-const pf = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+// ใช้ Intl.NumberFormat ซึ่งเป็นวิธีมาตรฐานในการจัดรูปแบบตัวเลขและสกุลเงิน
+const bahtFormatter = new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+});
 
 /**
- * จัดรูปแบบตัวเลขเป็นสกุลเงินบาท (ปัดเศษและใส่จุลภาค)
- * @param {number} x - ตัวเลข
+ * จัดรูปแบบตัวเลขเป็นสกุลเงินบาท (เช่น 1,234,567 บาท)
+ * @param {number} num - ตัวเลขที่ต้องการจัดรูปแบบ
  * @returns {string} ข้อความที่จัดรูปแบบแล้ว
  */
-function baht(x) {
-    return nf.format(Math.round(x));
+function formatBaht(num) {
+    if (typeof num !== 'number' || !isFinite(num)) {
+        return 'N/A';
+    }
+    // เราไม่ต้องการให้มีคำว่า "บาท" ต่อท้าย จึงตัดออก
+    return bahtFormatter.format(num).replace('฿', '').trim() + ' บาท';
 }
 
-/**
- * จัดรูปแบบตัวเลขเป็นเปอร์เซ็นต์ (ทศนิยม 2 ตำแหน่ง)
- * @param {number} x - ตัวเลข
- * @returns {string} ข้อความเปอร์เซ็นต์
- */
-function pct(x) {
-    return Number.isFinite(x) ? (x.toFixed(2) + '%') : 'N/A';
-}
-
-export const fmt = { baht, pct, nf, pf };
+export const fmt = {
+    baht: formatBaht
+};

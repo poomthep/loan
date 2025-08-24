@@ -1,3 +1,5 @@
+// ชื่อไฟล์: render.js
+
 // render.js - จัดการการแสดงผลบนหน้าจอ (DOM manipulation)
 import { fmt } from './format.js';
 import { calc } from './calc.js';
@@ -31,12 +33,6 @@ function clearResults() {
     if (wrap) wrap.innerHTML = '';
 }
 
-// render.js
-import { fmt } from './format.js';
-import { calc } from './calc.js';
-
-// ... (ensureBanner, setBanner, clearResults, renderSchedule ไม่มีการเปลี่ยนแปลง) ...
-
 function cardHTML(offer) {
     let ratesList = '';
     if (Array.isArray(offer.ratesToDisplay)) {
@@ -54,7 +50,6 @@ function cardHTML(offer) {
     const promoName = offer.promotion_name ?? '';
     const avgStr = Number.isFinite(offer.avgInterest3yr) ? offer.avgInterest3yr.toFixed(2) : 'N/A';
     const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : 'N/A';
-    // --- NEW: Display max loan amount ---
     const maxLoanStr = Number.isFinite(offer.maxAffordableLoan) ? fmt.baht(offer.maxAffordableLoan) : 'คุณสมบัติไม่ผ่าน';
 
     return `
@@ -93,8 +88,6 @@ function renderResults(list) {
     wrap.appendChild(frag);
 }
 
-export const render = { setBanner, renderResults, renderSchedule };
-
 function renderSchedule(container, loanAmount, avgRate, years) {
     const data = calc.buildAmortization(loanAmount, avgRate, years, 24);
     const t = document.createElement('table');
@@ -117,4 +110,5 @@ function renderSchedule(container, loanAmount, avgRate, years) {
     container.appendChild(t);
 }
 
-export const render = { setBanner, renderResults, renderSchedule };
+// FIX: รวม export ทั้งหมดไว้ที่เดียวเพื่อป้องกัน Syntax Error
+export const render = { setBanner, clearResults, renderResults, renderSchedule };
