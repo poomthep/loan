@@ -48,55 +48,83 @@ async function fetchAllPromotions() {
 }
 
 // ฟังก์ชันหลักที่จะทำงานเมื่อกดปุ่ม "วิเคราะห์"
+// ในไฟล์ app.js ให้แทนที่ฟังก์ชัน handleAnalysis เดิมด้วยฟังก์ชันนี้
+
 function handleAnalysis() {
-    // 3.1 อ่านค่าจากฟอร์ม
+    // 1. อ่านค่าจากฟอร์มทั้งหมด
     const userInfo = {
-        age: parseInt(userAgeInput.value) || 0,
-        salary: parseFloat(monthlySalaryInput.value) || 0,
-        // ... อ่านค่าอื่นๆ ...
-    };
-    const loanInfo = {
-        amount: parseFloat(loanAmountInput.value) || 0,
-        term: parseInt(loanTermInput.value) || 30,
+        age: parseInt(document.getElementById('userAge').value) || 0,
+        salary: parseFloat(document.getElementById('monthlySalary').value) || 0,
+        bonus: parseFloat(document.getElementById('annualBonus').value) || 0,
+        otherIncome: parseFloat(document.getElementById('otherIncome6M').value) || 0,
+        debt: parseFloat(document.getElementById('monthlyDebt').value) || 0,
+        profession: document.getElementById('profession').value,
+        wantsMRTA: document.getElementById('wantsMRTA').checked,
     };
 
-    // 3.2 ตรวจสอบข้อมูลเบื้องต้น
+    const loanInfo = {
+        amount: parseFloat(document.getElementById('loanAmount').value) || 0,
+        term: parseInt(document.getElementById('loanTerm').value) || 30,
+    };
+
+    // 2. ตรวจสอบข้อมูลเบื้องต้น
     if (userInfo.salary <= 0 || loanInfo.amount <= 0) {
         render.setBanner('warn', 'กรุณากรอกเงินเดือนและวงเงินกู้ที่ต้องการ');
         return;
     }
 
-    // 3.3 ประมวลผลโปรโมชันแต่ละอัน (นี่คือส่วนที่ซับซ้อนที่สุด)
-    const processedOffers = allPromotions.map(promo => {
-		
-		    // --- ส่วนดีบัก เริ่ม ---
-    console.log("------------------------------");
-    console.log("Checking Promo:", promo.promotion_name);
-    console.log("Promo DSR Limit:", promo.dsr_limit);
-    console.log("User's calculated DSR:", your_dsr_calculation_variable); // << ใส่ตัวแปร DSR ของผู้ใช้ที่คุณคำนวณได้
-    // --- ส่วนดีบัก จบ ---
-		
-        // ทำการคำนวณคุณสมบัติและวงเงินกู้สูงสุดสำหรับโปรโมชันนี้
-        // เช่น checkEligibility(userInfo, promo);
-        // const maxLoan = calculateMaxLoan(userInfo, promo);
-        // const monthlyPayment = calc.pmt(loanInfo.amount, avgInterest, loanInfo.term * 12);
+    // 3. คำนวณรายรับและ DSR ของผู้ใช้
+    const totalMonthlyIncome = userInfo.salary + (userInfo.bonus / 12) + (userInfo.otherIncome / 6);
+    // ป้องกันการหารด้วยศูนย์
+    const userDSR = totalMonthlyIncome > 0 ? (userInfo.debt / totalMonthlyIncome) * 100 : 100;
+
+    console.log(`User's Total Monthly Income: ${totalMonthlyIncome.toFixed(2)}`);
+    console.log(`User's DSR: ${userDSR.toFixed(2)}%`);
+
+    // 4. ประมวลผลและคัดกรองโปรโมชัน
+    const eligibleOffers = allPromotions.filter(promo => {
+        // --- ส่วนตรรกะการคัดกรอง ---
+        // เช็ก DSR: DSR ของผู้ใช้ต้องไม่เกินที่โปรโมชันกำหนด
+        const dsrCheck = userDSR < (promo.dsr_limit || 100);
+
+        // เช็กอายุ: อายุของผู้ใช้รวมกับระยะเวลากู้ต้องไม่เกินที่โปรโมชันกำหนด
+        const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
+        const ageCheck = (userInfo.age + loanInfo.term) <= (maxAge || 99);
         
-        // *** ส่วนนี้คือ Logic หลักของแอปที่คุณต้องเขียนเพิ่ม ***
-        // ตอนนี้จะ return ค่าสมมติไปก่อน
+        // เช็กรายได้ขั้นต่ำ (ถ้ามี)
+        const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
+        const incomeCheck = totalMonthlyIncome >= minIncome;
+
+        // --- Log ผลการตรวจสอบของแต่ละโปรโมชัน ---
+        console.log(`--- Checking: ${promo.promotion_name} ---`);
+        console.log(`DSR Check: ${dsrCheck} (User ${userDSR.toFixed(2)}% <= Promo ${promo.dsr_limit}%)`);
+        console.log(`Age Check: ${ageCheck} (User ${userInfo.age + loanInfo.term} <= Promo ${maxAge})`);
+        console.log(`Income Check: ${incomeCheck} (User ${totalMonthlyIncome.toFixed(2)} >= Required ${minIncome.toFixed(2)})`);
+        
+        return dsrCheck && ageCheck && incomeCheck; // โปรโมชันจะผ่านเมื่อทุกเงื่อนไขเป็นจริง
+    });
+
+    // 5. คำนวณค่าอื่นๆ เพิ่มเติมสำหรับโปรโมชันที่ผ่าน
+    const processedOffers = eligibleOffers.map(promo => {
+        const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        const numericRates = calc.parseFirst3Numeric(rates);
+        const avgInterest = calc.average(numericRates);
+        const estMonthly = calc.pmt(loanInfo.amount, avgInterest, loanInfo.term * 12);
+
         return {
-            ...promo, // คัดลอกข้อมูลโปรโมชันเดิมทั้งหมด
-            maxAffordableLoan: 3000000, // << ผลลัพธ์สมมติ
-            estMonthly: 15000, // << ผลลัพธ์สมมติ
-            avgInterest3yr: 3.5, // << ผลลัพธ์สมมติ
-            ratesToDisplay: promo.interest_rates.normal, // << ผลลัพธ์สมมติ
+            ...promo,
+            maxAffordableLoan: loanInfo.amount, // สมมติว่าผ่านตามวงเงินที่ขอ
+            estMonthly: estMonthly,
+            avgInterest3yr: avgInterest,
+            ratesToDisplay: rates,
         };
     });
 
-    // 3.4 เรียงลำดับและกรองผลลัพธ์ (ถ้ามี)
-    const sortedOffers = processedOffers.sort((a, b) => a.avgInterest3yr - b.avgInterest3yr);
-
-    // 3.5 ส่งข้อมูลไปให้ render.js เพื่อแสดงผล
-    render.renderResults(sortedOffers);
+    // 6. ส่งข้อมูลไปแสดงผล
+    render.renderResults(processedOffers);
+    if (processedOffers.length > 0) {
+        render.setBanner('info', `พบ ${processedOffers.length} โปรโมชันที่ตรงตามคุณสมบัติของคุณ`);
+    }
 }
 
 
