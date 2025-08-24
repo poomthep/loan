@@ -2,8 +2,7 @@
 
 import { supabase } from './supabase-client.js';
 import { render } from './render.js';
-// ไฟล์อื่นๆ ที่อาจจะต้องใช้
-// import { calc } from './calc.js';
+import { calc } from './calc.js';
 
 // --- 1. ดึง DOM Elements ของหน้าเครื่องคิดเลข ---
 const compareBtn = document.getElementById('compareBtn');
