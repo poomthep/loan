@@ -68,6 +68,14 @@ function handleAnalysis() {
 
     // 3.3 ประมวลผลโปรโมชันแต่ละอัน (นี่คือส่วนที่ซับซ้อนที่สุด)
     const processedOffers = allPromotions.map(promo => {
+		
+		    // --- ส่วนดีบัก เริ่ม ---
+    console.log("------------------------------");
+    console.log("Checking Promo:", promo.promotion_name);
+    console.log("Promo DSR Limit:", promo.dsr_limit);
+    console.log("User's calculated DSR:", your_dsr_calculation_variable); // << ใส่ตัวแปร DSR ของผู้ใช้ที่คุณคำนวณได้
+    // --- ส่วนดีบัก จบ ---
+		
         // ทำการคำนวณคุณสมบัติและวงเงินกู้สูงสุดสำหรับโปรโมชันนี้
         // เช่น checkEligibility(userInfo, promo);
         // const maxLoan = calculateMaxLoan(userInfo, promo);
