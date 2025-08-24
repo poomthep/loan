@@ -39,6 +39,9 @@ async function fetchAllPromotions() {
         allPromotions = [];
     } else {
         allPromotions = data;
+		
+		console.log(allPromotions); // <--- เพิ่มบรรทัดนี้เข้าไป
+		
         render.setBanner('info', `พบ ${allPromotions.length} โปรโมชัน, กรุณากรอกข้อมูลเพื่อวิเคราะห์`);
     }
     loadingSpinner.style.display = 'none';
