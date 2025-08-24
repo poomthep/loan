@@ -33,9 +33,10 @@ function clearResults() {
 
 function cardHTML(offer) {
     let ratesList = '';
-    if (Array.isArray(offer.interest_rates)) {
-        const last = offer.interest_rates.length - 1;
-        offer.interest_rates.forEach((r, i) => {
+    // Use the ratesToDisplay array passed from app.js
+    if (Array.isArray(offer.ratesToDisplay)) {
+        const last = offer.ratesToDisplay.length - 1;
+        offer.ratesToDisplay.forEach((r, i) => {
             const num = parseFloat(r);
             if (i === last || Number.isNaN(num)) {
                 ratesList += `<li>ปีที่ ${i + 1} เป็นต้นไป: ${r}</li>`;

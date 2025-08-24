@@ -30,6 +30,7 @@ function parseFirst3Numeric(rates) {
     return nums;
 }
 
+
 /**
  * คำนวณค่าเฉลี่ยของตัวเลขในอาร์เรย์
  * @param {Array<number>} arr - อาร์เรย์ของตัวเลข
