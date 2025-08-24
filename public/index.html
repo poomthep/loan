@@ -13,21 +13,42 @@
 
     <h1>เครื่องมือวิเคราะห์สินเชื่อบ้าน 🏡</h1>
 
-    <div class="user-info-container">
-        <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
-        <div class="input-grid">
-            <div class="form-group"><label for="loanPurpose">วัตถุประสงค์ในการกู้:</label><select id="loanPurpose"><option value="ทั้งหมด">-- ทุกวัตถุประสงค์ --</option><option value="ซื้อใหม่">ซื้อบ้านใหม่/คอนโด</option><option value="รีไฟแนนซ์">รีไฟแนนซ์</option><option value="นโยบายรัฐ">สินเชื่อนโยบายรัฐ</option></select></div>
-            <div class="form-group"><label for="profession">อาชีพ:</label><select id="profession"><option value="salaried">พนักงานประจำ</option><option value="government">ข้าราชการ</option><option value="business">เจ้าของกิจการ / อาชีพอิสระ</option></select></div>
-            <div class="form-group"><label for="customerType">ประเภทลูกค้า:</label><select id="customerType"><option value="retail">ลูกค้ารายย่อยทั่วไป</option><option value="welfare">ลูกค้าสวัสดิการ</option></select></div>
-            <div class="form-group"><label for="userAge">อายุ (ปี):</label><input type="number" id="userAge" placeholder="เช่น 30" inputmode="numeric" pattern="[0-9]*"></div>
-            <div class="form-group"><label for="monthlyIncome">รายได้/เดือน (บาท):</label><input type="number" id="monthlyIncome" placeholder="เช่น 50000" inputmode="decimal" pattern="[0-9]*"></div>
-            <div class="form-group"><label for="monthlyDebt">หนี้สินอื่นๆ/เดือน (บาท):</label><input type="number" id="monthlyDebt" placeholder="เช่น 10000" value="0" inputmode="decimal" pattern="[0-9]*"></div>
+<div class="user-info-container">
+    <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
+    <div class="input-grid">
+        <div class="form-group">
+            <label for="userAge">อายุ (ปี):</label>
+            <input type="number" id="userAge" placeholder="เช่น 47" inputmode="numeric">
         </div>
-        <div class="form-group checkbox-group">
-            <input type="checkbox" id="wantsMRTA">
-            <label for="wantsMRTA">สนใจโปรโมชันที่ต้องทำประกัน MRTA (เพื่อรับดอกเบี้ยพิเศษ)</label>
+        <div class="form-group">
+            <label for="monthlySalary">เงินเดือน (บาท/เดือน):</label>
+            <input type="number" id="monthlySalary" placeholder="เช่น 59000" inputmode="decimal">
+        </div>
+        <div class="form-group">
+            <label for="annualBonus">โบนัส (รวมทั้งปี):</label>
+            <input type="number" id="annualBonus" placeholder="เช่น 14000" value="0" inputmode="decimal">
+        </div>
+        <div class="form-group">
+            <label for="otherIncome6M">รายได้อื่นๆ (รวม 6 เดือนย้อนหลัง):</label>
+            <input type="number" id="otherIncome6M" placeholder="เช่น 64000" value="0" inputmode="decimal">
+        </div>
+        <div class="form-group">
+            <label for="monthlyDebt">หนี้สินในบูโร (ภาระผ่อนต่อเดือน):</label>
+            <input type="number" id="monthlyDebt" placeholder="เช่น 15000" value="0" inputmode="decimal">
+        </div>
+        <div class="form-group">
+            <label for="profession">อาชีพ:</label>
+            <select id="profession">
+                <option value="salaried">พนักงานประจำ</option>
+                <option value="business">เจ้าของกิจการ / อาชีพอิสระ</option>
+            </select>
         </div>
     </div>
+    <div class="form-group checkbox-group">
+        <input type="checkbox" id="wantsMRTA">
+        <label for="wantsMRTA">สนใจโปรโมชันที่ต้องทำประกัน MRTA (เพื่อรับดอกเบี้ยพิเศษ)</label>
+    </div>
+</div>
 
     <hr>
 

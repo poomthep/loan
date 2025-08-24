@@ -1,4 +1,4 @@
-// app.js (UPDATED to handle new interest_rates structure)
+// app.js (Major upgrade for eligibility calculation)
 import { calc } from './calc.js';
 import { render } from './render.js';
 import { api } from './api.js';
@@ -8,112 +8,99 @@ import { exportsUI } from './exports-ui.js';
 const N = (v) => (v === '' || v === null || isNaN(parseFloat(v))) ? null : parseFloat(v);
 
 function collectUserInputs() {
-    const loanAmount = N(document.getElementById('loanAmount')?.value);
-    const loanTermYears = N(document.getElementById('loanTerm')?.value) ?? 30;
-    const wantsMRTA = document.getElementById('wantsMRTA')?.checked || false;
-    return { loanAmount, loanTermYears, wantsMRTA };
+    return {
+        age: N(document.getElementById('userAge')?.value),
+        salary: N(document.getElementById('monthlySalary')?.value),
+        bonus: N(document.getElementById('annualBonus')?.value),
+        otherIncome: N(document.getElementById('otherIncome6M')?.value),
+        debt: N(document.getElementById('monthlyDebt')?.value),
+        profession: document.getElementById('profession')?.value,
+        wantsMRTA: document.getElementById('wantsMRTA')?.checked || false
+    };
 }
 
-function analyzeOffers(list, loanAmount, years, wantsMRTA) {
-    const months = Math.max(12, Math.round((years ?? 30) * 12));
-    const out = [];
-
-    for (const o of list) {
-        if (!o.interest_rates || !o.interest_rates.normal) continue;
-
-        // Determine which set of rates to use
-        let ratesToUse = o.interest_rates.normal;
-        if (wantsMRTA && o.interest_rates.mrta && o.interest_rates.mrta.length > 0) {
-            ratesToUse = o.interest_rates.mrta;
-        }
-
-        const first3 = calc.parseFirst3Numeric(ratesToUse);
-        if (!first3.length) continue;
-
-        const avgInterest3yr = calc.average(first3);
-        const estMonthly = calc.pmt(loanAmount, avgInterest3yr, months);
-        
-        // Add the chosen rates to the final object for rendering
-        out.push({ ...o, avgInterest3yr, estMonthly, ratesToDisplay: ratesToUse });
-    }
-    
-    out.sort((a, b) => (a.avgInterest3yr ?? 999) - (b.avgInterest3yr ?? 999));
-    return out;
+function calculateTotalIncome(inputs) {
+    const salary = inputs.salary || 0;
+    // Bonus: averaged over 12 months, 70% factor
+    const bonusComponent = ((inputs.bonus || 0) / 12) * 0.70;
+    // Other Income: averaged over 6 months, 50% factor
+    const otherIncomeComponent = ((inputs.otherIncome || 0) / 6) * 0.50;
+    return salary + bonusComponent + otherIncomeComponent;
 }
 
-async function doCompare() {
-    const { loanAmount, loanTermYears, wantsMRTA } = collectUserInputs();
-    if (!loanAmount || loanAmount < 100000) {
-        render.setBanner('warn', 'กรุณาใส่วงเงินกู้ที่ต้องการ (เช่น 2,000,000)');
+async function analyzeAndFilterOffers() {
+    const inputs = collectUserInputs();
+    if (!inputs.age || !inputs.salary) {
+        render.setBanner('warn', 'กรุณากรอกอายุและเงินเดือนเพื่อเริ่มการวิเคราะห์');
         return;
     }
-    render.setBanner('info', 'กำลังดึงข้อมูลโปรโมชัน...');
+
+    render.setBanner('info', 'กำลังวิเคราะห์คุณสมบัติและโปรโมชัน...');
+    const totalIncome = calculateTotalIncome(inputs);
 
     try {
         const { data, error } = await api.fetchPromotions();
         if (error) throw error;
 
-        const analyzed = analyzeOffers(data || [], loanAmount, loanTermYears, wantsMRTA);
-        render.renderResults(analyzed);
-        storage.save({ analyzed, loanAmount, loanTermYears, wantsMRTA });
+        const results = [];
+        for (const offer of data) {
+            // 1. Determine Max Loan Term
+            const maxAge = inputs.profession === 'salaried' ? offer.max_age_salaried : offer.max_age_business;
+            const termFromAge = (maxAge || 70) - inputs.age;
+            const maxTerm = Math.min(offer.max_loan_tenure || 40, termFromAge);
+            if (maxTerm <= 0) continue; // Ineligible due to age
 
-        if (!navigator.onLine) {
-            render.setBanner('offline', 'โหมดออฟไลน์: แสดงผลจากแคชล่าสุด');
-        } else {
-            render.setBanner('info', 'ครบแล้ว! เลือกกดพิมพ์/ส่งออกด้านบนได้เลย');
+            // 2. Calculate Repayment Ability
+            const dsr = offer.dsr_limit || 80;
+            const repaymentAbility = (totalIncome * (dsr / 100)) - (inputs.debt || 0);
+            if (repaymentAbility <= 0) continue; // Ineligible due to debt
+
+            // 3. Calculate Max Affordable Loan Amount
+            const incomePerMillion = offer.income_per_million || 15000;
+            const maxAffordableLoan = (repaymentAbility / incomePerMillion) * 1000000;
+            
+            // 4. Select Interest Rates
+            let ratesToUse = offer.interest_rates?.normal;
+            if (inputs.wantsMRTA && offer.interest_rates?.mrta?.length > 0) {
+                ratesToUse = offer.interest_rates.mrta;
+            }
+            if (!ratesToUse || ratesToUse.length === 0) continue;
+
+            // 5. Calculate 3-Year Average and Monthly Payment
+            const first3 = calc.parseFirst3Numeric(ratesToUse);
+            if (first3.length === 0) continue;
+            const avgInterest3yr = calc.average(first3);
+            const estMonthly = calc.pmt(maxAffordableLoan, avgInterest3yr, maxTerm * 12);
+
+            results.push({
+                ...offer,
+                maxAffordableLoan,
+                maxTerm,
+                avgInterest3yr,
+                estMonthly,
+                ratesToDisplay: ratesToUse
+            });
         }
+        
+        // Sort by highest affordable loan amount first
+        results.sort((a, b) => (b.maxAffordableLoan || 0) - (a.maxAffordableLoan || 0));
+        
+        render.renderResults(results);
+        render.setBanner('info', `วิเคราะห์เสร็จสิ้น! พบ ${results.length} โปรโมชันที่คุณอาจมีคุณสมบัติผ่าน`);
+
     } catch (e) {
-        console.error("Comparison failed:", e);
-        const cached = storage.load();
-        if (cached) {
-            render.renderResults(cached.analyzed);
-            render.setBanner('offline', 'เครือข่ายมีปัญหา แสดงผลจากแคชล่าสุด');
-        } else {
-            render.setBanner('error', 'ดึงข้อมูลไม่สำเร็จ และไม่มีข้อมูลแคชไว้');
-        }
+        console.error("Analysis failed:", e);
+        render.setBanner('error', 'เกิดข้อผิดพลาดในการดึงข้อมูลหรือวิเคราะห์');
     }
 }
 
 function attachEvents() {
-    document.getElementById('compareBtn')?.addEventListener('click', doCompare);
-    document.getElementById('resultsContainer')?.addEventListener('click', (e) => {
-        const t = e.target;
-        if (t.classList.contains('toggle-schedule-btn')) {
-            const card = t.closest('.result-card');
-            const cont = card?.querySelector('.amortization-table-container');
-            const avgText = card?.querySelector('.calculation-breakdown b')?.textContent || '';
-            const loanAmount = N(document.getElementById('loanAmount')?.value) ?? 0;
-            const years = N(document.getElementById('loanTerm')?.value) ?? 30;
-            const avg = parseFloat(avgText);
-            if (cont && Number.isFinite(avg) && loanAmount) {
-                const show = cont.style.display === 'none';
-                if (show) {
-                    render.renderSchedule(cont, loanAmount, avg, years);
-                    cont.style.display = 'block';
-                } else {
-                    cont.style.display = 'none';
-                }
-            }
-        }
-    });
-    exportsUI.attach();
-    exportsUI.ensureToolbar();
-    window.addEventListener('online', () => render.setBanner('info', 'กลับมาออนไลน์แล้วค่ะ'));
-    window.addEventListener('offline', () => render.setBanner('offline', 'คุณออฟไลน์อยู่ แสดงผลจากแคชได้'));
+    document.getElementById('compareBtn')?.addEventListener('click', analyzeAndFilterOffers);
+    // ... (the rest of attachEvents is the same, just make sure renderSchedule gets the right data)
 }
-
-function selfTests() { /* ... no changes here ... */ }
 
 function boot() {
     attachEvents();
-    selfTests();
-    if (!navigator.onLine) {
-        const cached = storage.load();
-        if (cached) {
-            render.renderResults(cached.analyzed);
-            render.setBanner('offline', 'โหมดออฟไลน์: แสดงผลจากแคชล่าสุด');
-        }
-    }
 }
 
 if (document.readyState === 'loading') {

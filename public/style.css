@@ -315,3 +315,13 @@ th {
     font-size: 1.6rem
   }
 }
+
+.result-card.ineligible {
+    opacity: 0.5;
+    background-color: #f1f1f1;
+}
+.result-card .highlight {
+    font-weight: bold;
+    color: var(--dark-text);
+    margin-top: 8px;
+}

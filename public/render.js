@@ -31,9 +31,14 @@ function clearResults() {
     if (wrap) wrap.innerHTML = '';
 }
 
+// render.js
+import { fmt } from './format.js';
+import { calc } from './calc.js';
+
+// ... (ensureBanner, setBanner, clearResults, renderSchedule ไม่มีการเปลี่ยนแปลง) ...
+
 function cardHTML(offer) {
     let ratesList = '';
-    // Use the ratesToDisplay array passed from app.js
     if (Array.isArray(offer.ratesToDisplay)) {
         const last = offer.ratesToDisplay.length - 1;
         offer.ratesToDisplay.forEach((r, i) => {
@@ -48,20 +53,23 @@ function cardHTML(offer) {
     const bankName = offer.banks?.name ?? 'ไม่ระบุธนาคาร';
     const promoName = offer.promotion_name ?? '';
     const avgStr = Number.isFinite(offer.avgInterest3yr) ? offer.avgInterest3yr.toFixed(2) : 'N/A';
-    const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : '';
+    const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : 'N/A';
+    // --- NEW: Display max loan amount ---
+    const maxLoanStr = Number.isFinite(offer.maxAffordableLoan) ? fmt.baht(offer.maxAffordableLoan) : 'คุณสมบัติไม่ผ่าน';
 
     return `
-      <div class="result-card">
+      <div class="result-card ${!Number.isFinite(offer.maxAffordableLoan) ? 'ineligible' : ''}">
         <h3>${bankName}</h3>
         <div class="calculation-breakdown">
           <p>${promoName}</p>
           <ul>${ratesList}</ul>
           <div>ดอกเบี้ยเฉลี่ย 3 ปี: <b>${avgStr}%</b></div>
-          ${payStr ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr} บาท</b></div>` : ''}
+          <div class="highlight">วงเงินกู้สูงสุด: <b>${maxLoanStr}</b></div>
+          ${Number.isFinite(offer.maxAffordableLoan) ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr}</b></div>` : ''}
         </div>
         <div class="button-group">
-          <button class="toggle-schedule-btn btn btn-secondary" aria-label="ตารางผ่อนรายเดือน" data-id="${offer.id}">ตารางผ่อนรายเดือน</button>
-          <button class="print-table-btn btn" aria-label="พิมพ์การ์ดนี้">พิมพ์</button>
+            ${Number.isFinite(offer.maxAffordableLoan) ? `<button class="toggle-schedule-btn btn btn-secondary" aria-label="ตารางผ่อนรายเดือน" data-id="${offer.id}">ตารางผ่อนรายเดือน</button>` : ''}
+            <button class="print-table-btn btn" aria-label="พิมพ์การ์ดนี้">พิมพ์</button>
         </div>
         <div class="amortization-table-container" style="display:none"></div>
       </div>
@@ -73,7 +81,7 @@ function renderResults(list) {
     if (!wrap) return;
     clearResults();
     if (!list || !list.length) {
-        wrap.innerHTML = '<div class="result-card">ยังไม่มีผลลัพธ์</div>';
+        wrap.innerHTML = '<div class="result-card">ไม่พบโปรโมชันที่ตรงตามเงื่อนไข</div>';
         return;
     }
     const frag = document.createDocumentFragment();
@@ -84,6 +92,8 @@ function renderResults(list) {
     });
     wrap.appendChild(frag);
 }
+
+export const render = { setBanner, renderResults, renderSchedule };
 
 function renderSchedule(container, loanAmount, avgRate, years) {
     const data = calc.buildAmortization(loanAmount, avgRate, years, 24);
