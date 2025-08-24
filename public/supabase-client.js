@@ -1,8 +1,8 @@
-// supabase-client.js
-// ไฟล์นี้จะทำการสร้าง Supabase client เพียงครั้งเดียวและส่งออกไปให้ไฟล์อื่นใช้
+// ชื่อไฟล์: supabase-client.js
 
+// ไฟล์นี้จะทำการสร้าง Supabase client เพียงครั้งเดียวและส่งออกไปให้ไฟล์อื่นใช้
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '/config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '/api/config';
 
 
 // สร้าง client และตั้งค่า auth ที่นี่เพียงที่เดียว
