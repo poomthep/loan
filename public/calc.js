@@ -1,24 +1,36 @@
-// calc.js - รวมฟังก์ชันการคำนวณทางการเงิน
+// ชื่อไฟล์: calc.js
+
+// ... ฟังก์ชัน pmt, parseFirst3Numeric, average, buildAmortization (เหมือนเดิม) ...
 
 /**
  * คำนวณค่างวดต่อเดือน (Principal + Interest)
- * @param {number} P - เงินต้น (Loan Amount)
- * @param {number} annualPct - อัตราดอกเบี้ยต่อปี (%)
- * @param {number} n - จำนวนงวดทั้งหมด (เดือน)
- * @returns {number} ค่างวดต่อเดือน
  */
 function pmt(P, annualPct, n) {
     const annual = Number(annualPct);
     const r = (annual / 100) / 12; // อัตราดอกเบี้ยต่อเดือน
-    if (!isFinite(r) || r === 0) return P / n;
+    if (!isFinite(r) || r === 0 || n <= 0) return P / n;
     const a = Math.pow(1 + r, n);
     return P * r * a / (a - 1);
 }
 
 /**
+ * คำนวณวงเงินกู้สูงสุด (Present Value) จากค่างวด
+ * @param {number} PMT - ค่างวดสูงสุดที่จ่ายไหวต่อเดือน
+ * @param {number} annualPct - อัตราดอกเบี้ยต่อปี (%)
+ * @param {number} n - จำนวนงวดทั้งหมด (เดือน)
+ * @returns {number} วงเงินกู้สูงสุดที่สามารถกู้ได้
+ */
+function pv(PMT, annualPct, n) {
+    const annual = Number(annualPct);
+    const r = (annual / 100) / 12; // อัตราดอกเบี้ยต่อเดือน
+    if (!isFinite(r) || r === 0 || n <= 0) return PMT * n;
+    const a = Math.pow(1 + r, n);
+    return PMT * (a - 1) / (r * a);
+}
+
+
+/**
  * ดึงตัวเลขดอกเบี้ย 3 ปีแรกออกมาจาก array
- * @param {Array<string|number>} rates - อาร์เรย์ของอัตราดอกเบี้ย
- * @returns {Array<number>} อาร์เรย์ของตัวเลขดอกเบี้ย 3 ค่าแรก
  */
 function parseFirst3Numeric(rates) {
     if (!Array.isArray(rates)) return [];
@@ -33,8 +45,6 @@ function parseFirst3Numeric(rates) {
 
 /**
  * คำนวณค่าเฉลี่ยของตัวเลขในอาร์เรย์
- * @param {Array<number>} arr - อาร์เรย์ของตัวเลข
- * @returns {number} ค่าเฉลี่ย
  */
 function average(arr) {
     if (!arr || !arr.length) return NaN;
@@ -43,11 +53,6 @@ function average(arr) {
 
 /**
  * สร้างตารางตัดต้นตัดดอก (Amortization Schedule)
- * @param {number} P - เงินต้น
- * @param {number} annualPct - อัตราดอกเบี้ยต่อปี (%)
- * @param {number} years - จำนวนปีที่กู้
- * @param {number} [maxRows=24] - จำนวนแถวสูงสุดที่จะแสดงผล
- * @returns {{payment: number, rows: Array<object>}} อ็อบเจกต์ที่ประกอบด้วยค่างวดและข้อมูลตาราง
  */
 function buildAmortization(P, annualPct, years, maxRows = 24) {
     const n = Math.max(12, Math.round(years * 12));
@@ -64,4 +69,6 @@ function buildAmortization(P, annualPct, years, maxRows = 24) {
     return { payment: pay, rows };
 }
 
-export const calc = { pmt, parseFirst3Numeric, average, buildAmortization };
+
+// NEW: เพิ่ม pv เข้าไปในส่วน export
+export const calc = { pmt, pv, parseFirst3Numeric, average, buildAmortization };
