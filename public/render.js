@@ -33,6 +33,8 @@ function clearResults() {
     if (wrap) wrap.innerHTML = '';
 }
 
+// ชื่อไฟล์: render.js
+
 function cardHTML(offer) {
     let ratesList = '';
     if (Array.isArray(offer.ratesToDisplay)) {
@@ -52,6 +54,9 @@ function cardHTML(offer) {
     const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : 'N/A';
     const maxLoanStr = Number.isFinite(offer.maxAffordableLoan) ? fmt.baht(offer.maxAffordableLoan) : 'คุณสมบัติไม่ผ่าน';
 
+    // --- CHANGED: เพิ่มการแสดงผลระยะเวลาที่ปรับแล้ว ---
+    const termText = `(ระยะเวลา ${offer.displayTerm} ปี)`;
+
     return `
       <div class="result-card ${!Number.isFinite(offer.maxAffordableLoan) ? 'ineligible' : ''}">
         <h3>${bankName}</h3>
@@ -60,7 +65,7 @@ function cardHTML(offer) {
           <ul>${ratesList}</ul>
           <div>ดอกเบี้ยเฉลี่ย 3 ปี: <b>${avgStr}%</b></div>
           <div class="highlight">วงเงินกู้สูงสุด: <b>${maxLoanStr}</b></div>
-          ${Number.isFinite(offer.maxAffordableLoan) ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr}</b></div>` : ''}
+          ${Number.isFinite(offer.maxAffordableLoan) ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr}</b> <small>${termText}</small></div>` : ''}
         </div>
         <div class="button-group">
             ${Number.isFinite(offer.maxAffordableLoan) ? `<button class="toggle-schedule-btn btn btn-secondary" aria-label="ตารางผ่อนรายเดือน" data-id="${offer.id}">ตารางผ่อนรายเดือน</button>` : ''}
