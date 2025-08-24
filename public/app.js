@@ -36,31 +36,15 @@ async function fetchAllPromotions() {
     loadingSpinner.style.display = 'none';
 }
 
+// ชื่อไฟล์: app.js (เฉพาะฟังก์ชัน handleAnalysis)
+
 function handleAnalysis() {
-    const userInfo = {
-        age: parseInt(document.getElementById('userAge').value) || 0,
-        salary: parseFloat(document.getElementById('monthlySalary').value) || 0,
-        bonus: parseFloat(document.getElementById('annualBonus').value) || 0,
-        otherIncome: parseFloat(document.getElementById('otherIncome6M').value) || 0,
-        debt: parseFloat(document.getElementById('monthlyDebt').value) || 0,
-        profession: document.getElementById('profession').value,
-        wantsMRTA: document.getElementById('wantsMRTA').checked,
-    };
-    const loanInfo = {
-        amount: parseFloat(document.getElementById('loanAmount').value) || 0,
-        term: parseInt(document.getElementById('loanTerm').value) || 30,
-    };
-
-    if (userInfo.salary <= 0) {
-        render.setBanner('warn', 'กรุณากรอกข้อมูลรายได้อย่างน้อย (เงินเดือน)');
-        return;
-    }
-
+    // ... (ส่วนอ่านค่าจากฟอร์มและคำนวณรายได้รวม เหมือนเดิม) ...
     const totalMonthlyIncome = userInfo.salary + (userInfo.bonus / 12) + (userInfo.otherIncome / 6);
     const isCalculatingMaxLoan = loanInfo.amount <= 0;
 
     processedOffers = allPromotions.map(promo => {
-        const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
+        // ... (ส่วนตรวจสอบคุณสมบัติเบื้องต้น เหมือนเดิม) ...
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
         if (maxAllowedTerm < 1) return null;
 
@@ -69,55 +53,43 @@ function handleAnalysis() {
         let calculationDetails = {};
 
         if (isCalculatingMaxLoan) {
-            const promoDSRLimit = promo.dsr_limit || 70;
-            const maxTotalDebtPayment = totalMonthlyIncome * (promoDSRLimit / 100);
-            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
-            if (maxAffordablePayment <= 0) return null;
-
+            // --- คำนวณวงเงินกู้สูงสุด ---
             actualTerm = maxAllowedTerm;
             const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
             const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
             if (isNaN(avgInterest)) return null;
 
-            const calculatedMaxLoan = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
-            finalLoanAmount = Math.min(calculatedMaxLoan, promo.max_loan_amount || Infinity);
+            // --- วิธีที่ 1: คำนวณจาก DSR (PV Formula) ---
+            const promoDSRLimit = promo.dsr_limit || 70;
+            const maxTotalDebtPayment = totalMonthlyIncome * (promoDSRLimit / 100);
+            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
+            if (maxAffordablePayment <= 0) return null;
+            const maxLoanByPV = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
+
+            // --- วิธีที่ 2: คำนวณจากเกณฑ์รายได้ต่อล้าน ---
+            const incomePerMillionReq = promo.income_per_million || 25000; // ใช้ค่ากลางๆ เป็น default
+            const maxLoanByIncome = (totalMonthlyIncome / incomePerMillionReq) * 1000000;
+
+            // --- ผลลัพธ์สุดท้ายคือค่าที่ "น้อยกว่า" ระหว่าง 2 วิธี และไม่เกินเพดานของโปรโมชัน ---
+            finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
             
-            // ⭐ เพิ่มตัวแปรสำหรับแสดงในสูตร
             calculationDetails = {
-                totalMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
-                existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12, // 'r'
-                totalMonths: actualTerm * 12 // 'n'
+                // ... (รายละเอียดเดิม) ...
+                maxLoanByPV,      // ⭐ เพิ่มผลลัพธ์วิธีที่ 1
+                maxLoanByIncome   // ⭐ เพิ่มผลลัพธ์วิธีที่ 2
             };
         } else {
-            actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
-            const userDSR = totalMonthlyIncome > 0 ? ((userInfo.debt + calc.pmt(loanInfo.amount, calc.average(calc.parseFirst3Numeric(promo.interest_rates.normal)), actualTerm * 12)) / totalMonthlyIncome) * 100 : 100;
-            const dsrCheck = userDSR < (promo.dsr_limit || 100);
-            const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
-            const incomeCheck = totalMonthlyIncome >= minIncome;
-
-            if (!dsrCheck || !incomeCheck) return null;
-            finalLoanAmount = loanInfo.amount;
+            // ... (โค้ดสำหรับ Case 2 เหมือนเดิม) ...
         }
 
-        const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-        const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
-        const estMonthly = calc.pmt(finalLoanAmount, avgInterest, actualTerm * 12);
-        
+        // ... (ส่วนคำนวณ estMonthly และ return object เหมือนเดิม) ...
         return {
             ...promo, maxAffordableLoan: finalLoanAmount, estMonthly, avgInterest3yr: avgInterest,
             ratesToDisplay: rates, displayTerm: actualTerm, calculationDetails,
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 
-    const sortedOffers = processedOffers.sort((a, b) => b.maxAffordableLoan - a.maxAffordableLoan);
-    render.renderResults(sortedOffers);
-    
-    if (sortedOffers.length > 0) {
-        render.setBanner('info', `พบ ${sortedOffers.length} โปรโมชันที่ตรงตามคุณสมบัติของคุณ`);
-    } else {
-        render.setBanner('warn', 'ไม่พบโปรโมชันที่ตรงตามเงื่อนไข หรือความสามารถในการกู้ไม่เพียงพอ');
-    }
+    // ... (ส่วนเรียงลำดับและส่งไปแสดงผลเหมือนเดิม) ...
 }
 
 // --- 4. Event Listeners ---

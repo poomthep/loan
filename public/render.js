@@ -39,45 +39,34 @@ function clearResults() {
 
 // ชื่อไฟล์: render.js
 
+// ชื่อไฟล์: render.js (เฉพาะฟังก์ชัน cardHTML)
+
 function cardHTML(offer) {
-    let ratesList = '';
-    if (Array.isArray(offer.ratesToDisplay)) {
-        const last = offer.ratesToDisplay.length - 1;
-        offer.ratesToDisplay.forEach((r, i) => {
-            const num = parseFloat(r);
-            if (i === last || Number.isNaN(num)) {
-                ratesList += `<li>ปีที่ ${i + 1} เป็นต้นไป: ${r}</li>`;
-            } else {
-                ratesList += `<li>ปีที่ ${i + 1}: ${num.toFixed(2)}%</li>`;
-            }
-        });
+    // ... (ส่วนประกาศตัวแปรเหมือนเดิม) ...
+
+    // --- NEW: สร้าง HTML สำหรับแสดงผล 2 วิธี ---
+    let maxLoanDetailsHTML = '';
+    if (offer.calculationDetails && offer.calculationDetails.maxLoanByPV) {
+        maxLoanDetailsHTML = `
+            <div class="loan-details">
+                <p><span>ตามภาระผ่อน (DSR):</span> <span>${fmt.baht(offer.calculationDetails.maxLoanByPV)}</span></p>
+                <p><span>ตามเกณฑ์รายได้:</span> <span>${fmt.baht(offer.calculationDetails.maxLoanByIncome)}</span></p>
+            </div>
+        `;
     }
-    
-    // ประกาศตัวแปร bankName (ใช้ n) ถูกต้องแล้ว
-    const bankName = offer.banks?.name ?? 'ไม่ระบุธนาคาร';
-    const promoName = offer.promotion_name ?? '';
-    const avgStr = Number.isFinite(offer.avgInterest3yr) ? offer.avgInterest3yr.toFixed(2) : 'N/A';
-    const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : 'N/A';
-    const maxLoanStr = Number.isFinite(offer.maxAffordableLoan) ? fmt.baht(offer.maxAffordableLoan) : 'คุณสมบัติไม่ผ่าน';
-    const termText = `(ระยะเวลา ${offer.displayTerm} ปี)`;
 
     return `
       <div class="result-card" data-id="${offer.id}">
-        {/* FIX: แก้จาก banklName (l) เป็น bankName (n) */}
-        <h3>${bankName}</h3> 
+        <h3>${bankName}</h3>
         <div class="calculation-breakdown">
           <p>${promoName}</p>
           <ul>${ratesList}</ul>
           <div>ดอกเบี้ยเฉลี่ย 3 ปี: <b>${avgStr}%</b></div>
-          <div class="highlight">วงเงินกู้สูงสุด: <b>${maxLoanStr}</b></div>
+          ${maxLoanDetailsHTML} {/* ⭐ แสดงรายละเอียดวงเงิน 2 วิธี */}
+          <div class="highlight">วงเงินกู้สูงสุด (ที่เป็นไปได้): <b>${maxLoanStr}</b></div>
           ${Number.isFinite(offer.maxAffordableLoan) ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr}</b> <small>${termText}</small></div>` : ''}
         </div>
-        <div class="button-group">
-            ${(offer.calculationDetails && Object.keys(offer.calculationDetails).length > 0) ? `<button class="details-btn btn btn-secondary" aria-label="ดูรายละเอียดการคำนวณ">ดูรายละเอียด</button>` : ''}
-            <button class="toggle-schedule-btn btn" aria-label="ตารางผ่อนรายเดือน">ตารางผ่อน</button>
-            <button class="print-table-btn btn" aria-label="พิมพ์การ์ดนี้">พิมพ์</button>
-        </div>
-        <div class="amortization-table-container" style="display:none"></div>
+        {/* ... (ส่วนปุ่ม Button Group เหมือนเดิม) ... */}
       </div>
     `;
 }

@@ -388,3 +388,20 @@ th {
 
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 @keyframes slideIn { from {transform: translateY(-50px);} to {transform: translateY(0);} }
+
+.loan-details {
+    font-size: 0.9em;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
+.loan-details p {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+}
+.loan-details p span:last-child {
+    font-weight: bold;
+}
