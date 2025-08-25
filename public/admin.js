@@ -144,28 +144,33 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null,
     }
 }
 
-async function renderPromotionsTable(promotionsTableBody, promotions) { 
-    promotionsTableBody.innerHTML = ''; 
-    if (!promotions || promotions.length === 0) { 
-        promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; 
-        return; 
-    } 
-    promotions.forEach(p => { 
-        const rates = p.interest_rates?.normal || []; 
-        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null); 
-        const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; 
-        const tr = document.createElement('tr'); 
+// ชื่อไฟล์: admin.js (เฉพาะฟังก์ชัน renderPromotionsTable)
+
+async function renderPromotionsTable(promotionsTableBody, promotions) {
+    promotionsTableBody.innerHTML = '';
+    if (!promotions || promotions.length === 0) {
+        promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>';
+        return;
+    }
+    promotions.forEach(p => {
+        const rates = p.interest_rates?.normal || [];
+        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null);
+        const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A';
+        const tr = document.createElement('tr');
+        
+        // ⭐ NEW: เพิ่ม data-label ในแต่ละ <td>
         tr.innerHTML = ` 
-            <td>${p.banks?.name || 'N/A'}</td> 
-            <td class="promo-name">${p.promotion_name}</td> 
-            <td>${avg}</td> 
-            <td class="actions"> 
+            <td data-label="ธนาคาร">${p.banks?.name || 'N/A'}</td> 
+            <td data-label="โปรโมชัน" class="promo-name">${p.promotion_name}</td> 
+            <td data-label="เฉลี่ย 3 ปี (%)">${avg}</td> 
+            <td data-label="การจัดการ" class="actions"> 
                 <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button> 
                 <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button> 
-            </td>`; 
-        promotionsTableBody.appendChild(tr); 
-    }); 
+            </td>`;
+        promotionsTableBody.appendChild(tr);
+    });
 }
+
 
 async function fetchBanks(bankSelect) { 
     const { data, error } = await supabase.from('banks').select('id, name').order('name'); 
