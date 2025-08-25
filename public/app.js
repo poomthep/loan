@@ -78,7 +78,6 @@ function handleAnalysis() {
         let finalLoanAmount = 0;
         let actualTerm = 0;
         let calculationDetails = {};
-        let steppedPayments = [];
 
         const resolveRate = (rate) => {
             if (typeof rate === 'string' && rate.toUpperCase().includes('MRR')) {
@@ -113,7 +112,9 @@ function handleAnalysis() {
             calculationDetails = {
                 totalMonthlyIncome, assessmentFactor, assessedMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
                 existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12, maxLoanByPV, maxLoanByIncome
+                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12, maxLoanByPV,
+                maxLoanByIncome,
+                incomePerMillionReq // ⭐ NEW: เพิ่ม incomePerMillionReq เข้าไปใน details
             };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
@@ -135,44 +136,15 @@ function handleAnalysis() {
         }
 
         const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-        if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
-            const rateGroups = [];
-            let lastRate = null;
-            ratesToCalc.forEach((rateStr, index) => {
-                const numericRate = resolveRate(rateStr);
-                if (numericRate !== lastRate) {
-                    rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
-                    lastRate = numericRate;
-                } else {
-                    rateGroups[rateGroups.length - 1].endYear = index + 1;
-                }
-            });
-
-            rateGroups.forEach((group, index) => {
-                const isLastGroup = index === rateGroups.length - 1;
-                const payment = calc.pmt(finalLoanAmount, group.rate, actualTerm * 12);
-                
-                let periodLabel = '';
-                if (group.startYear === group.endYear) {
-                    periodLabel = isLastGroup ? `ปีที่ ${group.startYear} เป็นต้นไป` : `ปีที่ ${group.startYear}`;
-                } else {
-                    periodLabel = `ปีที่ ${group.startYear}-${group.endYear}`;
-                }
-                steppedPayments.push({ period: periodLabel, amount: payment });
-            });
-        }
+        const avgInterest3yr = calc.average(calc.parseFirst3Numeric(ratesToCalc.map(resolveRate)));
         
-        const ratesForAvg = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-        const avgInterest3yr = calc.average(calc.parseFirst3Numeric(ratesForAvg.map(resolveRate)));
-
         return {
             ...promo,
             maxAffordableLoan: finalLoanAmount,
             avgInterest3yr: avgInterest3yr,
-            ratesToDisplay: ratesForAvg,
+            ratesToDisplay: ratesToCalc,
             displayTerm: actualTerm,
             calculationDetails,
-            steppedPayments
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 
@@ -196,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้ (อาจเกิดจากการกรอกวงเงินกู้โดยตรง)</p>';
         } else {
             const assessmentFactorText = details.assessmentFactor < 1 ? `(ปรับลด ${((1 - details.assessmentFactor) * 100).toFixed(0)}%)` : '';
+            // ⭐ NEW: อัปเดตการแสดงผลของวิธีที่ 2 ให้มีการแทนค่า
             modalContent.innerHTML = `
                 <p><span>รายได้รวม (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
                 <p><span>รายได้ที่ใช้ประเมิน ${assessmentFactorText}:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
@@ -218,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h4>วิธีคำนวณที่ 2: ตามเกณฑ์รายได้</h4>
                  <div class="formula-display">
                   <p><span><b>สูตร:</b></span> <span>(รายได้ที่ใช้ประเมิน / เกณฑ์) × 1 ล้าน</span></p>
+                  <hr>
+                  <p><span><b>การแทนค่า:</b></span> <span></span></p>
+                  <p><span>รายได้ที่ใช้ประเมิน:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
+                  <p><span>เกณฑ์ (รายได้ต่อล้าน):</span> <span>${details.incomePerMillionReq.toLocaleString('th-TH')}</span></p>
+                  <hr>
                   <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByIncome)}</b></span></p>
                 </div>
                 <hr>
