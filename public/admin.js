@@ -202,6 +202,7 @@ function clearForm(appElements) {
     appElements.saveBtn.disabled = false;
     document.getElementById('bonus_factor').value = 70;
     document.getElementById('other_income_factor').value = 50;
+    document.getElementById('income_assessment_factor').value = 100;
     hasMrtaOptionCheckbox.checked = false;
     renderInterestRateInputs(appElements.ratesContainer);
     appElements.promotionForm.querySelector('select').focus();
@@ -212,7 +213,7 @@ function populateForm(appElements, promo) {
     Object.keys(promo).forEach(key => {
         const el = document.getElementById(key);
         if (el) {
-            if (key === 'bonus_factor' || key === 'other_income_factor') {
+            if (key === 'bonus_factor' || key === 'other_income_factor' || key === 'income_assessment_factor') {
                 el.value = (promo[key] ?? 0) * 100;
             } else if (el.type === 'checkbox') {
                 el.checked = promo[key];
@@ -251,6 +252,7 @@ async function handleFormSubmit(e, appElements) {
 
         promoData.bonus_factor = N(formData.get('bonus_factor')) / 100;
         promoData.other_income_factor = N(formData.get('other_income_factor')) / 100;
+        promoData.income_assessment_factor = N(formData.get('income_assessment_factor')) / 100;
 
         promoData.has_mrta_option = hasMrtaOptionCheckbox.checked;
 
@@ -342,7 +344,6 @@ function setupAppEventListeners(appElements) {
         }
     });
 
-    appElements.modalCancelBtn.addEventListener('click', () => { appElements.confirmModal.style.display = 'none'; });
     const closeModal = () => appElements.confirmModal.style.display = 'none';
     appElements.modalCancelBtn.addEventListener('click', closeModal);
     appElements.confirmModal.querySelector('.close-btn').addEventListener('click', closeModal);
