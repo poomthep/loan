@@ -3,6 +3,9 @@ import { render } from './render.js';
 import { calc } from './calc.js';
 import { fmt } from './format.js';
 
+// --- ค่าคงที่ MRR อ้างอิง ---
+const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3% (ปรับเปลี่ยนได้ตามต้องการ)
+
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
 const resultsContainer = document.getElementById('resultsContainer');
@@ -75,11 +78,21 @@ function handleAnalysis() {
         let finalLoanAmount = 0;
         let actualTerm = 0;
         let calculationDetails = {};
+        let steppedPayments = [];
+
+        const resolveRate = (rate) => {
+            if (typeof rate === 'string' && rate.toUpperCase().includes('MRR')) {
+                const parts = rate.toUpperCase().split(/[-+]/);
+                const deduction = parseFloat(parts[1] || 0);
+                return rate.includes('-') ? MRR - deduction : MRR + deduction;
+            }
+            return parseFloat(rate);
+        };
 
         if (isCalculatingMaxLoan) {
             actualTerm = maxAllowedTerm;
             const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-            const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
+            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
             if (isNaN(avgInterest)) {
                 return null;
             }
@@ -98,20 +111,14 @@ function handleAnalysis() {
             finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
             
             calculationDetails = {
-                totalMonthlyIncome,
-                assessmentFactor,
-                assessedMonthlyIncome,
-                promoDSRLimit, maxTotalDebtPayment,
+                totalMonthlyIncome, assessmentFactor, assessedMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
                 existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12,
-                totalMonths: actualTerm * 12,
-                maxLoanByPV,
-                maxLoanByIncome
+                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12, maxLoanByPV, maxLoanByIncome
             };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
             const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-            const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
+            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
             if (isNaN(avgInterest)) return null;
 
             const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
@@ -127,18 +134,45 @@ function handleAnalysis() {
             finalLoanAmount = loanInfo.amount;
         }
 
-        const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-        const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
-        const estMonthly = calc.pmt(finalLoanAmount, avgInterest, actualTerm * 12);
+        const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
+            const rateGroups = [];
+            let lastRate = null;
+            ratesToCalc.forEach((rateStr, index) => {
+                const numericRate = resolveRate(rateStr);
+                if (numericRate !== lastRate) {
+                    rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
+                    lastRate = numericRate;
+                } else {
+                    rateGroups[rateGroups.length - 1].endYear = index + 1;
+                }
+            });
+
+            rateGroups.forEach((group, index) => {
+                const isLastGroup = index === rateGroups.length - 1;
+                const payment = calc.pmt(finalLoanAmount, group.rate, actualTerm * 12);
+                
+                let periodLabel = '';
+                if (group.startYear === group.endYear) {
+                    periodLabel = isLastGroup ? `ปีที่ ${group.startYear} เป็นต้นไป` : `ปีที่ ${group.startYear}`;
+                } else {
+                    periodLabel = `ปีที่ ${group.startYear}-${group.endYear}`;
+                }
+                steppedPayments.push({ period: periodLabel, amount: payment });
+            });
+        }
         
+        const ratesForAvg = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        const avgInterest3yr = calc.average(calc.parseFirst3Numeric(ratesForAvg.map(resolveRate)));
+
         return {
             ...promo,
             maxAffordableLoan: finalLoanAmount,
-            estMonthly: estMonthly,
-            avgInterest3yr: avgInterest,
-            ratesToDisplay: rates,
+            avgInterest3yr: avgInterest3yr,
+            ratesToDisplay: ratesForAvg,
             displayTerm: actualTerm,
             calculationDetails,
+            steppedPayments
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 
@@ -163,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const assessmentFactorText = details.assessmentFactor < 1 ? `(ปรับลด ${((1 - details.assessmentFactor) * 100).toFixed(0)}%)` : '';
             modalContent.innerHTML = `
-                <p><span>รายได้รวมต่อเดือน (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
+                <p><span>รายได้รวม (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
                 <p><span>รายได้ที่ใช้ประเมิน ${assessmentFactorText}:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
                 <p><span>ความสามารถในการผ่อนต่อเดือน:</span> <span>${fmt.baht(details.maxAffordablePayment)}</span></p>
                 <p><span>อัตราดอกเบี้ยเฉลี่ย (3 ปี):</span> <span>${details.avgInterest.toFixed(2)}%</span></p>

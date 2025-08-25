@@ -1,5 +1,3 @@
-// render.js - จัดการการแสดงผลบนหน้าจอ (DOM manipulation)
-
 import { fmt } from './format.js';
 import { calc } from './calc.js';
 
@@ -49,9 +47,15 @@ function cardHTML(offer) {
     const bankName = offer.banks?.name ?? 'ไม่ระบุธนาคาร';
     const promoName = offer.promotion_name ?? '';
     const avgStr = Number.isFinite(offer.avgInterest3yr) ? offer.avgInterest3yr.toFixed(2) : 'N/A';
-    const payStr = Number.isFinite(offer.estMonthly) ? fmt.baht(offer.estMonthly) : 'N/A';
     const maxLoanStr = Number.isFinite(offer.maxAffordableLoan) ? fmt.baht(offer.maxAffordableLoan) : 'คุณสมบัติไม่ผ่าน';
-    const termText = `(ระยะเวลา ${offer.displayTerm} ปี)`;
+    
+    let steppedPaymentsHTML = '';
+    if (Array.isArray(offer.steppedPayments) && offer.steppedPayments.length > 0) {
+        const paymentItems = offer.steppedPayments.map(p => 
+            `<li><span class="period">${p.period}:</span> <span class="amount">${fmt.baht(p.amount)}/เดือน</span></li>`
+        ).join('');
+        steppedPaymentsHTML = `<div class="stepped-payments"><h4>ค่างวดผ่อนชำระ:</h4><ul>${paymentItems}</ul></div>`;
+    }
 
     let maxLoanDetailsHTML = '';
     if (offer.calculationDetails && offer.calculationDetails.maxLoanByPV) {
@@ -72,7 +76,7 @@ function cardHTML(offer) {
           <div>ดอกเบี้ยเฉลี่ย 3 ปี: <b>${avgStr}%</b></div>
           ${maxLoanDetailsHTML}
           <div class="highlight">วงเงินกู้สูงสุด (ที่เป็นไปได้): <b>${maxLoanStr}</b></div>
-          ${Number.isFinite(offer.maxAffordableLoan) ? `<div>ค่างวดประมาณการ/เดือน: <b>${payStr}</b> <small>${termText}</small></div>` : ''}
+          ${steppedPaymentsHTML}
         </div>
         <div class="button-group">
             ${(offer.calculationDetails && Object.keys(offer.calculationDetails).length > 0) ? `<button class="details-btn btn btn-secondary" aria-label="ดูรายละเอียดการคำนวณ">ดูรายละเอียด</button>` : ''}
