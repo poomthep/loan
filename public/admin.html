@@ -3,99 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แผงควบคุมโปรโมชันสินเชื่อ</title>
-    <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#34495e">
-    <link rel="stylesheet" href="admin.css">
-</head>
-<body>
+    <title>Admin - จัดการโปรโมชันสินเชื่อ</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body class="container">
 
-    <div id="gate" class="view container active">
-        <h2>เข้าสู่ระบบผู้ดูแล</h2>
-        <form id="login-form" autocomplete="on">
-            <div class="form-group full-width"><label for="email">อีเมล</label><input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="username"></div>
-            <div class="form-group full-width"><label for="password">รหัสผ่าน</label><input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password"></div>
-            <div class="form-actions"><button type="submit" id="login-btn" class="btn-primary">เข้าสู่ระบบ</button></div>
+    <h1>จัดการโปรโมชันสินเชื่อ</h1>
+
+    <div id="gate">
+        <h2>กรุณาเข้าสู่ระบบ</h2>
+        <form id="login-form" class="form-grid">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" id="login-btn" class="btn btn-primary">เข้าสู่ระบบ</button>
         </form>
     </div>
 
-    <div id="app" class="view container">
-        <header>
-            <h1>จัดการโปรโมชันสินเชื่อบ้าน</h1>
-            <button id="logout-btn" class="btn-secondary">ออกจากระบบ</button>
-        </header>
+    <div id="app" style="display: none;">
+        <div style="text-align: right; margin-bottom: 20px;">
+            <button id="logout-btn" class="btn btn-danger">ออกจากระบบ</button>
+        </div>
 
-        <form id="promotion-form">
-            <h2 class="full-width">เพิ่ม/แก้ไขโปรโมชัน</h2>
-            <fieldset>
-                <legend>ข้อมูลโปรโมชันหลัก</legend>
-                <div class="sub-grid">
-                    <div class="form-group"><label for="bank_id">ธนาคาร</label><select id="bank_id" name="bank_id" required></select></div>
-                    <div class="form-group"><label for="promotion_name">ชื่อโปรโมชัน</label><input type="text" id="promotion_name" name="promotion_name" required></div>
-                    <div class="form-group"><label for="start_date">วันที่เริ่ม</label><input type="date" id="start_date" name="start_date"></div>
-                    <div class="form-group"><label for="end_date">วันที่สิ้นสุด</label><input type="date" id="end_date" name="end_date"></div>
-                </div>
-            </fieldset>
+        <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
+        <form id="promotion-form" class="form-grid">
+            <div class="form-group">
+                <label for="bank_id">ธนาคาร:</label>
+                <select id="bank_id" name="bank_id" required></select>
+            </div>
+            <div class="form-group">
+                <label for="promotion_name">ชื่อโปรโมชัน:</label>
+                <input type="text" id="promotion_name" name="promotion_name" placeholder="เช่น สินเชื่อบ้านใหม่ ดอกเบี้ยสุขใจ" required>
+            </div>
 
-            <fieldset>
-                <legend>โครงสร้างอัตราดอกเบี้ย</legend>
-                <div id="interest-rates-container"></div>
-                <button type="button" id="add-rate-year-btn" class="btn-secondary">เพิ่มปีดอกเบี้ย (+)</button>
-                <div class="form-group form-group--checkbox full-width" style="margin-top: 15px;">
-                    <input type="checkbox" id="has_mrta_option" name="has_mrta_option"><label for="has_mrta_option">มีตัวเลือก MRTA</label>
-                </div>
-            </fieldset>
-
-            <fieldset>
-                <legend>เงื่อนไขและเกณฑ์การพิจารณา</legend>
-                <div class="sub-grid">
-                    <div class="form-group"><label for="max_ltv">Max LTV (%)</label><input type="number" id="max_ltv" name="max_ltv"></div>
-                    <div class="form-group"><label for="dsr_limit">DSR Limit (%)</label><input type="number" id="dsr_limit" name="dsr_limit"></div>
-                    <div class="form-group"><label for="income_per_million">รายได้ต่อกู้ 1 ลบ./ด.</label><input type="number" id="income_per_million" name="income_per_million"></div>
-                    <div class="form-group"><label for="min_living_expense">ค่าครองชีพขั้นต่ำ/ด.</label><input type="number" id="min_living_expense" name="min_living_expense"></div>
-                    <div class="form-group"><label for="max_income">รายได้สูงสุดผู้กู้ (บาท/เดือน)</label><input type="number" id="max_income" name="max_income"></div>
-                    <div class="form-group"><label for="max_loan_amount">วงเงินกู้สูงสุด (บาท)</label><input type="number" id="max_loan_amount" name="max_loan_amount"></div>
-                    <div class="form-group"><label for="max_loan_tenure">อายุสัญญาสูงสุด (ปี)</label><input type="number" id="max_loan_tenure" name="max_loan_tenure"></div>
-                    <div class="form-group"><label for="max_age_salaried">อายุผู้กู้สูงสุด (พนักงาน)</label><input type="number" id="max_age_salaried" name="max_age_salaried"></div>
-                    <div class="form-group"><label for="max_age_business">อายุผู้กู้สูงสุด (ธุรกิจ)</label><input type="number" id="max_age_business" name="max_age_business"></div>
-                </div>
-            </fieldset>
+            <div class="form-group">
+                <label for="start_date">วันที่เริ่มโปรโมชัน:</label>
+                <input type="date" id="start_date" name="start_date">
+            </div>
+            <div class="form-group">
+                <label for="end_date">วันที่สิ้นสุดโปรโมชัน:</label>
+                <input type="date" id="end_date" name="end_date">
+            </div>
             
-            <div class="form-group form-group--checkbox full-width"><input type="checkbox" id="waive_mortgage_fee" name="waive_mortgage_fee"><label for="waive_mortgage_fee">ยกเว้นค่าจดจำนอง</label></div>
-            <div class="form-group full-width"><label for="notes">หมายเหตุ</label><input type="text" id="notes" name="notes"></div>
+            <hr class="full-width">
+
+            <div class="form-group">
+                <label for="dsr_limit">DSR ไม่เกิน (%):</label>
+                <input type="number" id="dsr_limit" name="dsr_limit" placeholder="เช่น 70" value="70">
+            </div>
+            <div class="form-group">
+                <label for="income_per_million">รายได้ต่อล้าน (บาท):</label>
+                <input type="number" id="income_per_million" name="income_per_million" placeholder="เช่น 25000" value="25000">
+            </div>
+            <div class="form-group">
+                <label for="bonus_factor">สัดส่วนโบนัสที่นำมาคิด (%):</label>
+                <input type="number" id="bonus_factor" name="bonus_factor" placeholder="เช่น 70" value="70" step="1">
+            </div>
+            <div class="form-group">
+                <label for="other_income_factor">สัดส่วนรายได้อื่นที่นำมาคิด (%):</label>
+                <input type="number" id="other_income_factor" name="other_income_factor" placeholder="เช่น 50" value="50" step="1">
+            </div>
+
+            <hr class="full-width">
+
+            <h3 class="full-width">อัตราดอกเบี้ย</h3>
+            <div class="form-group checkbox-group full-width">
+                <input type="checkbox" id="has_mrta_option">
+                <label for="has_mrta_option">มีตัวเลือกดอกเบี้ยพิเศษสำหรับ MRTA</label>
+            </div>
+            <div id="interest-rates-container" class="full-width">
+                </div>
+            <div class="full-width">
+                <button type="button" id="add-rate-year-btn" class="btn btn-secondary">เพิ่มปีดอกเบี้ย</button>
+            </div>
             
-            <div class="form-actions full-width">
-                <button type="submit" id="save-btn" class="btn-primary">บันทึกโปรโมชัน</button>
-                <button type="button" id="clear-btn" class="btn-secondary">ล้างฟอร์ม</button>
+            <hr class="full-width">
+            
+            <div class="form-group full-width">
+                <label for="notes">หมายเหตุ:</label>
+                <textarea id="notes" name="notes" rows="3"></textarea>
+            </div>
+            
+            <div class="full-width button-group" style="justify-content: flex-start;">
+                <button type="submit" id="save-btn" class="btn btn-primary">บันทึกโปรโมชัน</button>
+                <button type="button" id="clear-btn" class="btn">ล้างฟอร์ม</button>
             </div>
         </form>
 
-        <hr style="margin: 40px 0;">
-        <div class="table-controls">
-             <div class="form-group"><label for="search-input">ค้นหา</label><input type="search" id="search-input" placeholder="ค้นหาโปรโมชันหรือธนาคาร..."></div>
-        </div>
-        <div class="table-wrapper">
-            <table id="promotions-table">
-                <thead><tr><th>ธนาคาร</th><th>โปรโมชัน</th><th>เฉลี่ย 3 ปี (%)</th><th>จัดการ</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <hr>
+
+        <h2>รายการโปรโมชันทั้งหมด</h2>
+        <table id="promotions-table" class="data-table">
+            <thead>
+                <tr>
+                    <th>ธนาคาร</th>
+                    <th>ชื่อโปรโมชัน</th>
+                    <th>ดอกเบี้ยเฉลี่ย 3 ปี (%)</th>
+                    <th>การจัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
-    
+
     <div id="toast"></div>
 
-    <div id="confirm-modal" class="modal-backdrop">
+    <div id="confirm-modal" class="modal">
         <div class="modal-content">
-            <p id="modal-text">คุณแน่ใจหรือไม่?</p>
-            <div class="modal-actions">
-                <button id="modal-cancel-btn" class="btn-secondary">ยกเลิก</button>
-                <button id="modal-confirm-btn" class="btn-danger">ยืนยันลบ</button>
+            <span class="close-btn">&times;</span>
+            <p id="modal-text">คุณต้องการลบรายการนี้ใช่หรือไม่?</p>
+            <div class="button-group">
+                <button id="modal-confirm-btn" class="btn btn-danger">ยืนยัน</button>
+                <button id="modal-cancel-btn" class="btn">ยกเลิก</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="supabase-client.js"></script>
-    <script type="module" src="admin.js"></script>
-    <script type="module" src="session-guard.js"></script>
+    <script src="supabase-client.js" type="module"></script>
+    <script src="session-guard.js" type="module"></script>
+    <script src="admin.js" type="module"></script>
 </body>
 </html>

@@ -1,5 +1,3 @@
-// ชื่อไฟล์: app.js (ฉบับสมบูรณ์ล่าสุด)
-
 import { supabase } from './supabase-client.js';
 import { render } from './render.js';
 import { calc } from './calc.js';
@@ -56,13 +54,21 @@ function handleAnalysis() {
         return;
     }
 
-    const totalMonthlyIncome = userInfo.salary + (userInfo.bonus / 12) + (userInfo.otherIncome / 6);
     const isCalculatingMaxLoan = loanInfo.amount <= 0;
 
     processedOffers = allPromotions.map(promo => {
+        const bonusFactor = promo.bonus_factor ?? 0.70;
+        const otherIncomeFactor = promo.other_income_factor ?? 0.50;
+
+        const monthlyBonus = (userInfo.bonus / 12) * bonusFactor;
+        const monthlyOtherIncome = (userInfo.otherIncome / 6) * otherIncomeFactor;
+        const totalMonthlyIncome = userInfo.salary + monthlyBonus + monthlyOtherIncome;
+
         const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
-        if (maxAllowedTerm < 1) return null;
+        if (maxAllowedTerm < 1) {
+            return null;
+        }
 
         let finalLoanAmount = 0;
         let actualTerm = 0;
@@ -72,12 +78,16 @@ function handleAnalysis() {
             actualTerm = maxAllowedTerm;
             const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
             const avgInterest = calc.average(calc.parseFirst3Numeric(rates));
-            if (isNaN(avgInterest)) return null;
+            if (isNaN(avgInterest)) {
+                return null;
+            }
 
             const promoDSRLimit = promo.dsr_limit || 70;
             const maxTotalDebtPayment = totalMonthlyIncome * (promoDSRLimit / 100);
             const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
-            if (maxAffordablePayment <= 0) return null;
+            if (maxAffordablePayment <= 0) {
+                return null;
+            }
             const maxLoanByPV = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
 
             const incomePerMillionReq = promo.income_per_million || 25000;
@@ -103,7 +113,9 @@ function handleAnalysis() {
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
             const incomeCheck = totalMonthlyIncome >= minIncome;
 
-            if (!dsrCheck || !incomeCheck) return null;
+            if (!dsrCheck || !incomeCheck) {
+                return null;
+            }
             finalLoanAmount = loanInfo.amount;
         }
 
@@ -112,8 +124,13 @@ function handleAnalysis() {
         const estMonthly = calc.pmt(finalLoanAmount, avgInterest, actualTerm * 12);
         
         return {
-            ...promo, maxAffordableLoan: finalLoanAmount, estMonthly, avgInterest3yr: avgInterest,
-            ratesToDisplay: rates, displayTerm: actualTerm, calculationDetails,
+            ...promo,
+            maxAffordableLoan: finalLoanAmount,
+            estMonthly: estMonthly,
+            avgInterest3yr: avgInterest,
+            ratesToDisplay: rates,
+            displayTerm: actualTerm,
+            calculationDetails,
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 

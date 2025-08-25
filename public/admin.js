@@ -1,4 +1,3 @@
-// admin.js (Added MRTA interest rate fields)
 import { supabase } from './supabase-client.js';
 import { scheduleSessionRefresh, setupVisibilityHandlers } from './session-guard.js';
 
@@ -13,7 +12,10 @@ let appBooted = false;
 const N = (v) => (v === '' || v === null || isNaN(parseFloat(v))) ? null : parseFloat(v);
 const D = (v) => (v === '' || v === null) ? null : v;
 const showToast = (message, isError = false) => { toast.textContent = message; toast.className = isError ? 'error' : ''; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); };
-const showView = (viewName) => { Object.values(views).forEach(v => v.classList.remove('active')); if (views[viewName]) views[viewName].classList.add('active'); };
+const showView = (viewName) => { 
+    Object.values(views).forEach(v => v.style.display = 'none');
+    if (views[viewName]) views[viewName].style.display = 'block';
+};
 
 // --- Core Application Logic ---
 async function loadInitialData(appElements) {
@@ -21,6 +23,7 @@ async function loadInitialData(appElements) {
     await fetchBanks(appElements.bankSelect);
     await fetchPromotions(appElements.promotionsTableBody);
 }
+
 async function isAdminAuthenticated(session) {
     try {
         if (!session) { return false; }
@@ -66,7 +69,7 @@ function initializeGateView() {
 function initializeAppView() {
     const appElements = initAppElements();
     setupAppEventListeners(appElements);
-    renderInterestRateInputs(appElements.ratesContainer); // Render initial state
+    renderInterestRateInputs(appElements.ratesContainer);
     loadInitialData(appElements);
 }
 
@@ -77,6 +80,7 @@ async function boot(session) {
             appBooted = true;
             showView('app');
             initializeAppView();
+            scheduleSessionRefresh(session);
         }
     } else {
         appBooted = false;
@@ -103,23 +107,16 @@ function initAppElements() {
 }
 
 // --- UI Rendering ---
-// UPDATED: renderInterestRateInputs to include MRTA fields
 function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null, null, ""], mrta: [null, null, null, ""] }) {
     ratesContainer.innerHTML = '';
-    const showMrta = document.getElementById('has_mrta_option').checked;
-
-    const normalRates = rates?.normal || [null, null, null, ""];
-    const mrtaRates = rates?.mrta || [null, null, null, ""];
-    
-    // Use normalRates length as the primary driver for the number of rows
+    const showMrta = hasMrtaOptionCheckbox.checked;
+    const normalRates = rates?.normal || ["", "", "", ""];
+    const mrtaRates = rates?.mrta || ["", "", "", ""];
     const numYears = normalRates.length;
 
     for (let i = 0; i < numYears; i++) {
         const year = i + 1;
         const isLastRate = i === numYears - 1;
-        // CHANGED: Allow removal if there are more than 3 years, and it's not the very last input
-        const isRemovable = numYears > 3 && !isLastRate; 
-        
         const normalRateValue = normalRates[i] ?? '';
         const mrtaRateValue = mrtaRates[i] ?? '';
         
@@ -140,18 +137,61 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null,
             <label>${labelText}</label>
             <div class="rate-inputs-group">
                <input type="${inputType}" class="rate-input normal-rate" value="${normalRateValue}" placeholder="ปกติ (%)" title="อัตราดอกเบี้ยปกติ ปีที่ ${year}" ${inputType === 'number' ? 'step="0.01"' : ''}>
-                <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'}" ${inputType === 'number' ? 'step="0.01"' : ''}>
-           </div>
-            ${isRemovable ? `<button type="button" class="btn-danger remove-rate-year-btn" tabindex="-1">ลบ</button>` : ''}
+               <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'}" ${inputType === 'number' ? 'step="0.01"' : ''}>
+            </div>
         `;
         ratesContainer.appendChild(row);
     }
 }
 
-// ... other rendering and data fetching functions are the same ...
-async function renderPromotionsTable(promotionsTableBody, promotions) { promotionsTableBody.innerHTML = ''; if (!promotions || promotions.length === 0) { promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; return; } promotions.forEach(p => { const rates = p.interest_rates?.normal || []; const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null); const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; const tr = document.createElement('tr'); tr.innerHTML = ` <td>${p.banks?.name || 'N/A'}</td> <td class="promo-name">${p.promotion_name}<small>${p.loan_type}</small></td> <td>${avg}</td> <td class="actions"> <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button> <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button> </td>`; promotionsTableBody.appendChild(tr); }); }
-async function fetchBanks(bankSelect) { const { data, error } = await supabase.from('banks').select('id, name').order('name'); if (error) { showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); return; } state.banks = data; bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>'; state.banks.forEach(bank => { const option = document.createElement('option'); option.value = bank.id; option.textContent = bank.name; bankSelect.appendChild(option); }); }
-async function fetchPromotions(promotionsTableBody) { const { data, error } = await supabase.from('promotions').select('*, banks(name)').order('created_at', { ascending: false }); if (error) { showToast('ไม่สามารถโหลดข้อมูลโปรโมชันได้', true); return; } state.promotions = data; renderPromotionsTable(promotionsTableBody, data); }
+async function renderPromotionsTable(promotionsTableBody, promotions) { 
+    promotionsTableBody.innerHTML = ''; 
+    if (!promotions || promotions.length === 0) { 
+        promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; 
+        return; 
+    } 
+    promotions.forEach(p => { 
+        const rates = p.interest_rates?.normal || []; 
+        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null); 
+        const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; 
+        const tr = document.createElement('tr'); 
+        tr.innerHTML = ` 
+            <td>${p.banks?.name || 'N/A'}</td> 
+            <td class="promo-name">${p.promotion_name}</td> 
+            <td>${avg}</td> 
+            <td class="actions"> 
+                <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button> 
+                <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button> 
+            </td>`; 
+        promotionsTableBody.appendChild(tr); 
+    }); 
+}
+
+async function fetchBanks(bankSelect) { 
+    const { data, error } = await supabase.from('banks').select('id, name').order('name'); 
+    if (error) { 
+        showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); 
+        return; 
+    } 
+    state.banks = data; 
+    bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>'; 
+    state.banks.forEach(bank => { 
+        const option = document.createElement('option'); 
+        option.value = bank.id; 
+        option.textContent = bank.name; 
+        bankSelect.appendChild(option); 
+    }); 
+}
+
+async function fetchPromotions(promotionsTableBody) { 
+    const { data, error } = await supabase.from('promotions').select('*, banks(name)').order('created_at', { ascending: false }); 
+    if (error) { 
+        showToast('ไม่สามารถโหลดข้อมูลโปรโมชันได้', true); 
+        return; 
+    } 
+    state.promotions = data; 
+    renderPromotionsTable(promotionsTableBody, data); 
+}
 
 // --- Form Handling ---
 function clearForm(appElements) {
@@ -160,11 +200,11 @@ function clearForm(appElements) {
     state.editingId = null;
     appElements.saveBtn.textContent = 'บันทึกโปรโมชัน';
     appElements.saveBtn.disabled = false;
-    appElements.saveBtn.classList.replace('btn-secondary', 'btn-primary');
-    // Reset checkbox and re-render inputs
+    document.getElementById('bonus_factor').value = 70;
+    document.getElementById('other_income_factor').value = 50;
     hasMrtaOptionCheckbox.checked = false;
     renderInterestRateInputs(appElements.ratesContainer);
-    appElements.promotionForm.querySelector('input, select').focus();
+    appElements.promotionForm.querySelector('select').focus();
 }
 
 function populateForm(appElements, promo) {
@@ -172,7 +212,9 @@ function populateForm(appElements, promo) {
     Object.keys(promo).forEach(key => {
         const el = document.getElementById(key);
         if (el) {
-            if (el.type === 'checkbox') {
+            if (key === 'bonus_factor' || key === 'other_income_factor') {
+                el.value = (promo[key] ?? 0) * 100;
+            } else if (el.type === 'checkbox') {
                 el.checked = promo[key];
             } else if (el.type === 'date') {
                 el.value = promo[key] ? new Date(promo[key]).toISOString().split('T')[0] : '';
@@ -181,13 +223,11 @@ function populateForm(appElements, promo) {
             }
         }
     });
-    // Trigger change event for MRTA checkbox to show/hide fields
     hasMrtaOptionCheckbox.dispatchEvent(new Event('change'));
     renderInterestRateInputs(appElements.ratesContainer, promo.interest_rates);
     state.isEditing = true;
     state.editingId = promo.id;
     appElements.saveBtn.textContent = 'บันทึกการแก้ไข';
-    appElements.saveBtn.classList.replace('btn-primary', 'btn-secondary');
     window.scrollTo(0, 0);
 }
 
@@ -196,18 +236,22 @@ async function handleFormSubmit(e, appElements) {
     appElements.saveBtn.disabled = true;
 
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!await isAdminAuthenticated(session)) {
-            showToast('Session ไม่ถูกต้อง, กรุณาล็อกอินใหม่', true);
-            setTimeout(() => location.reload(), 2000);
-            return;
-        }
-
         const formData = new FormData(appElements.promotionForm);
         const promoData = {};
-        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'max_ltv', 'dsr_limit', 'income_per_million', 'min_living_expense', 'max_income', 'max_loan_amount', 'max_loan_tenure', 'max_age_salaried', 'max_age_business', 'notes'];
-        formFields.forEach(field => { const el = document.getElementById(field); if (el && el.type === 'number') { promoData[field] = N(formData.get(field)); } else if (el) { promoData[field] = D(formData.get(field)); } });
-        promoData.waive_mortgage_fee = document.getElementById('waive_mortgage_fee').checked;
+        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'dsr_limit', 'income_per_million', 'notes'];
+        
+        formFields.forEach(field => { 
+            const el = document.getElementById(field);
+            if (el && el.type === 'number') {
+                promoData[field] = N(formData.get(field));
+            } else if (el) {
+                promoData[field] = D(formData.get(field));
+            }
+        });
+
+        promoData.bonus_factor = N(formData.get('bonus_factor')) / 100;
+        promoData.other_income_factor = N(formData.get('other_income_factor')) / 100;
+
         promoData.has_mrta_option = hasMrtaOptionCheckbox.checked;
 
         const normalRates = [];
@@ -217,7 +261,6 @@ async function handleFormSubmit(e, appElements) {
         rateRows.forEach(row => {
             const normalInput = row.querySelector('.normal-rate');
             const mrtaInput = row.querySelector('.mrta-rate');
-            
             normalRates.push(normalInput.type === 'number' ? N(normalInput.value) : D(normalInput.value));
             if (hasMrtaOptionCheckbox.checked) {
                 mrtaRates.push(mrtaInput.type === 'number' ? N(mrtaInput.value) : D(mrtaInput.value));
@@ -229,7 +272,10 @@ async function handleFormSubmit(e, appElements) {
             mrta: hasMrtaOptionCheckbox.checked ? mrtaRates.filter(r => r !== null && r !== "") : []
         };
         
-        const { error } = state.isEditing ? await supabase.from('promotions').update(promoData).eq('id', state.editingId) : await supabase.from('promotions').insert([promoData]);
+        const { error } = state.isEditing 
+            ? await supabase.from('promotions').update(promoData).eq('id', state.editingId) 
+            : await supabase.from('promotions').insert([promoData]);
+        
         if (error) throw error;
         
         showToast(state.isEditing ? 'แก้ไขโปรโมชันสำเร็จ' : 'เพิ่มโปรโมชันสำเร็จ');
@@ -249,7 +295,6 @@ function setupAppEventListeners(appElements) {
     appElements.clearBtn.addEventListener('click', () => clearForm(appElements));
     appElements.promotionForm.addEventListener('submit', (e) => handleFormSubmit(e, appElements));
     
-    // Add listener for the MRTA checkbox to toggle fields
     hasMrtaOptionCheckbox.addEventListener('change', () => {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {
@@ -258,7 +303,6 @@ function setupAppEventListeners(appElements) {
     });
 
     appElements.addRateYearBtn.addEventListener('click', () => {
-        // This is complex now with two sets of rates. We will simplify by just re-rendering.
         const normalRates = Array.from(appElements.ratesContainer.querySelectorAll('.normal-rate')).map(input => input.type === 'number' ? N(input.value) : D(input.value));
         const mrtaRates = Array.from(appElements.ratesContainer.querySelectorAll('.mrta-rate')).map(input => input.type === 'number' ? N(input.value) : D(input.value));
         const lastNormal = normalRates.pop();
@@ -282,16 +326,10 @@ function setupAppEventListeners(appElements) {
             const id = target.dataset.id;
             const promo = state.promotions.find(p => p.id == id);
             appElements.modalText.textContent = `คุณต้องการลบโปรโมชัน "${promo?.promotion_name || 'รายการนี้'}" ใช่หรือไม่?`;
-            appElements.confirmModal.classList.add('visible');
+            appElements.confirmModal.style.display = 'block';
             appElements.modalConfirmBtn.onclick = async () => {
-                appElements.confirmModal.classList.remove('visible');
+                appElements.confirmModal.style.display = 'none';
                 try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!await isAdminAuthenticated(session)) {
-                        showToast('Session ไม่ถูกต้อง, กรุณาล็อกอินใหม่', true);
-                        setTimeout(() => location.reload(), 2000);
-                        return;
-                    }
                     const { error } = await supabase.from('promotions').delete().eq('id', id);
                     if (error) throw error;
                     showToast('ลบโปรโมชันสำเร็จแล้ว');
@@ -303,13 +341,25 @@ function setupAppEventListeners(appElements) {
             };
         }
     });
-    appElements.modalCancelBtn.addEventListener('click', () => { appElements.confirmModal.classList.remove('visible'); });
-    appElements.confirmModal.addEventListener('click', (e) => { if (e.target === appElements.confirmModal) { appElements.confirmModal.classList.remove('visible'); } });
+
+    appElements.modalCancelBtn.addEventListener('click', () => { appElements.confirmModal.style.display = 'none'; });
+    const closeModal = () => appElements.confirmModal.style.display = 'none';
+    appElements.modalCancelBtn.addEventListener('click', closeModal);
+    appElements.confirmModal.querySelector('.close-btn').addEventListener('click', closeModal);
+    appElements.confirmModal.addEventListener('click', (e) => { 
+        if (e.target === appElements.confirmModal) { closeModal(); } 
+    });
 }
 
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
-    try { if (location.hash.includes('access_token')) { history.replaceState(null, '', location.origin + location.pathname); } } catch (e) { console.warn('Could not clean URL hash'); }
+    try { 
+        if (location.hash.includes('access_token')) { 
+            history.replaceState(null, '', location.origin + location.pathname); 
+        } 
+    } catch (e) { 
+        console.warn('Could not clean URL hash'); 
+    }
     
     setupVisibilityHandlers();
 
