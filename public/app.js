@@ -153,24 +153,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!details || Object.keys(details).length === 0) {
             modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้ (อาจเกิดจากการกรอกวงเงินกู้โดยตรง)</p>';
         } else {
+            // ⭐ แก้ไขส่วนนี้เพื่อเพิ่มการแสดงการแทนค่าในสูตร
             modalContent.innerHTML = `
                 <p><span>รายได้รวมต่อเดือน:</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
-                <p><span>เงื่อนไข DSR ของโปรโมชัน:</span> <span>ไม่เกิน ${details.promoDSRLimit}%</span></p>
-                <p><span>ภาระหนี้สูงสุดที่แบกรับได้:</span> <span>${fmt.baht(details.maxTotalDebtPayment)}</span></p>
-                <p><span>ภาระหนี้สินเดิม:</span> <span>-${fmt.baht(details.existingDebt)}</span></p>
                 <p><span>ความสามารถในการผ่อนต่อเดือน:</span> <span>${fmt.baht(details.maxAffordablePayment)}</span></p>
                 <p><span>อัตราดอกเบี้ยเฉลี่ย (3 ปี):</span> <span>${details.avgInterest.toFixed(2)}%</span></p>
                 <p><span>ระยะเวลา:</span> <span>${details.actualTerm} ปี</span></p>
                 <hr>
+
                 <h4>วิธีคำนวณที่ 1: ตามภาระผ่อน (DSR)</h4>
                 <div class="formula-display">
-                  <p><span>สูตร:</span> <span>PV = PMT × [1-(1+r)<sup>-n</sup>]/r</span></p>
-                  <p><span>ผลลัพธ์:</span> <span>${fmt.baht(details.maxLoanByPV)}</span></p>
+                  <p><span><b>สูตร:</b></span> <span>PV = PMT × [1-(1+r)<sup>-n</sup>]/r</span></p>
+                  <hr>
+                  <p><span><b>การแทนค่า:</b></span> <span></span></p>
+                  <p><span>PMT (ค่างวด):</span> <span>${details.maxAffordablePayment.toLocaleString('th-TH')}</span></p>
+                  <p><span>r (ดอกเบี้ย/เดือน):</span> <span>${details.monthlyRate.toFixed(8)} (${details.avgInterest.toFixed(2)}% / 12)</span></p>
+                  <p><span>n (จำนวนงวด):</span> <span>${details.totalMonths} เดือน (${details.actualTerm} ปี)</span></p>
+                  <hr>
+                  <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByPV)}</b></span></p>
                 </div>
+                
+                <hr>
                 <h4>วิธีคำนวณที่ 2: ตามเกณฑ์รายได้</h4>
                  <div class="formula-display">
-                  <p><span>สูตร:</span> <span>(รายได้รวม / เกณฑ์) * 1 ล้าน</span></p>
-                  <p><span>ผลลัพธ์:</span> <span>${fmt.baht(details.maxLoanByIncome)}</span></p>
+                  <p><span><b>สูตร:</b></span> <span>(รายได้รวม / เกณฑ์) × 1 ล้าน</span></p>
+                   <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByIncome)}</b></span></p>
                 </div>
                 <hr>
                 <p><span><b>วงเงินกู้สูงสุดที่เป็นไปได้ (ค่าที่น้อยกว่า):</b></span> <span><b>${fmt.baht(details.finalLoanAmount)}</b></span></p>
