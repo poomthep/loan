@@ -253,3 +253,84 @@ hr {
         margin: 5vh auto;
     }
 }
+
+/* === CSS Variables (Theme Definition) === */
+:root {
+    --primary-color: #005A9C;
+    --secondary-color: #6c757d;
+    --background-color: #f8f9fa;
+    --surface-color: #ffffff;
+    --text-color: #343a40;
+    --text-color-light: #6c757d;
+    --border-color: #dee2e6;
+    --danger-color: #dc3545;
+    --font-family: 'Kanit', sans-serif;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --border-radius: 8px;
+}
+
+/* === Base & Typography === */
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.7;
+    margin: 0;
+}
+
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px 30px;
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+h1, h2, h3, h4 {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+/* ... (ส่วน Typography อื่นๆ เหมือนเดิม) ... */
+
+/* === NEW: Section Header for Admin Page === */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.section-header h2 {
+    margin: 0;
+    border-bottom: none;
+}
+
+/* === NEW: Bank MRR Row Styles === */
+.bank-mrr-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+}
+.bank-mrr-row label {
+    font-weight: 700;
+    flex: 1 1 150px; /* Allow shrinking but base width is 150px */
+}
+.bank-mrr-row input {
+    flex: 2 1 200px; /* Allow growing and shrinking, base width 200px */
+}
+.bank-mrr-row button {
+    flex-shrink: 0; /* Don't allow button to shrink */
+}
+
+
+/* === Forms & Inputs === */
+.input-grid, .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+/* ... (ส่วน Forms, Buttons, Result Cards, Modal, Responsive เหมือนเดิม) ... */

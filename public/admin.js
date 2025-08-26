@@ -24,16 +24,12 @@ function renderBankManagement(banks) {
     container.innerHTML = '<h3>ค่า MRR ของแต่ละธนาคาร</h3>';
     banks.forEach(bank => {
         const div = document.createElement('div');
-        div.className = 'form-grid';
-        div.style.alignItems = 'flex-end';
+        // ⭐ MODIFIED: Changed class and removed inline styles for better CSS control
+        div.className = 'bank-mrr-row'; 
         div.innerHTML = `
-            <div class="form-group">
-                <label>${bank.name}</label>
-                <input type="number" class="mrr-input" id="mrr-${bank.id}" value="${bank.mrr_rate || ''}" step="0.01" placeholder="เช่น 7.3">
-            </div>
-            <div class="form-group">
-                <button class="btn btn-secondary save-mrr-btn" data-id="${bank.id}">บันทึก</button>
-            </div>
+            <label for="mrr-${bank.id}">${bank.name}</label>
+            <input type="number" class="mrr-input" id="mrr-${bank.id}" value="${bank.mrr_rate || ''}" step="0.01" placeholder="เช่น 7.3">
+            <button class="btn btn-secondary btn-sm save-mrr-btn" data-id="${bank.id}">บันทึก</button>
         `;
         container.appendChild(div);
     });
@@ -352,7 +348,6 @@ function setupAppEventListeners(appElements) {
         }
     });
 
-    // --- MODIFIED: Added Toggle Bank Manager ---
     const toggleBankManagerBtn = document.getElementById('toggle-bank-manager-btn');
     toggleBankManagerBtn.addEventListener('click', () => {
         if (bankContainer.style.display === 'none') {
