@@ -54,14 +54,14 @@ function cardHTML(offer) {
         const paymentItems = offer.steppedPayments.map(p => 
             `<li><span class="period">${p.period}:</span> <span class="amount">${fmt.baht(p.amount)}/เดือน</span></li>`
         ).join('');
-        steppedPaymentsHTML = `<div class="stepped-payments"><h4>ค่างวดผ่อนชำระ:</h4><ul>${paymentItems}</ul></div>`;
+        steppedPaymentsHTML = `<div class="stepped-payments"><h4>ค่างวดผ่อนชำระโดยประมาณ:</h4><ul>${paymentItems}</ul></div>`;
     }
 
     let maxLoanDetailsHTML = '';
-    if (offer.calculationDetails && offer.calculationDetails.maxLoanByPV) {
+    if (offer.calculationDetails && offer.calculationDetails.maxLoanByDSRHeuristic) {
         maxLoanDetailsHTML = `
             <div class="loan-details">
-                <p><span>ตามภาระผ่อน (DSR):</span> <span>${fmt.baht(offer.calculationDetails.maxLoanByPV)}</span></p>
+                <p><span>ตามภาระผ่อน (DSR):</span> <span>${fmt.baht(offer.calculationDetails.maxLoanByDSRHeuristic)}</span></p>
                 <p><span>ตามเกณฑ์รายได้:</span> <span>${fmt.baht(offer.calculationDetails.maxLoanByIncome)}</span></p>
             </div>
         `;
