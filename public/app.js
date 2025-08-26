@@ -3,6 +3,9 @@ import { render } from './render.js';
 import { calc } from './calc.js';
 import { fmt } from './format.js';
 
+// --- ค่าคงที่ MRR อ้างอิง ---
+const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3% (ปรับเปลี่ยนได้ตามต้องการ)
+
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
 const resultsContainer = document.getElementById('resultsContainer');
@@ -21,7 +24,6 @@ async function fetchAllPromotions() {
     loadingSpinner.style.display = 'block';
     render.clearResults();
     
-    // ⭐ CHANGE: ดึง mrr_rate มาจากตาราง banks ด้วย
     const { data, error } = await supabase.from('promotions').select('*, banks(name, mrr_rate)');
 
     if (error) {
@@ -84,9 +86,8 @@ function handleAnalysis() {
         let calculationDetails = {};
         let steppedPayments = [];
 
-        // ⭐ CHANGE: ให้ฟังก์ชัน resolveRate ใช้ MRR ของแต่ละธนาคาร
         const resolveRate = (rate) => {
-            const bankMRR = promo.banks?.mrr_rate || 7.3; // ใช้ MRR ของธนาคาร หรือถ้าไม่มีให้ใช้ 7.3 เป็นค่าสำรอง
+            const bankMRR = promo.banks?.mrr_rate || 7.3;
             if (typeof rate === 'string' && rate.toUpperCase().includes('MRR')) {
                 const parts = rate.toUpperCase().split(/[-+]/);
                 const adjustment = parseFloat(parts[1] || 0);
@@ -94,47 +95,45 @@ function handleAnalysis() {
             }
             return parseFloat(rate);
         };
+        
+        // --- คำนวณวงเงินกู้สูงสุด (ทำทุกครั้ง) ---
+        const tempActualTerm = isCalculatingMaxLoan ? maxAllowedTerm : Math.min(loanInfo.term, maxAllowedTerm);
+        const tempRates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        const tempAvgInterest = calc.average(calc.parseFirst3Numeric(tempRates.map(resolveRate)));
+
+        if(isNaN(tempAvgInterest)) return null;
+
+        const promoDSRLimit = promo.dsr_limit || 70;
+        const maxAffordablePayment = netIncomeForCalculation * (promoDSRLimit / 100);
+        const maxLoanByPV = maxAffordablePayment > 0 ? calc.pv(maxAffordablePayment, tempAvgInterest, tempActualTerm * 12) : 0;
+        
+        const incomePerMillionReq = promo.income_per_million || 25000;
+        const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
 
         if (isCalculatingMaxLoan) {
             actualTerm = maxAllowedTerm;
-            const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
-            if (isNaN(avgInterest)) return null;
-
-            const promoDSRLimit = promo.dsr_limit || 70;
-            const maxAffordablePayment = netIncomeForCalculation * (promoDSRLimit / 100);
-            if (maxAffordablePayment <= 0) return null;
-            const maxLoanByPV = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
-
-            const incomePerMillionReq = promo.income_per_million || 25000;
-            const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
-
             finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
-            
-            calculationDetails = {
-                totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
-                existingDebt: userInfo.debt, netIncomeForCalculation,
-                promoDSRLimit, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12,
-                maxLoanByPV, maxLoanByIncome, incomePerMillionReq
-            };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
-            const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
-            if (isNaN(avgInterest)) return null;
-
-            const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
+            const estPayment = calc.pmt(loanInfo.amount, tempAvgInterest, actualTerm * 12);
             const userDSR = grossAssessedIncome > 0 ? ((userInfo.debt + estPayment) / grossAssessedIncome) * 100 : 100;
             const dsrCheck = userDSR < (promo.dsr_limit || 100);
             
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
             const incomeCheck = netIncomeForCalculation >= minIncome;
-
+            
             if (!dsrCheck || !incomeCheck) return null;
             finalLoanAmount = loanInfo.amount;
         }
 
+        calculationDetails = {
+            totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
+            existingDebt: userInfo.debt, netIncomeForCalculation,
+            promoDSRLimit, maxAffordablePayment, avgInterest: tempAvgInterest, actualTerm,
+            monthlyRate: (tempAvgInterest / 100) / 12, totalMonths: actualTerm * 12,
+            maxLoanByPV, maxLoanByIncome, incomePerMillionReq
+        };
+        
         const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
         if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
             const rateGroups = [];
@@ -195,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showModal(details) {
         if (!details || Object.keys(details).length === 0) {
-            modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้ (อาจเกิดจากการกรอกวงเงินกู้โดยตรง)</p>';
+            modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้</p>';
         } else {
             const assessmentFactorText = details.assessmentFactor < 1 ? `(ปรับลด ${((1 - details.assessmentFactor) * 100).toFixed(0)}%)` : '';
             modalContent.innerHTML = `
@@ -238,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 
     resultsContainer.addEventListener('click', (e) => {
-        const detailsButton = e.target.closest('details-btn');
+        const detailsButton = e.target.closest('.details-btn');
         if (detailsButton) {
             const cardElement = e.target.closest('.result-card');
             const offerId = cardElement.dataset.id;
