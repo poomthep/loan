@@ -1,4 +1,4 @@
-// Admin Promotions (full, compatible with simple admin.html)
+// Admin Promotions (strict add + filter blanks)
 import { getSupabase } from './supabaseClient.js';
 import { getProfileRole } from './auth.js';
 
@@ -14,63 +14,45 @@ async function ensureAdmin() {
   }
 }
 
-async function getDefaultBankId() {
+async function getDefaultBankId(){
   const sb = await getSupabase();
-  const { data, error } = await sb.from('banks').select('id').order('bank_name', { ascending: true }).limit(1);
-  if (error) return null;
+  const { data } = await sb.from('banks').select('id').order('bank_name',{ascending:true}).limit(1);
   return data && data[0] ? data[0].id : null;
 }
 
-async function loadPromotions() {
+async function fetchPromotions(){
   const sb = await getSupabase();
-  const selects = [
-    'id, title, detail, active, bank_id, product_type',
-    'id, title, detail, active, bank_id',
-    'id, name, detail, active, bank_id',
-    'id, name, description, active, bank_id'
-  ];
-  for (const sel of selects) {
-    const { data, error } = await sb.from('promotions').select(sel).order('title', { ascending: true }).limit(200);
-    if (!error) {
-      return (data||[]).map(r => ({
-        id: r.id,
-        title: r.title ?? r.name ?? '',
-        detail: r.detail ?? r.description ?? '',
-        active: r.active ?? true,
-        bank_id: r.bank_id ?? null,
-        product_type: r.product_type ?? 'MORTGAGE',
-      }));
-    }
-  }
-  return [];
-}
-
-async function upsertPromotion(payload) {
-  const sb = await getSupabase();
-  const { error } = await sb.from('promotions').upsert(payload, { onConflict: 'id' });
+  const { data, error } = await sb.from('promotions')
+    .select('id, title, detail, active, bank_id, product_type')
+    .order('title', { ascending: true }).limit(500);
   if (error) throw error;
+  return (data||[]);
 }
 
-async function deletePromotion(id) {
-  const sb = await getSupabase();
-  const { error } = await sb.from('promotions').delete().eq('id', id);
-  if (error) throw error;
+function rowToObj(r){
+  return {
+    id: r.id,
+    title: r.title ?? '',
+    detail: r.detail ?? '',
+    active: !!r.active,
+    bank_id: r.bank_id ?? null,
+    product_type: r.product_type ?? 'MORTGAGE'
+  };
 }
 
-function renderPromotions(rows) {
+function renderPromotions(rows){
   const body = qs('#promo-body');
   if (!body) return;
+  // Filter out blanks (both title and detail empty)
+  const filtered = rows.map(rowToObj).filter(r => (r.title.trim() !== '' || r.detail.trim() !== ''));
   body.innerHTML = '';
-
-  rows.forEach(r => {
+  filtered.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="px-3 py-2 border-b"><input class="p-title w-64 border rounded px-2 py-1" data-id="${r.id}" value="${r.title||''}" placeholder="ชื่อโปร"></td>
-      <td class="px-3 py-2 border-b"><textarea class="p-detail w-96 border rounded px-2 py-1" data-id="${r.id}" placeholder="รายละเอียด">${r.detail||''}</textarea></td>
-      <td class="px-3 py-2 border-b" style="text-align:center">
-        <input type="checkbox" class="p-active" data-id="${r.id}" ${r.active ? 'checked':''}>
-      </td>
-      <td class="px-3 py-2 border-b">
+      <td><input class="p-title" data-id="${r.id}" value="${r.title}" placeholder="ชื่อโปร"></td>
+      <td><textarea class="p-detail" data-id="${r.id}" placeholder="รายละเอียด">${r.detail}</textarea></td>
+      <td style="text-align:center"><input type="checkbox" class="p-active" data-id="${r.id}" ${r.active?'checked':''}></td>
+      <td>
         <button class="btn p-save" data-id="${r.id}">บันทึก</button>
         <button class="btn outline p-del" data-id="${r.id}">ลบ</button>
       </td>
@@ -85,12 +67,18 @@ function renderPromotions(rows) {
         id,
         title: qs(`.p-title[data-id="${id}"]`).value.trim(),
         detail: qs(`.p-detail[data-id="${id}"]`).value.trim(),
-        active: qs(`.p-active[data-id="${id}"]`).checked
+        active: qs(`.p-active[data-id="${id}"]`).checked,
       };
+      // optional guard: prevent saving totally blank
+      if (!payload.title && !payload.detail) { alert('กรอกชื่อโปรหรือรายละเอียดอย่างน้อย 1 อย่าง'); return; }
       btn.disabled = true;
-      try { await upsertPromotion(payload); btn.textContent='บันทึกแล้ว'; setTimeout(()=>btn.textContent='บันทึก', 900); }
-      catch(e){ alert(e.message || 'บันทึกไม่สำเร็จ'); }
-      btn.disabled = false;
+      try{
+        const sb = await getSupabase();
+        const { error } = await sb.from('promotions').upsert(payload, { onConflict: 'id' });
+        if (error) throw error;
+        btn.textContent='บันทึกแล้ว'; setTimeout(()=>btn.textContent='บันทึก', 900);
+      }catch(e){ alert(e.message || 'บันทึกไม่สำเร็จ'); }
+      btn.disabled=false;
     });
   });
 
@@ -99,49 +87,50 @@ function renderPromotions(rows) {
       if (!confirm('ยืนยันลบโปรนี้?')) return;
       const id = btn.dataset.id;
       btn.disabled = true;
-      try { await deletePromotion(id); btn.closest('tr')?.remove(); }
-      catch(e){ alert(e.message || 'ลบไม่สำเร็จ'); }
+      try{
+        const sb = await getSupabase();
+        const { error } = await sb.from('promotions').delete().eq('id', id);
+        if (error) throw error;
+        btn.closest('tr')?.remove();
+      }catch(e){ alert(e.message || 'ลบไม่สำเร็จ'); }
       btn.disabled = false;
     });
   });
 }
 
-async function addNewPromo() {
-  const title = qs('#new-title')?.value?.trim() || '';
-  const detail = qs('#new-detail')?.value?.trim() || '';
+async function addNew(){
+  const title = (qs('#new-title')?.value || '').trim();
+  const detail = (qs('#new-detail')?.value || '').trim();
   const active = qs('#new-active')?.checked ?? true;
-
-  // bank_id to satisfy NOT NULL (if enforced)
-  const bank_id = await getDefaultBankId();
-
+  if (!title) { alert('กรุณากรอก "ชื่อโปร"'); return; }
   const payload = { title, detail, active, product_type: 'MORTGAGE' };
+  const bank_id = await getDefaultBankId();
   if (bank_id) payload.bank_id = bank_id;
 
-  try {
-    await upsertPromotion(payload);
-    // clear inputs
-    if (qs('#new-title')) qs('#new-title').value = '';
-    if (qs('#new-detail')) qs('#new-detail').value = '';
-    if (qs('#new-active')) qs('#new-active').checked = true;
-    await refresh();
-  } catch (e) {
-    alert(e.message || 'เพิ่มโปรไม่สำเร็จ');
-  }
+  const sb = await getSupabase();
+  const { error } = await sb.from('promotions').insert([payload]);
+  if (error) { alert(error.message || 'เพิ่มโปรไม่สำเร็จ'); return; }
+
+  // clear inputs
+  if (qs('#new-title')) qs('#new-title').value = '';
+  if (qs('#new-detail')) qs('#new-detail').value = '';
+  if (qs('#new-active')) qs('#new-active').checked = true;
+  await refresh();
 }
 
 export async function refresh(){
-  const rows = await loadPromotions();
-  renderPromotions(rows);
+  try{
+    const rows = await fetchPromotions();
+    renderPromotions(rows);
+  }catch(e){
+    console.error('load promotions failed', e);
+  }
 }
 
 export async function initAdminPromotions(){
   await ensureAdmin();
-  qs('#btn-promo-add')?.addEventListener('click', addNewPromo);
+  qs('#btn-promo-add')?.addEventListener('click', addNew);
   qs('#btn-promo-refresh')?.addEventListener('click', refresh);
   await refresh();
 }
-
-// alias for compatibility with newer admin pages
-export async function initAdminPromotionsAdvanced(){
-  return initAdminPromotions();
-}
+export async function initAdminPromotionsAdvanced(){ return initAdminPromotions(); }
