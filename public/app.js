@@ -141,11 +141,11 @@ function handleAnalysis() {
             let lastRate = null;
             ratesToCalc.forEach((rateStr, index) => {
                 const numericRate = resolveRate(rateStr);
-                if (numericRate !== lastRate || index === ratesToCalc.length - 1) {
-                    rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
-                    lastRate = numericRate;
+                const currentGroup = rateGroups[rateGroups.length - 1];
+                if (currentGroup && currentGroup.rate === numericRate) {
+                    currentGroup.endYear = index + 1;
                 } else {
-                    rateGroups[rateGroups.length - 1].endYear = index + 1;
+                    rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
                 }
             });
 
@@ -154,7 +154,7 @@ function handleAnalysis() {
                 const payment = calc.pmt(finalLoanAmount, group.rate, actualTerm * 12);
                 
                 let periodLabel = '';
-                if(isLastGroup && group.startYear !== actualTerm) {
+                if(isLastGroup && group.startYear < actualTerm) {
                     periodLabel = `ปีที่ ${group.startYear} เป็นต้นไป`;
                 } else if (group.startYear === group.endYear) {
                     periodLabel = `ปีที่ ${group.startYear}`;
