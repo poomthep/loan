@@ -352,6 +352,18 @@ function setupAppEventListeners(appElements) {
         }
     });
 
+    // --- MODIFIED: Added Toggle Bank Manager ---
+    const toggleBankManagerBtn = document.getElementById('toggle-bank-manager-btn');
+    toggleBankManagerBtn.addEventListener('click', () => {
+        if (bankContainer.style.display === 'none') {
+            bankContainer.style.display = 'block';
+            toggleBankManagerBtn.textContent = 'ซ่อนส่วนจัดการ MRR';
+        } else {
+            bankContainer.style.display = 'none';
+            toggleBankManagerBtn.textContent = 'แก้ไข MRR ธนาคาร';
+        }
+    });
+
     hasMrtaOptionCheckbox.addEventListener('change', () => {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {

@@ -4,12 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - จัดการโปรโมชันสินเชื่อ</title>
-
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="style.css">		
-
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="container">
 
@@ -35,8 +30,11 @@
             <button id="logout-btn" class="btn btn-danger">ออกจากระบบ</button>
         </div>
 
-        <h2>จัดการข้อมูลธนาคาร (MRR)</h2>
-        <div id="bank-management-container">
+        <div class="section-header">
+            <h2>จัดการข้อมูลธนาคาร (MRR)</h2>
+            <button id="toggle-bank-manager-btn" class="btn btn-secondary">แก้ไข MRR ธนาคาร</button>
+        </div>
+        <div id="bank-management-container" style="display: none;">
             </div>
         
         <hr>
