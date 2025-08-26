@@ -1,58 +1,49 @@
-// session-guard.js (Refactored as a helper module)
+// session-guard.js — cross-tab safe session refresh for Supabase
 import { supabase } from './supabase-client.js';
 
 let refreshTimer = null;
-const PRE_REFRESH_SECONDS = 60; // Refresh 60 seconds before expiry
+const PRE_REFRESH_SECONDS = 90; // refresh ~1.5 minutes before expiry
 
-// This function is now exported to be called by admin.js
-export async function scheduleSessionRefresh(session) {
-    if (refreshTimer) clearTimeout(refreshTimer);
+export async function scheduleSessionRefresh(passedSession) {
+  try {
+    // Clear previous timer
+    if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
 
-    const sessionToSchedule = session || (await supabase.auth.getSession()).data.session;
-    if (!sessionToSchedule?.expires_at) {
-        return; // No session to schedule, do nothing.
-    }
+    const { data: { session } } = await supabase.auth.getSession();
+    const s = passedSession || session;
+    if (!s || !s.expires_at) return;
 
-    const now = Math.floor(Date.now() / 1000);
-    const secondsLeft = sessionToSchedule.expires_at - now;
-    
-    if (secondsLeft <= PRE_REFRESH_SECONDS) {
-        // If expiry is imminent, refresh now.
-        refreshSession('near-expiry');
-    } else {
-        // Otherwise, schedule a refresh for a later time.
-        const refreshInMs = (secondsLeft - PRE_REFRESH_SECONDS) * 1000;
-        refreshTimer = setTimeout(() => refreshSession('scheduled'), Math.max(0, refreshInMs));
-    }
+    const nowSec = Math.floor(Date.now() / 1000);
+    const dueInSec = Math.max(1, (s.expires_at - PRE_REFRESH_SECONDS) - nowSec);
+    refreshTimer = setTimeout(async () => {
+      try {
+        // Light ping to ensure session is still valid; supabase-js auto-refreshes
+        await supabase.auth.getSession();
+      } catch (e) {
+        console.warn('[session-guard] refresh error', e);
+      } finally {
+        scheduleSessionRefresh(); // reschedule
+      }
+    }, dueInSec * 1000);
+  } catch (e) {
+    console.warn('[session-guard] schedule error', e);
+  }
 }
 
-async function refreshSession(reason = 'manual') {
-    try {
-        console.log(`[SessionGuard] Refreshing session (reason: ${reason})...`);
-        const { data, error } = await supabase.auth.refreshSession();
-        if (error) throw error;
-        if (data.session) {
-            // After refresh, schedule the next one.
-            scheduleSessionRefresh(data.session);
-        }
-    } catch (err) {
-        console.warn('[SessionGuard] Failed to refresh session:', err.message);
-    }
-}
-
-// This function sets up listeners that trigger a session check.
 export function setupVisibilityHandlers() {
-    const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-            scheduleSessionRefresh();
-        }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-    window.addEventListener('storage', (e) => {
-        if (e.key && e.key.includes('supabase.auth.token')) {
-            handleVisibilityChange();
-        }
-    });
+  const onFocus = () => scheduleSessionRefresh();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') onFocus(); });
+  window.addEventListener('focus', onFocus);
+  // Cross-tab: when another tab updates supabase token in localStorage
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.includes('supabase.auth.token')) onFocus();
+  });
 }
+
+// Hook auth changes so any login/logout immediately re-schedules
+supabase.auth.onAuthStateChange((_event, session) => {
+  scheduleSessionRefresh(session || undefined);
+});
+
+// Optional: kick things off
+scheduleSessionRefresh();

@@ -1,4 +1,4 @@
-// sw-register.js — robust registration & fast updates
+// sw-register.js — robust SW registration with auto-update
 (function(){
   if (!('serviceWorker' in navigator)) return;
 
@@ -9,35 +9,31 @@
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then(reg => {
-        // Check for updates periodically
-        setInterval(() => {
-          try {
-            reg.update();
-          } catch (e) {
-            console.warn('[SW] Periodic update failed:', e);
-          }
-        }, 60 * 60 * 1000); // every hour
+        // Proactively check on load
+        try { reg.update(); } catch(e) {}
 
+        // Listen for new SW installing
         reg.addEventListener('updatefound', () => {
-          const sw = reg.installing;
-          if (!sw) return;
-          sw.addEventListener('statechange', () => {
-            if (sw.state === 'installed') {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed') {
+              // A new SW is waiting
               sendSkipWaiting(reg);
             }
           });
         });
 
-        // Ensure the waiting SW is activated on page load
-        sendSkipWaiting(reg);
-
-        // Reload the page once after a new SW has taken control
-        let refreshing;
+        // If a new controller takes over, reload once to get fresh assets
+        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (refreshing) return;
-          window.location.reload();
           refreshing = true;
+          window.location.reload();
         });
+
+        // Poll for updates every 20 minutes
+        setInterval(() => { try { reg.update(); } catch(e) {} }, 20 * 60 * 1000);
       })
       .catch(err => console.error('[sw-register] registration error:', err));
   });
