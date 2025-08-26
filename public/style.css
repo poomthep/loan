@@ -9,7 +9,7 @@
     --border-color: #dee2e6;        /* Subtle border color */
     --success-color: #28a745;       /* Green for success messages */
     --danger-color: #dc3545;        /* Red for danger/delete */
-    --font-family: 'Sarabun', sans-serif;
+    --font-family: 'Kanit', sans-serif; /* <-- UPDATED FONT */
     --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     --border-radius: 8px;
 }
