@@ -27,26 +27,51 @@ async function loadBanks() {
   return [];
 }
 
-async function loadPromotions() {
+async function selectWithFallback(table, selectSets, filterActive=true) {
   const supabase = await getSupabase();
-  // try with active column first
-  let { data, error } = await supabase
-    .from('promotions')
-    .select('id, title, detail, active')
-    .eq('active', true)
-    .order('title');
-  // if 400 (e.g., column/table missing), try without filter
-  if (error && (error.code === 'PGRST100' || (error.message||'').toLowerCase().includes('does not exist') || (error.status || 0) === 400)) {
-    ({ data, error } = await supabase
-      .from('promotions')
-      .select('id, title, detail, active')
-      .order('title'));
+  for (const sel of selectSets) {
+    try {
+      let q = supabase.from(table).select(sel).order('title', { ascending: true });
+      if (filterActive) q = q.eq('active', true);
+      const { data, error } = await q;
+      if (!error) return data || [];
+      // continue on "does not exist" or 400
+      const msg = (error.message || '').toLowerCase();
+      if (error.code === 'PGRST100' or (error.status||0)===400 or msg.includes('does not exist') or msg.includes('unknown')) {
+        continue;
+      }
+      // otherwise throw
+      throw error;
+    } catch (e) {
+      // keep trying next select format
+      continue;
+    }
   }
-  if (error) {
-    console.warn('loadPromotions error:', error);
-    return [];
+  return [];
+}
+
+async function loadPromotions() {
+  // Try various column name combos
+  const selSets = [
+    'id, title, detail, active',
+    'id, name, detail, active',
+    'id, title, description, active',
+    'id, name, description, active',
+    'id, title, details, active',
+    'id, name, details, active',
+    'id, title, detail',
+    'id, name, detail',
+    'id, title, description',
+    'id, name, description'
+  ];
+  let rows = await selectWithFallback('promotions', selSets, true);
+  if (!rows.length) {
+    rows = await selectWithFallback('promotions', selSets, false);
   }
-  return (data || []).filter(p => p.active === undefined ? true : !!p.active);
+  return rows.map(r => ({
+    title: r.title ?? r.name ?? '(ไม่มีชื่อ)',
+    detail: r.detail ?? r.description ?? r.details ?? ''
+  }));
 }
 
 export async function runLoanPage(){

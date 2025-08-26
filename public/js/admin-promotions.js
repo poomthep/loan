@@ -15,13 +15,35 @@ async function ensureAdmin() {
 
 async function loadPromotions() {
   const supabase = await getSupabase();
-  const { data, error } = await supabase.from('promotions').select('id, title, detail, active').order('title', { ascending: true });
-  if (error) throw error;
-  return data || [];
+  const selects = [
+    'id, title, detail, active',
+    'id, name, detail, active',
+    'id, title, description, active',
+    'id, name, description, active',
+    'id, title, details, active',
+    'id, name, details, active',
+    'id, title, detail',
+    'id, name, detail',
+    'id, title, description',
+    'id, name, description'
+  ];
+  for (const sel of selects) {
+    const { data, error } = await supabase.from('promotions').select(sel).order('title', { ascending: true }).limit(100);
+    if (!error) {
+      return (data || []).map(r => ({
+        id: r.id,
+        title: r.title ?? r.name ?? '',
+        detail: r.detail ?? r.description ?? r.details ?? '',
+        active: r.active ?? true
+      }));
+    }
+  }
+  return [];
 }
 
 async function upsertPromotion(payload) {
   const supabase = await getSupabase();
+  // always upsert to canonical columns; requires standardized DB
   const { error } = await supabase.from('promotions').upsert(payload, { onConflict: 'id' });
   if (error) throw error;
 }
@@ -39,12 +61,12 @@ function renderPromotions(rows) {
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="px-3 py-2 border-b"><input class="p-title w-64 border rounded px-2 py-1" data-id="${r.id}" value="${r.title || ''}" /></td>
-      <td class="px-3 py-2 border-b"><textarea class="p-detail w-80 border rounded px-2 py-1" data-id="${r.id}">${r.detail || ''}</textarea></td>
-      <td class="px-3 py-2 border-b" style="text-align:center"><input type="checkbox" class="p-active" data-id="${r.id}" ${r.active ? 'checked':''}></td>
+      <td class="px-3 py-2 border-b"><input class="p-title w-64 border rounded px-2 py-1" data-id="${r.id || ''}" value="${r.title || ''}" /></td>
+      <td class="px-3 py-2 border-b"><textarea class="p-detail w-80 border rounded px-2 py-1" data-id="${r.id || ''}">${r.detail || ''}</textarea></td>
+      <td class="px-3 py-2 border-b" style="text-align:center"><input type="checkbox" class="p-active" data-id="${r.id || ''}" ${r.active ? 'checked':''}></td>
       <td class="px-3 py-2 border-b">
-        <button class="btn p-save" data-id="${r.id}">บันทึก</button>
-        <button class="btn outline p-del" data-id="${r.id}">ลบ</button>
+        <button class="btn p-save" data-id="${r.id || ''}">บันทึก</button>
+        <button class="btn outline p-del" data-id="${r.id || ''}">ลบ</button>
       </td>
     `;
     body.appendChild(tr);
@@ -52,10 +74,10 @@ function renderPromotions(rows) {
 
   qsa('.p-save').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const title = qs(`.p-title[data-id="${id}"]`).value.trim();
-      const detail = qs(`.p-detail[data-id="${id}"]`).value.trim();
-      const active = qs(`.p-active[data-id="${id}"]`).checked;
+      const id = btn.dataset.id || undefined;
+      const title = qs(`.p-title[data-id="${btn.dataset.id}"]`)?.value?.trim() || '';
+      const detail = qs(`.p-detail[data-id="${btn.dataset.id}"]`)?.value?.trim() || '';
+      const active = qs(`.p-active[data-id="${btn.dataset.id}"]`)?.checked ?? true;
       btn.disabled = true;
       try {
         await upsertPromotion({ id, title, detail, active });
@@ -72,6 +94,7 @@ function renderPromotions(rows) {
     btn.addEventListener('click', async () => {
       if (!confirm('ยืนยันลบโปรนี้?')) return;
       const id = btn.dataset.id;
+      if (!id) { btn.closest('tr')?.remove(); return; }
       btn.disabled = true;
       try {
         await deletePromotion(id);
