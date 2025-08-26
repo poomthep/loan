@@ -46,8 +46,10 @@ async function isAdminAuthenticated(session) {
         if (!session) { return false; }
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return false;
-        const { data: profile, error } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
-        if (error) { throw error; }
+        
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
+        if (profileError) { throw profileError; }
+        
         if (!profile || profile.role !== 'admin' || profile.status !== 'approved') {
             throw new Error('Access Denied');
         }
@@ -61,6 +63,7 @@ async function isAdminAuthenticated(session) {
 
 function initializeGateView() {
     const loginForm = document.getElementById('login-form');
+    if (!loginForm) return;
     loginForm.onsubmit = async (e) => {
         e.preventDefault();
         const loginBtn = document.getElementById('login-btn');
@@ -70,8 +73,11 @@ function initializeGateView() {
             email: loginForm.email.value,
             password: loginForm.password.value
         });
-        if (error) { showToast(error.message, true); }
-        else { showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...'); }
+        if (error) {
+            showToast(error.message, true);
+        } else {
+            showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...');
+        }
         loginBtn.disabled = false;
         loginBtn.textContent = 'เข้าสู่ระบบ';
     };
@@ -117,7 +123,7 @@ function initAppElements() {
     };
 }
 
-// --- REWRITTEN: UI Rendering ---
+// --- UI Rendering ---
 function renderInterestRateInputs(ratesContainer, rates = { normal: [null], mrta: [null] }) {
     ratesContainer.innerHTML = '';
     const showMrta = hasMrtaOptionCheckbox.checked;
@@ -204,7 +210,7 @@ async function fetchPromotions(promotionsTableBody) {
     renderPromotionsTable(promotionsTableBody, data); 
 }
 
-// --- REWRITTEN: Form Handling ---
+// --- Form Handling ---
 function clearForm(appElements) {
     appElements.promotionForm.reset();
     state.isEditing = false;
@@ -273,7 +279,7 @@ async function handleFormSubmit(e, appElements) {
             const isLastRate = index === rateRows.length - 1;
             
             const normalInput = row.querySelector('.normal-rate');
-            const normalValue = normalInput.type === 'number' ? N(normalInput.value) : D(normalInput.value);
+            const normalValue = N(normalInput.value);
             if (isLastRate && normalValue !== null) {
                 normalRates.push(`MRR-${normalValue}`);
             } else {
@@ -282,7 +288,7 @@ async function handleFormSubmit(e, appElements) {
 
             if (hasMrtaOptionCheckbox.checked) {
                 const mrtaInput = row.querySelector('.mrta-rate');
-                const mrtaValue = mrtaInput.type === 'number' ? N(mrtaInput.value) : D(mrtaInput.value);
+                const mrtaValue = N(mrtaInput.value);
                 if (isLastRate && mrtaValue !== null) {
                     mrtaRates.push(`MRR-${mrtaValue}`);
                 } else {
@@ -313,19 +319,35 @@ async function handleFormSubmit(e, appElements) {
     }
 }
 
-// --- REWRITTEN: Event Listeners Setup ---
+// --- Event Listeners Setup ---
 function setupAppEventListeners(appElements) {
     appElements.logoutBtn.addEventListener('click', () => supabase.auth.signOut());
     appElements.clearBtn.addEventListener('click', () => clearForm(appElements));
     appElements.promotionForm.addEventListener('submit', (e) => handleFormSubmit(e, appElements));
     
-    // --- Bank Manager Events ---
     const bankContainer = document.getElementById('bank-management-container');
     bankContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('save-mrr-btn')) {
-            // ... (save mrr logic)
+            const btn = e.target;
+            btn.disabled = true;
+            const bankId = btn.dataset.id;
+            const mrrInput = document.getElementById(`mrr-${bankId}`);
+            const newMrrRate = N(mrrInput.value);
+
+            if (newMrrRate === null) {
+                showToast('กรุณาใส่ค่า MRR ที่ถูกต้อง', true);
+                btn.disabled = false;
+                return;
+            }
+
+            const { error } = await supabase.from('banks').update({ mrr_rate: newMrrRate }).eq('id', bankId);
+
+            if (error) { showToast('อัปเดต MRR ไม่สำเร็จ: ' + error.message, true); }
+            else { showToast('อัปเดต MRR สำเร็จ'); }
+            btn.disabled = false;
         }
     });
+
     const toggleBankManagerBtn = document.getElementById('toggle-bank-manager-btn');
     toggleBankManagerBtn.addEventListener('click', () => {
         if (bankContainer.style.display === 'none') {
@@ -337,7 +359,6 @@ function setupAppEventListeners(appElements) {
         }
     });
 
-    // --- Promo Form Toggle ---
     const togglePromoFormBtn = document.getElementById('toggle-promo-form-btn');
     const promoForm = document.getElementById('promotion-form');
     togglePromoFormBtn.addEventListener('click', () => {
@@ -350,24 +371,40 @@ function setupAppEventListeners(appElements) {
         }
     });
 
-    // --- Interest Rate Events ---
     hasMrtaOptionCheckbox.addEventListener('change', () => {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {
             const parent = field.closest('.mrr-group') || field;
-            parent.style.display = hasMrtaOptionCheckbox.checked ? 'flex' : 'none';
+            parent.style.display = hasMrtaOptionCheckbox.checked ? 'block' : 'none';
         });
     });
 
     appElements.addRateYearBtn.addEventListener('click', () => {
-        // ... (add rate year logic)
+        const ratesContainer = appElements.ratesContainer;
+        const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
+        const normalRates = rateRows.map((row, index) => {
+            const input = row.querySelector('.normal-rate');
+            return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+        });
+        const mrtaRates = rateRows.map((row, index) => {
+            const input = row.querySelector('.mrta-rate');
+            return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+        });
+        
+        const lastNormal = normalRates.pop();
+        const lastMrta = mrtaRates.pop();
+        normalRates.push(null);
+        mrtaRates.push(null);
+        normalRates.push(lastNormal);
+        mrtaRates.push(lastMrta);
+        renderInterestRateInputs(ratesContainer, { normal: normalRates, mrta: mrtaRates });
     });
     
     appElements.ratesContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-rate-year-btn')) {
             const ratesContainer = appElements.ratesContainer;
             const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
-            if (rateRows.length <= 1) return; // Cannot remove the last row
+            if (rateRows.length <= 1) return;
 
             const normalRates = rateRows.map((row, index) => {
                 const input = row.querySelector('.normal-rate');
@@ -378,17 +415,47 @@ function setupAppEventListeners(appElements) {
                 return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
             });
             
-            normalRates.splice(rateRows.length - 2, 1);
-            mrtaRates.splice(rateRows.length - 2, 1);
+            const indexToRemove = parseInt(e.target.dataset.yearIndex, 10);
+            normalRates.splice(indexToRemove, 1);
+            mrtaRates.splice(indexToRemove, 1);
             
             renderInterestRateInputs(ratesContainer, { normal: normalRates, mrta: mrtaRates });
         }
     });
-
-    // --- Promotions Table & Modal Events ---
+    
     appElements.promotionsTableBody.addEventListener('click', async (e) => {
-        // ... (edit/delete logic)
+        const target = e.target;
+        if (target.classList.contains('edit-btn')) {
+            const id = target.dataset.id;
+            const promo = state.promotions.find(p => p.id == id);
+            if (promo) {
+                if(promoForm.style.display === 'none') {
+                    togglePromoFormBtn.click();
+                }
+                populateForm(appElements, promo);
+            }
+            else { showToast('ไม่พบข้อมูลโปรโมชัน', true); }
+        }
+        if (target.classList.contains('delete-btn')) {
+            const id = target.dataset.id;
+            const promo = state.promotions.find(p => p.id == id);
+            appElements.modalText.textContent = `คุณต้องการลบโปรโมชัน "${promo?.promotion_name || 'รายการนี้'}" ใช่หรือไม่?`;
+            appElements.confirmModal.style.display = 'block';
+            appElements.modalConfirmBtn.onclick = async () => {
+                appElements.confirmModal.style.display = 'none';
+                try {
+                    const { error } = await supabase.from('promotions').delete().eq('id', id);
+                    if (error) throw error;
+                    showToast('ลบโปรโมชันสำเร็จแล้ว');
+                    await fetchPromotions(appElements.promotionsTableBody);
+                } catch (error) {
+                    console.error('Delete Error:', error);
+                    showToast('ลบไม่สำเร็จ: ' + error.message, true);
+                }
+            };
+        }
     });
+
     const closeModal = () => appElements.confirmModal.style.display = 'none';
     appElements.modalCancelBtn.addEventListener('click', closeModal);
     appElements.confirmModal.querySelector('.close-btn').addEventListener('click', closeModal);
@@ -399,5 +466,19 @@ function setupAppEventListeners(appElements) {
 
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // ... (init logic)
+    try { 
+        if (location.hash.includes('access_token')) { 
+            history.replaceState(null, '', location.origin + location.pathname); 
+        } 
+    } catch (e) { 
+        console.warn('Could not clean URL hash'); 
+    }
+    
+    setupVisibilityHandlers();
+    const { data: { session } } = await supabase.auth.getSession();
+    boot(session);
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log(`[AUTH] Event: ${event}`);
+        boot(session);
+    });
 });
