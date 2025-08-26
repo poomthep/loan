@@ -1,93 +1,85 @@
+
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Admin Console</title>
-  <meta name="theme-color" content="#111827">
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin: 0; color: #111; }
-    .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.04); margin-bottom: 16px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .hidden { display: none; }
-    .btn { border: 1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius: 10px; cursor:pointer; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin:0; color:#111; }
+    .container { max-width: 1200px; margin: 28px auto; padding: 0 16px; }
+    .card { border:1px solid #e5e7eb; border-radius:16px; padding:18px; box-shadow:0 4px 10px rgba(0,0,0,.04); margin-bottom:16px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .btn { border:1px solid #111827; background:#111827; color:#fff; padding:8px 14px; border-radius:10px; cursor:pointer; }
     .btn.outline { background:#fff; color:#111827; }
-    input, textarea { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
+    input, select, textarea { border:1px solid #d1d5db; border-radius:10px; padding:8px 10px; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { text-align:left; }
-    th { font-weight:600; background:#f3f4f6; }
-    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    th, td { padding:8px 10px; border-bottom: 1px solid #e5e7eb; text-align:left; vertical-align: top; }
+    h3 { margin: 0 0 8px 0; }
+    .muted { color:#6b7280; font-size:12px; }
   </style>
   <script type="module">
     import { registerServiceWorker } from './sw-register.js';
     import { startSessionGuard } from './js/session-guard.js';
     import { handleAuthUI } from './js/auth.js';
-    import { initAdminPage } from './js/admin.js';            // MRR section
-    import { initAdminPromotions } from './js/admin-promotions.js'; // Promotions CRUD
-    registerServiceWorker();
-    startSessionGuard();
-    handleAuthUI();
-    initAdminPage();
-    initAdminPromotions();
+    import { initAdminPage } from './js/admin.js'; // Banks + MRR (ของเดิม)
+    import { initAdminPromotionsAdvanced } from './js/admin-promotions.js';
+    import { initAdminRules } from './js/admin-rules.js';
+    registerServiceWorker?.();
+    startSessionGuard?.();
+    handleAuthUI?.();
+    initAdminPage?.();
+    initAdminPromotionsAdvanced();
+    initAdminRules();
   </script>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Admin Console</h1>
-      <div class="row">
-        <span id="role-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-200">GUEST</span>
-        <a href="/index.html" class="btn outline">หน้าหลัก</a>
-        <button id="btn-logout" class="btn outline">ออกจากระบบ</button>
-      </div>
-    </header>
-
     <div class="card">
-      <h3>อัตรา MRR ของธนาคาร</h3>
-      <div class="row" style="justify-content:space-between;">
-        <div>จัดการค่า MRR ได้แบบรวดเร็ว (เฉพาะแอดมิน)</div>
+      <div class="row" style="justify-content:space-between">
+        <h3>จัดการค่า MRR ได้แบบรวดเร็ว (เฉพาะแอดมิน)</h3>
         <button id="btn-refresh-mrr" class="btn">↻ รีเฟรช MRR</button>
       </div>
       <div style="overflow-x:auto;margin-top:10px">
         <table>
-          <thead>
-            <tr>
-              <th class="px-3 py-2 border-b">ธนาคาร</th>
-              <th class="px-3 py-2 border-b">MRR</th>
-              <th class="px-3 py-2 border-b">การทำงาน</th>
-            </tr>
-          </thead>
+          <thead><tr><th>ธนาคาร</th><th>MRR</th><th>การทำงาน</th></tr></thead>
           <tbody id="banks-body"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Promotions card injected from patch -->
     <div class="card">
       <h3>โปรโมชัน</h3>
-      <div class="row" style="justify-content:space-between;">
-        <div>เพิ่ม/แก้ไข/ลบโปรโมชัน (เฉพาะแอดมิน)</div>
-        <div class="row">
-          <button id="btn-promo-refresh" class="btn">↻ รีเฟรช</button>
-        </div>
-      </div>
-
-      <div class="row" style="gap:10px; margin-top:10px">
-        <input id="new-title" class="w-64" placeholder="ชื่อโปร (เช่น ดอกเบี้ยพิเศษ)">
-        <textarea id="new-detail" class="w-80" placeholder="รายละเอียด"></textarea>
-        <label><input type="checkbox" id="new-active" checked> เปิดใช้งาน</label>
+      <div class="row muted">เพิ่ม/แก้ไข/ลบโปร (เฉพาะแอดมิน)</div>
+      <div class="row" style="margin-top:8px">
+        <input id="new-title" placeholder="ชื่อโปร (เช่น ดอกพิเศษ)" style="width:240px"/>
+        <textarea id="new-detail" placeholder="รายละเอียด" style="width:340px;height:36px"></textarea>
+        <select id="new-product">
+          <option value="MORTGAGE">MORTGAGE</option>
+          <option value="PERSONAL">PERSONAL</option>
+          <option value="SME">SME</option>
+          <option value="REFINANCE">REFINANCE</option>
+        </select>
+        <label class="row"><input id="new-active" type="checkbox" checked/> เปิดใช้งาน</label>
         <button id="btn-promo-add" class="btn">+ เพิ่มโปร</button>
+        <button id="btn-promo-refresh" class="btn outline">↻ รีเฟรช</button>
       </div>
-
-      <div style="overflow-x:auto; margin-top:10px">
+      <div style="overflow-x:auto;margin-top:10px">
         <table>
           <thead>
             <tr>
-              <th class="px-3 py-2 border-b">ชื่อโปร</th>
-              <th class="px-3 py-2 border-b">รายละเอียด</th>
-              <th class="px-3 py-2 border-b">เปิดใช้งาน</th>
-              <th class="px-3 py-2 border-b">การทำงาน</th>
+              <th>ธนาคาร</th>
+              <th>ผลิตภัณฑ์</th>
+              <th>ชื่อโปร</th>
+              <th>รายละเอียด</th>
+              <th>ส่วนลด (bps)</th>
+              <th>คงที่ (%)</th>
+              <th>เดือนคงที่</th>
+              <th>LTV override</th>
+              <th>เริ่ม</th>
+              <th>จบ</th>
+              <th>เปิดใช้</th>
+              <th>การทำงาน</th>
             </tr>
           </thead>
           <tbody id="promo-body"></tbody>
@@ -96,11 +88,31 @@
     </div>
 
     <div class="card">
-      <h3>หมายเหตุ</h3>
-      <ul>
-        <li>ถ้าเห็นป้าย <strong>GUEST</strong> แปลว่ายังไม่ใช่แอดมิน — ติดต่อผู้ดูแลเพื่อเพิ่ม role</li>
-        <li>ปุ่ม ↻ รีเฟรช จะโหลดข้อมูลล่าสุดจากฐานข้อมูล</li>
-      </ul>
+      <h3>กติกาธนาคาร (Bank Rules)</h3>
+      <div class="row muted">กำหนด DSR/LTV/อายุผ่อนสูงสุด ต่อธนาคาร/ผลิตภัณฑ์/ทรัพย์/บ้านหลังที่เท่าไร</div>
+      <div class="row" style="margin-top:8px">
+        <button id="btn-rules-add" class="btn">+ เพิ่มกติกา</button>
+        <button id="btn-rules-refresh" class="btn outline">↻ รีเฟรช</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>ธนาคาร</th>
+              <th>ผลิตภัณฑ์</th>
+              <th>ทรัพย์</th>
+              <th>บ้านหลัง</th>
+              <th>DSR cap</th>
+              <th>LTV cap</th>
+              <th>ผ่อนสูงสุด (ปี)</th>
+              <th>อายุสูงสุดเมื่อผ่อนครบ</th>
+              <th>รายได้ขั้นต่ำ</th>
+              <th>การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody id="rules-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </body>
