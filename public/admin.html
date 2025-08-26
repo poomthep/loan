@@ -1,156 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - จัดการโปรโมชันสินเชื่อ</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Console</title>
+  <meta name="theme-color" content="#111827">
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin: 0; color: #111; }
+    .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.04); margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hidden { display: none; }
+    .btn { border: 1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius: 10px; cursor:pointer; }
+    .btn.outline { background:#fff; color:#111827; }
+    input { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align:left; }
+    th { font-weight:600; background:#f3f4f6; }
+    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+  </style>
+  <script type="module">
+    import { registerServiceWorker } from './sw-register.js';
+    import { startSessionGuard } from './js/session-guard.js';
+    import { handleAuthUI } from './js/auth.js';
+    import { initAdminPage } from './js/admin.js';
+    registerServiceWorker();
+    startSessionGuard();
+    handleAuthUI();
+    initAdminPage();
+  </script>
 </head>
-<body class="container">
+<body>
+  <div class="container">
+    <header>
+      <h1>Admin Console</h1>
+      <div class="row">
+        <span id="role-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-200">GUEST</span>
+        <a href="/index.html" class="btn outline">หน้าหลัก</a>
+        <button id="btn-logout" class="btn outline">ออกจากระบบ</button>
+      </div>
+    </header>
 
-    <h1>จัดการโปรโมชันสินเชื่อ</h1>
-
-    <div id="gate">
-        <h2>กรุณาเข้าสู่ระบบ</h2>
-        <form id="login-form" class="form-grid">
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" id="login-btn" class="btn btn-primary">เข้าสู่ระบบ</button>
-        </form>
-    </div>
-
-    <div id="app" style="display: none;">
-        <div style="text-align: right; margin-bottom: 20px;">
-            <button id="logout-btn" class="btn btn-danger">ออกจากระบบ</button>
-        </div>
-
-        <div class="section-header">
-            <h2>จัดการข้อมูลธนาคาร (MRR)</h2>
-            <button id="toggle-bank-manager-btn" class="btn btn-secondary">แก้ไข MRR ธนาคาร</button>
-        </div>
-        <div id="bank-management-container" style="display: none;">
-            </div>
-        
-        <hr>
-
-        <div class="section-header">
-            <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
-            <button id="toggle-promo-form-btn" class="btn btn-secondary">แสดง/ซ่อนฟอร์ม</button>
-        </div>
-        <form id="promotion-form" class="form-grid" style="display: none;">
-            <div class="form-group">
-                <label for="bank_id">ธนาคาร:</label>
-                <select id="bank_id" name="bank_id" required></select>
-            </div>
-            <div class="form-group">
-                <label for="promotion_name">ชื่อโปรโมชัน:</label>
-                <input type="text" id="promotion_name" name="promotion_name" required>
-            </div>
-            <div class="form-group">
-                <label for="start_date">วันที่เริ่มโปรโมชัน:</label>
-                <input type="date" id="start_date" name="start_date">
-            </div>
-            <div class="form-group">
-                <label for="end_date">วันที่สิ้นสุดโปรโมชัน:</label>
-                <input type="date" id="end_date" name="end_date">
-            </div>
-            
-            <hr class="full-width">
-
-            <div class="form-group">
-                <label for="dsr_limit">DSR ไม่เกิน (%):</label>
-                <input type="number" id="dsr_limit" name="dsr_limit" value="70">
-            </div>
-            <div class="form-group">
-                <label for="income_per_million">รายได้ต่อล้าน (บาท):</label>
-                <input type="number" id="income_per_million" name="income_per_million" value="25000">
-            </div>
-            <div class="form-group">
-                <label for="bonus_factor">สัดส่วนโบนัสที่นำมาคิด (%):</label>
-                <input type="number" id="bonus_factor" name="bonus_factor" value="70" step="1">
-            </div>
-            <div class="form-group">
-                <label for="other_income_factor">สัดส่วนรายได้อื่นที่นำมาคิด (%):</label>
-                <input type="number" id="other_income_factor" name="other_income_factor" value="50" step="1">
-            </div>
-            <div class="form-group">
-                <label for="income_assessment_factor">สัดส่วนรายได้ที่ใช้ประเมิน (%):</label>
-                <input type="number" id="income_assessment_factor" name="income_assessment_factor" value="100" step="1">
-            </div>
-            <div class="form-group">
-                <label for="payment_multiplier">ตัวคูณยอดผ่อน (เช่น 150):</label>
-                <input type="number" id="payment_multiplier" name="payment_multiplier" value="150">
-            </div>
-            <div class="form-group">
-                <label for="min_living_expense">ค่าครองชีพขั้นต่ำ (บาท/เดือน):</label>
-                <input type="number" id="min_living_expense" name="min_living_expense" value="15000">
-            </div>
-
-            <hr class="full-width">
-            
-            <h3 class="full-width">อัตราดอกเบี้ย</h3>
-            <div class="form-group checkbox-group full-width">
-                <input type="checkbox" id="has_mrta_option">
-                <label for="has_mrta_option">มีตัวเลือกดอกเบี้ยพิเศษสำหรับ MRTA</label>
-            </div>
-            <div id="interest-rates-container" class="full-width"></div>
-            <div class="full-width button-group" style="justify-content: flex-start; margin-top: 0;">
-                <button type="button" id="add-rate-year-btn" class="btn btn-secondary btn-sm">เพิ่มปี</button>
-            </div>
-            
-            <hr class="full-width">
-            
-            <div class="form-group full-width">
-                <label for="notes">หมายเหตุ:</label>
-                <textarea id="notes" name="notes" rows="3"></textarea>
-            </div>
-            
-            <div class="full-width button-group" style="justify-content: flex-start;">
-                <button type="submit" id="save-btn" class="btn btn-primary">บันทึกโปรโมชัน</button>
-                <button type="button" id="clear-btn" class="btn">ล้างฟอร์ม</button>
-            </div>
-        </form>
-
-        <hr>
-
-        <h2>รายการโปรโมชันทั้งหมด</h2>
-        <table id="promotions-table" class="data-table">
-            <thead>
-                <tr>
-                    <th>ธนาคาร</th>
-                    <th>ชื่อโปรโมชัน</th>
-                    <th>ดอกเบี้ยเฉลี่ย 3 ปี (%)</th>
-                    <th>การจัดการ</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
+    <div class="card">
+      <h3>อัตรา MRR ของธนาคาร</h3>
+      <div class="row" style="justify-content:space-between;">
+        <div>จัดการค่า MRR ได้แบบรวดเร็ว (เฉพาะแอดมิน)</div>
+        <button id="btn-refresh-mrr" class="btn">↻ รีเฟรช MRR</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th class="px-3 py-2 border-b">ธนาคาร</th>
+              <th class="px-3 py-2 border-b">MRR</th>
+              <th class="px-3 py-2 border-b">การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody id="banks-body"></tbody>
         </table>
+      </div>
     </div>
 
-    <div id="toast"></div>
-
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <p id="modal-text">คุณต้องการลบรายการนี้ใช่หรือไม่?</p>
-            <div class="button-group">
-                <button id="modal-confirm-btn" class="btn btn-danger">ยืนยัน</button>
-                <button id="modal-cancel-btn" class="btn">ยกเลิก</button>
-            </div>
-        </div>
+    <div class="card">
+      <h3>หมายเหตุ</h3>
+      <ul>
+        <li>ถ้าเห็นป้าย <strong>GUEST</strong> แปลว่ายังไม่ใช่แอดมิน — ติดต่อผู้ดูแลเพื่อเพิ่ม role</li>
+        <li>ปุ่ม ↻ รีเฟรช จะโหลดข้อมูลล่าสุดจากฐานข้อมูล</li>
+      </ul>
     </div>
-
-    <script src="supabase-client.js" type="module"></script>
-    <script src="session-guard.js" type="module"></script>
-    <script src="admin.js" type="module"></script>
+  </div>
 </body>
 </html>
