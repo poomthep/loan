@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>วิเคราะห์สินเชื่อ</title>
+  <meta name="theme-color" content="#111827">
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin: 0; color: #111; }
+    .container { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+    .card { border:1px solid #e5e7eb; border-radius:16px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,.04); margin-bottom:16px; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn { border: 1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius: 10px; cursor:pointer; }
+    .btn.outline { background:#fff; color:#111827; }
+    input, select { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
+    table { border-collapse: collapse; width:100%; }
+    th, td { padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:left; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; }
+  </style>
+  <script type="module">
+    import { registerServiceWorker } from './sw-register.js';
+    import { startSessionGuard } from './js/session-guard.js';
+    import { runLoanPage } from './js/loan.js';
+    registerServiceWorker();
+    startSessionGuard();
+    runLoanPage();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>วิเคราะห์สินเชื่อ</h1>
+      <a class="btn outline" href="/index.html">หน้าหลัก</a>
+    </header>
+
+    <div class="card">
+      <div class="row" style="gap:16px">
+        <div>
+          <div>วงเงินกู้ (บาท)</div>
+          <input id="loan-amount" type="number" min="0" step="1000" value="500000"/>
+        </div>
+        <div>
+          <div>ระยะเวลาผ่อน (ปี)</div>
+          <input id="loan-years" type="number" min="1" step="1" value="5"/>
+        </div>
+        <div>
+          <div>รายได้ต่อเดือน (บาท)</div>
+          <input id="income" type="number" min="0" step="1000" value="30000"/>
+        </div>
+        <div>
+          <div>หนี้ต่อเดือน (บาท)</div>
+          <input id="debt" type="number" min="0" step="1000" value="0"/>
+        </div>
+        <button id="btn-calc" class="btn">คำนวณ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>เปรียบเทียบค่างวด (ใช้ MRR จากฐานข้อมูล)</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ธนาคาร</th>
+              <th>MRR (%)</th>
+              <th>ค่างวด/เดือน (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+      <div id="summary" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h3>โปรโมชันที่กำลังเปิดอยู่</h3>
+      <ul id="promo-list"></ul>
+    </div>
+  </div>
+</body>
+</html>

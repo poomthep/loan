@@ -13,7 +13,7 @@
     .hidden { display: none; }
     .btn { border: 1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius: 10px; cursor:pointer; }
     .btn.outline { background:#fff; color:#111827; }
-    input { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
+    input, textarea { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
     table { border-collapse: collapse; width: 100%; }
     th, td { text-align:left; }
     th { font-weight:600; background:#f3f4f6; }
@@ -23,11 +23,13 @@
     import { registerServiceWorker } from './sw-register.js';
     import { startSessionGuard } from './js/session-guard.js';
     import { handleAuthUI } from './js/auth.js';
-    import { initAdminPage } from './js/admin.js';
+    import { initAdminPage } from './js/admin.js';            // MRR section
+    import { initAdminPromotions } from './js/admin-promotions.js'; // Promotions CRUD
     registerServiceWorker();
     startSessionGuard();
     handleAuthUI();
     initAdminPage();
+    initAdminPromotions();
   </script>
 </head>
 <body>
@@ -57,6 +59,38 @@
             </tr>
           </thead>
           <tbody id="banks-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Promotions card injected from patch -->
+    <div class="card">
+      <h3>โปรโมชัน</h3>
+      <div class="row" style="justify-content:space-between;">
+        <div>เพิ่ม/แก้ไข/ลบโปรโมชัน (เฉพาะแอดมิน)</div>
+        <div class="row">
+          <button id="btn-promo-refresh" class="btn">↻ รีเฟรช</button>
+        </div>
+      </div>
+
+      <div class="row" style="gap:10px; margin-top:10px">
+        <input id="new-title" class="w-64" placeholder="ชื่อโปร (เช่น ดอกเบี้ยพิเศษ)">
+        <textarea id="new-detail" class="w-80" placeholder="รายละเอียด"></textarea>
+        <label><input type="checkbox" id="new-active" checked> เปิดใช้งาน</label>
+        <button id="btn-promo-add" class="btn">+ เพิ่มโปร</button>
+      </div>
+
+      <div style="overflow-x:auto; margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th class="px-3 py-2 border-b">ชื่อโปร</th>
+              <th class="px-3 py-2 border-b">รายละเอียด</th>
+              <th class="px-3 py-2 border-b">เปิดใช้งาน</th>
+              <th class="px-3 py-2 border-b">การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody id="promo-body"></tbody>
         </table>
       </div>
     </div>

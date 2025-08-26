@@ -1,0 +1,33 @@
+<!-- === Promotions card (insert into admin.html under the MRR card) === -->
+<div class="card">
+  <h3>โปรโมชัน</h3>
+  <div class="row" style="justify-content:space-between;">
+    <div>เพิ่ม/แก้ไข/ลบโปรโมชัน (เฉพาะแอดมิน)</div>
+    <div class="row">
+      <button id="btn-promo-refresh" class="btn">↻ รีเฟรช</button>
+    </div>
+  </div>
+
+  <div class="row" style="gap:10px; margin-top:10px">
+    <input id="new-title" class="w-64" placeholder="ชื่อโปร (เช่น ดอกเบี้ยพิเศษ)">
+    <textarea id="new-detail" class="w-80" placeholder="รายละเอียด"></textarea>
+    <label><input type="checkbox" id="new-active" checked> เปิดใช้งาน</label>
+    <button id="btn-promo-add" class="btn">+ เพิ่มโปร</button>
+  </div>
+
+  <div style="overflow-x:auto; margin-top:10px">
+    <table>
+      <thead>
+        <tr>
+          <th class="px-3 py-2 border-b">ชื่อโปร</th>
+          <th class="px-3 py-2 border-b">รายละเอียด</th>
+          <th class="px-3 py-2 border-b">เปิดใช้งาน</th>
+          <th class="px-3 py-2 border-b">การทำงาน</th>
+        </tr>
+      </thead>
+      <tbody id="promo-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- === End promotions card === -->
