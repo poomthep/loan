@@ -1,130 +1,50 @@
-
 <!doctype html>
-<html lang="th">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>วิเคราะห์สินเชื่อ</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin:0; color:#111; }
-    .container { max-width: 1100px; margin: 28px auto; padding: 0 16px; }
-    .card { border:1px solid #e5e7eb; border-radius:16px; padding:18px; box-shadow:0 4px 10px rgba(0,0,0,.04); margin-bottom:16px; }
-    .row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
-    .btn { border:1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius:10px; cursor:pointer; }
-    .btn.outline { background:#fff; color:#111827; }
-    input, select { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
-    table { border-collapse: collapse; width:100%; }
-    th, td { padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:left; }
-    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-    .muted { color:#6b7280; font-size:12px; }
-    .warn { color:#b45309; font-size:12px; }
-    .pill { padding:4px 8px; border-radius:999px; background:#eef2ff; }
-  </style>
-  <script type="module">
-    import { runLoanPage } from './js/loan-advanced.js';
-    runLoanPage();
-  </script>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>วิเคราะห์สินเชื่อ (DSR / LTV)</h1>
-      <a class="btn outline" href="/index.html">หน้าหลัก</a>
-    </header>
+<html lang="th"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>วิเคราะห์สินเชื่อ</title>
+<link rel="stylesheet" href="/public/css/styles.css"/>
+<script type="module">
+  import { runLoanPage } from './js/loan-advanced.js';
+  runLoanPage();
+</script>
+</head><body>
+<div class="container">
+  <header class="row" style="justify-content:space-between">
+    <h1 style="margin:0">วิเคราะห์สินเชื่อ (DSR / LTV)</h1>
+    <a class="btn outline" href="/index.html">หน้าหลัก</a>
+  </header>
 
-    <div class="card">
-      <div class="row">
-        <label class="row"><input type="radio" name="mode" value="max" checked/> คำนวณวงเงินสูงสุด</label>
-        <label class="row"><input type="radio" name="mode" value="check"/> ตรวจสอบวงเงินที่ต้องการ</label>
-      </div>
-      <div class="row" style="gap:16px;margin-top:8px">
-        <div>
-          <div>ประเภทสินเชื่อ</div>
-          <select id="product">
-            <option value="MORTGAGE">สินเชื่อที่อยู่อาศัย</option>
-            <option value="REFINANCE">รีไฟแนนซ์</option>
-            <option value="PERSONAL">สินเชื่อบุคคล</option>
-            <option value="SME">SME</option>
-          </select>
-        </div>
-        <div>
-          <div>รายได้สุทธิ/เดือน (บาท)</div>
-          <input id="income" type="number" min="0" step="1000" value="40000"/>
-        </div>
-        <div>
-          <div>ภาระหนี้/เดือน (บาท)</div>
-          <input id="debt" type="number" min="0" step="500" value="0"/>
-        </div>
-        <div>
-          <div>รายได้เสริม/เดือน (ถ้ามี)</div>
-          <input id="income-extra" type="number" min="0" step="1000" value="0"/>
-        </div>
-        <div>
-          <div>อายุผู้กู้ (ปี)</div>
-          <input id="age" type="number" min="18" max="80" step="1" value="30"/>
-        </div>
-        <div>
-          <div>ระยะเวลาผ่อน (ปี)</div>
-          <input id="years" type="number" min="1" step="1" value="20"/>
-        </div>
-        <div id="block-property">
-          <div>มูลค่าหลักประกัน (บาท)</div>
-          <input id="property" type="number" min="0" step="50000" value="2000000"/>
-        </div>
-        <div id="block-prop-meta">
-          <div>ประเภททรัพย์</div>
-          <select id="property-type">
-            <option value="">—</option>
-            <option value="HOUSE">บ้านเดี่ยว</option>
-            <option value="TOWNHOME">ทาวน์โฮม</option>
-            <option value="CONDO">คอนโด</option>
-            <option value="LAND+HOUSE">ที่ดิน+บ้าน</option>
-          </select>
-        </div>
-        <div id="block-home">
-          <div>บ้านหลังที่เท่าไร</div>
-          <select id="home-number">
-            <option value="">—</option>
-            <option value="1">หลังแรก</option>
-            <option value="2">หลังที่สอง</option>
-            <option value="3">หลังที่สามขึ้นไป</option>
-          </select>
-        </div>
-        <div id="block-loan">
-          <div>วงเงินที่ต้องการกู้ (บาท)</div>
-          <input id="loan-amount" type="number" min="0" step="10000" value="1500000"/>
-        </div>
-        <button id="btn-run" class="btn">คำนวณ</button>
-      </div>
-      <div class="muted" style="margin-top:6px">
-        * โหมด “คำนวณวงเงินสูงสุด” จะหา P_max ให้โดยดู DSR/LTV/ข้อจำกัดธนาคาร | โหมด “ตรวจสอบวงเงินที่ต้องการ” จะประเมิน DSR/LTV ของวงเงินที่กรอก
-      </div>
+  <div class="card">
+    <div class="row">
+      <label class="row"><input type="radio" name="mode" value="max" checked/> คำนวณวงเงินสูงสุด</label>
+      <label class="row"><input type="radio" name="mode" value="check"/> ตรวจสอบวงเงินที่ต้องการ</label>
     </div>
-
-    <div class="card">
-      <h3>สรุปวงเงินสูงสุด</h3>
-      <div id="caps"></div>
-    </div>
-
-    <div class="card">
-      <h3>ข้อเสนอ (เรียงค่างวดต่ำสุด)</h3>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>ธนาคาร</th>
-              <th>โปร/ส่วนลด</th>
-              <th>ดอกใช้คำนวณ</th>
-              <th>ค่างวด/เดือน</th>
-              <th>DTI</th>
-              <th>สถานะ</th>
-            </tr>
-          </thead>
-          <tbody id="offers"></tbody>
-        </table>
-      </div>
-      <div id="note" class="muted" style="margin-top:6px"></div>
+    <div class="form-grid" style="margin-top:10px">
+      <div><div>ประเภทสินเชื่อ</div><select id="product"><option>MORTGAGE</option><option>REFINANCE</option><option>PERSONAL</option><option>SME</option></select></div>
+      <div><div>รายได้สุทธิ/เดือน (บาท)</div><input id="income" type="number" min="0" step="1000" value="40000"/></div>
+      <div><div>ภาระหนี้/เดือน (บาท)</div><input id="debt" type="number" min="0" step="500" value="0"/></div>
+      <div><div>รายได้เสริม/เดือน</div><input id="income-extra" type="number" min="0" step="1000" value="0"/></div>
+      <div><div>อายุผู้กู้ (ปี)</div><input id="age" type="number" min="18" max="80" step="1" value="30"/></div>
+      <div><div>ระยะเวลาผ่อน (ปี)</div><input id="years" type="number" min="1" step="1" value="20"/></div>
+      <div id="block-property"><div>มูลค่าหลักประกัน (บาท)</div><input id="property" type="number" min="0" step="50000" value="2000000"/></div>
+      <div id="block-prop-meta"><div>ประเภททรัพย์</div><select id="property-type"><option value="">—</option><option>HOUSE</option><option>TOWNHOME</option><option>CONDO</option><option>LAND+HOUSE</option></select></div>
+      <div id="block-home"><div>บ้านหลังที่เท่าไร</div><select id="home-number"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+      <div id="block-loan"><div>วงเงินที่ต้องการกู้ (บาท)</div><input id="loan-amount" type="number" min="0" step="10000" value="1500000"/></div>
+      <div><div>&nbsp;</div><button id="btn-run" class="btn btn-full">คำนวณ</button></div>
     </div>
   </div>
-</body>
-</html>
+
+  <div class="card"><h3>สรุปวงเงินสูงสุด</h3><div id="caps"></div></div>
+
+  <div class="card">
+    <h3>ข้อเสนอ (เรียงค่างวดต่ำสุด)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ธนาคาร</th><th>โปร/ส่วนลด</th><th>ดอกใช้คำนวณ</th><th>ค่างวด/เดือน</th><th>DTI</th><th>สถานะ</th></tr></thead>
+        <tbody id="offers"></tbody>
+      </table>
+    </div>
+    <div id="note" class="muted" style="margin-top:6px"></div>
+  </div>
+</div>
+</body></html>
