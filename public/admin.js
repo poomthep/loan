@@ -229,6 +229,7 @@ function clearForm(appElements) {
     document.getElementById('other_income_factor').value = 50;
     document.getElementById('income_assessment_factor').value = 100;
     document.getElementById('payment_multiplier').value = 150;
+    document.getElementById('min_living_expense').value = 15000;
     hasMrtaOptionCheckbox.checked = false;
     renderInterestRateInputs(appElements.ratesContainer);
     appElements.promotionForm.querySelector('select').focus();
@@ -265,7 +266,7 @@ async function handleFormSubmit(e, appElements) {
     try {
         const formData = new FormData(appElements.promotionForm);
         const promoData = {};
-        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'dsr_limit', 'income_per_million', 'payment_multiplier', 'notes'];
+        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'dsr_limit', 'income_per_million', 'payment_multiplier', 'min_living_expense', 'notes'];
         
         formFields.forEach(field => { 
             const el = document.getElementById(field);
