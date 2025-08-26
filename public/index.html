@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เครื่องมือวิเคราะห์สินเชื่อบ้าน</title>
-    <link rel="stylesheet" href="style.css">
+    
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="style.css">
+	
+	<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="print.css" media="print">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="favicon.ico">
@@ -12,50 +17,51 @@
 <body class="container">
 
     <h1>เครื่องมือวิเคราะห์สินเชื่อบ้าน 🏡</h1>
+    <div id="statusBanner"></div>
 
-<div class="user-info-container">
-    <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
-    <div class="input-grid">
-        <div class="form-group">
-            <label for="userAge">อายุ (ปี):</label>
-            <input type="number" id="userAge" placeholder="เช่น 47" inputmode="numeric">
+    <div class="user-info-container">
+        <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
+        <div class="input-grid">
+            <div class="form-group">
+                <label for="userAge">อายุ (ปี):</label>
+                <input type="number" id="userAge" placeholder="เช่น 47" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label for="monthlySalary">เงินเดือน (บาท/เดือน):</label>
+                <input type="number" id="monthlySalary" placeholder="เช่น 59000" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="annualBonus">โบนัส (รวมทั้งปี):</label>
+                <input type="number" id="annualBonus" placeholder="เช่น 14000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="otherIncome6M">รายได้อื่นๆ (รวม 6 เดือนย้อนหลัง):</label>
+                <input type="number" id="otherIncome6M" placeholder="เช่น 64000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="monthlyDebt">หนี้สินในบูโร (ภาระผ่อนต่อเดือน):</label>
+                <input type="number" id="monthlyDebt" placeholder="เช่น 15000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="profession">อาชีพ:</label>
+                <select id="profession">
+                    <option value="salaried">พนักงานประจำ</option>
+                    <option value="business">เจ้าของกิจการ / อาชีพอิสระ</option>
+                </select>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="monthlySalary">เงินเดือน (บาท/เดือน):</label>
-            <input type="number" id="monthlySalary" placeholder="เช่น 59000" inputmode="decimal">
-        </div>
-        <div class="form-group">
-            <label for="annualBonus">โบนัส (รวมทั้งปี):</label>
-            <input type="number" id="annualBonus" placeholder="เช่น 14000" value="0" inputmode="decimal">
-        </div>
-        <div class="form-group">
-            <label for="otherIncome6M">รายได้อื่นๆ (รวม 6 เดือนย้อนหลัง):</label>
-            <input type="number" id="otherIncome6M" placeholder="เช่น 64000" value="0" inputmode="decimal">
-        </div>
-        <div class="form-group">
-            <label for="monthlyDebt">หนี้สินในบูโร (ภาระผ่อนต่อเดือน):</label>
-            <input type="number" id="monthlyDebt" placeholder="เช่น 15000" value="0" inputmode="decimal">
-        </div>
-        <div class="form-group">
-            <label for="profession">อาชีพ:</label>
-            <select id="profession">
-                <option value="salaried">พนักงานประจำ</option>
-                <option value="business">เจ้าของกิจการ / อาชีพอิสระ</option>
-            </select>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="wantsMRTA">
+            <label for="wantsMRTA">สนใจโปรโมชันที่ต้องทำประกัน MRTA (เพื่อรับดอกเบี้ยพิเศษ)</label>
         </div>
     </div>
-    <div class="form-group checkbox-group">
-        <input type="checkbox" id="wantsMRTA">
-        <label for="wantsMRTA">สนใจโปรโมชันที่ต้องทำประกัน MRTA (เพื่อรับดอกเบี้ยพิเศษ)</label>
-    </div>
-</div>
 
     <hr>
 
     <h2>กรอกข้อมูลสินเชื่อที่ต้องการ</h2>
     <div class="input-group">
         <label for="loanAmount">วงเงินกู้ที่ต้องการ (บาท):</label>
-        <input type="number" id="loanAmount" value="2000000" inputmode="decimal" pattern="[0-9]*">
+        <input type="number" id="loanAmount" placeholder="เว้นว่างเพื่อคำนวณวงเงินสูงสุด" inputmode="decimal" pattern="[0-9]*">
     </div>
     <div class="input-group">
         <label for="loanTerm">ระยะเวลากู้ที่ต้องการ (ปี):</label>
@@ -76,18 +82,21 @@
         <div id="loading-spinner" style="display: none;"></div>
     </div>
 
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>รายละเอียดการคำนวณ</h2>
+            <div id="modal-details-content">
+                </div>
+        </div>
+    </div>
+
     <script src="/api/config" type="module"></script>
+    <script src="supabase-client.js" type="module"></script>
+    <script src="calc.js" type="module"></script>
+    <script src="format.js" type="module"></script>
+    <script src="render.js" type="module"></script>
     <script src="app.js" type="module"></script>
     <script src="sw-register.js" defer></script>
-	
-	<div id="details-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h2>รายละเอียดการคำนวณ</h2>
-        <div id="modal-details-content">
-            </div>
-    </div>
-</div>
-	
 </body>
 </html>
