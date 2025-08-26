@@ -3,8 +3,8 @@ import { render } from './render.js';
 import { calc } from './calc.js';
 import { fmt } from './format.js';
 
-// --- ADDED BACK: กำหนดค่า MRR อ้างอิง ---
-const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3%
+// --- ค่าคงที่ MRR อ้างอิง ---
+const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3% (ปรับเปลี่ยนได้ตามต้องการ)
 
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
@@ -67,7 +67,13 @@ function handleAnalysis() {
         const totalMonthlyIncome = userInfo.salary + monthlyBonus + monthlyOtherIncome;
 
         const assessmentFactor = promo.income_assessment_factor ?? 1.0;
-        const assessedMonthlyIncome = totalMonthlyIncome * assessmentFactor;
+        const grossAssessedIncome = totalMonthlyIncome * assessmentFactor;
+
+        const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
+
+        if (netIncomeForCalculation <= 0) {
+            return null;
+        }
 
         const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
@@ -96,21 +102,21 @@ function handleAnalysis() {
             if (isNaN(avgInterest)) return null;
 
             const promoDSRLimit = promo.dsr_limit || 70;
-            const maxTotalDebtPayment = assessedMonthlyIncome * (promoDSRLimit / 100);
-            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
+            const maxAffordablePayment = netIncomeForCalculation * (promoDSRLimit / 100);
             if (maxAffordablePayment <= 0) return null;
             const maxLoanByPV = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
 
             const incomePerMillionReq = promo.income_per_million || 25000;
-            const maxLoanByIncome = (assessedMonthlyIncome / incomePerMillionReq) * 1000000;
+            const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
 
             finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
             
             calculationDetails = {
-                totalMonthlyIncome, assessmentFactor, assessedMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
-                existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12, maxLoanByPV,
-                maxLoanByIncome, incomePerMillionReq
+                totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
+                existingDebt: userInfo.debt, netIncomeForCalculation,
+                promoDSRLimit, maxAffordablePayment, avgInterest, actualTerm,
+                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12,
+                maxLoanByPV, maxLoanByIncome, incomePerMillionReq
             };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
@@ -119,24 +125,23 @@ function handleAnalysis() {
             if (isNaN(avgInterest)) return null;
 
             const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
-            const userDSR = assessedMonthlyIncome > 0 ? ((userInfo.debt + estPayment) / assessedMonthlyIncome) * 100 : 100;
+            const userDSR = grossAssessedIncome > 0 ? ((userInfo.debt + estPayment) / grossAssessedIncome) * 100 : 100;
             const dsrCheck = userDSR < (promo.dsr_limit || 100);
             
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
-            const incomeCheck = assessedMonthlyIncome >= minIncome;
+            const incomeCheck = netIncomeForCalculation >= minIncome;
 
             if (!dsrCheck || !incomeCheck) return null;
             finalLoanAmount = loanInfo.amount;
         }
-        
-        // --- ADDED BACK: คำนวณค่างวดแบบขั้นบันได ---
+
         const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
         if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
             const rateGroups = [];
             let lastRate = null;
             ratesToCalc.forEach((rateStr, index) => {
                 const numericRate = resolveRate(rateStr);
-                if (numericRate !== lastRate || index === ratesToCalc.length - 1) { // Group consecutive same rates
+                if (numericRate !== lastRate || index === ratesToCalc.length - 1) {
                     rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
                     lastRate = numericRate;
                 } else {
@@ -159,7 +164,7 @@ function handleAnalysis() {
                 steppedPayments.push({ period: periodLabel, amount: payment });
             });
         }
-
+        
         const avgInterest3yr = calc.average(calc.parseFirst3Numeric(ratesToCalc.map(resolveRate)));
         
         return {
@@ -169,7 +174,7 @@ function handleAnalysis() {
             ratesToDisplay: ratesToCalc,
             displayTerm: actualTerm,
             calculationDetails,
-            steppedPayments // ส่งผลลัพธ์ใหม่ไปด้วย
+            steppedPayments
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 
@@ -195,13 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const assessmentFactorText = details.assessmentFactor < 1 ? `(ปรับลด ${((1 - details.assessmentFactor) * 100).toFixed(0)}%)` : '';
             modalContent.innerHTML = `
                 <p><span>รายได้รวม (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
-                <p><span>รายได้ที่ใช้ประเมิน ${assessmentFactorText}:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
+                <p><span>รายได้หลังปรับลด ${assessmentFactorText}:</span> <span>${fmt.baht(details.grossAssessedIncome)}</span></p>
                 <p><span>หักภาระหนี้สินเดิม:</span> <span>-${fmt.baht(details.existingDebt)}</span></p>
                 <p><span><b>รายได้สุทธิที่ใช้คำนวณ:</b></span> <span><b>${fmt.baht(details.netIncomeForCalculation)}</b></span></p>
-                <hr>
-                <p><span>ความสามารถในการผ่อนต่อเดือน:</span> <span>${fmt.baht(details.maxAffordablePayment)}</span></p>
-                <p><span>อัตราดอกเบี้ยเฉลี่ย (3 ปี):</span> <span>${details.avgInterest.toFixed(2)}%</span></p>
-                <p><span>ระยะเวลา:</span> <span>${details.actualTerm} ปี</span></p>
                 <hr>
                 <h4>วิธีคำนวณที่ 1: ตามภาระผ่อน (DSR)</h4>
                 <div class="formula-display">
