@@ -39,7 +39,6 @@ h1 { text-align: center; margin-bottom: 30px; }
 h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; }
 hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 
-/* === Section Header for Admin Page === */
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -98,7 +97,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
     margin-bottom: 10px;
 }
 .rate-year-row > label {
-    flex: 0 0 120px; /* Fixed width for year label */
+    flex: 0 0 120px; 
     font-weight: 700;
 }
 .rate-inputs-group {
@@ -131,16 +130,36 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
 .data-table th { background-color: var(--background-color); font-weight: 700; }
+.actions button { margin-right: 5px; }
+
+/* Result Card Styles */
+.result-card { border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; margin-bottom: 20px; box-shadow: var(--box-shadow); background-color: var(--surface-color); }
+.result-card.ineligible { opacity: 0.6; background-color: #f8f9fa; }
+.result-card h3 { margin-top: 0; }
+.result-card .highlight { font-size: 1.1em; font-weight: bold; color: var(--primary-color); background-color: #e6f0f8; padding: 10px; border-radius: 5px; margin: 15px 0; }
+.result-card ul { list-style-type: none; padding-left: 0; }
+.result-card li { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+
+/* Stepped Payments & Details */
+.stepped-payments, .loan-details { font-size: 0.9em; background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: 5px; padding: 15px; margin: 15px 0; }
+.stepped-payments h4, .loan-details h4 { margin-top: 0; margin-bottom: 10px; }
+.stepped-payments ul { list-style: none; padding: 0; margin: 0; }
+.stepped-payments li, .loan-details p { display: flex; justify-content: space-between; padding: 8px 0; margin: 0; border-bottom: 1px dotted #ccc; }
+.stepped-payments li:last-child, .loan-details p:last-child { border-bottom: none; }
+.stepped-payments .amount, .loan-details span:last-child { font-weight: bold; color: var(--primary-color); }
+
 
 /* === Modal === */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
 .modal-content { background-color: var(--surface-color); margin: 10vh auto; padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 600px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .close-btn { color: #aaa; position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+.formula-display { padding: 10px; background: #f4f7f6; border-radius: 5px; margin: 10px 0; }
+
 
 /* === Responsive Design === */
 @media (max-width: 768px) {
     .container { margin: 10px; padding: 15px; }
-    .input-grid, .form-grid, .bank-mrr-row { grid-template-columns: 1fr; }
+    .input-grid, .form-grid { grid-template-columns: 1fr; }
     .bank-mrr-row { flex-direction: column; align-items: stretch; }
     h1 { font-size: 1.8em; }
     .modal-content { width: 95%; margin: 5vh auto; }
