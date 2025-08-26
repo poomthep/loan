@@ -3,9 +3,6 @@ import { render } from './render.js';
 import { calc } from './calc.js';
 import { fmt } from './format.js';
 
-// --- ค่าคงที่ MRR อ้างอิง ---
-const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3% (ปรับเปลี่ยนได้ตามต้องการ)
-
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
 const resultsContainer = document.getElementById('resultsContainer');
@@ -24,7 +21,8 @@ async function fetchAllPromotions() {
     loadingSpinner.style.display = 'block';
     render.clearResults();
     
-    const { data, error } = await supabase.from('promotions').select('*, banks(name)');
+    // ⭐ CHANGE: ดึง mrr_rate มาจากตาราง banks ด้วย
+    const { data, error } = await supabase.from('promotions').select('*, banks(name, mrr_rate)');
 
     if (error) {
         console.error('Error fetching promotions:', error);
@@ -86,11 +84,13 @@ function handleAnalysis() {
         let calculationDetails = {};
         let steppedPayments = [];
 
+        // ⭐ CHANGE: ให้ฟังก์ชัน resolveRate ใช้ MRR ของแต่ละธนาคาร
         const resolveRate = (rate) => {
+            const bankMRR = promo.banks?.mrr_rate || 7.3; // ใช้ MRR ของธนาคาร หรือถ้าไม่มีให้ใช้ 7.3 เป็นค่าสำรอง
             if (typeof rate === 'string' && rate.toUpperCase().includes('MRR')) {
                 const parts = rate.toUpperCase().split(/[-+]/);
-                const deduction = parseFloat(parts[1] || 0);
-                return rate.includes('-') ? MRR - deduction : MRR + deduction;
+                const adjustment = parseFloat(parts[1] || 0);
+                return rate.includes('-') ? bankMRR - adjustment : bankMRR + adjustment;
             }
             return parseFloat(rate);
         };
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 
     resultsContainer.addEventListener('click', (e) => {
-        const detailsButton = e.target.closest('.details-btn');
+        const detailsButton = e.target.closest('details-btn');
         if (detailsButton) {
             const cardElement = e.target.closest('.result-card');
             const offerId = cardElement.dataset.id;
