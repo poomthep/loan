@@ -106,40 +106,55 @@ function initAppElements() {
     };
 }
 
-function renderInterestRateInputs(ratesContainer, rates = { normal: [null], mrta: [null] }) {
+function renderInterestRateInputs(ratesContainer, rates = { normal: [""], mrta: [""] }) {
     ratesContainer.innerHTML = '';
     const showMrta = hasMrtaOptionCheckbox.checked;
     const normalRates = rates?.normal || [];
     const mrtaRates = rates?.mrta || [];
-    const numYears = normalRates.length;
+    
+    const numYears = Math.max(normalRates.length, 1);
+    while (normalRates.length < numYears) normalRates.push("");
+    while (mrtaRates.length < numYears) mrtaRates.push("");
 
     for (let i = 0; i < numYears; i++) {
         const year = i + 1;
         const isLastRate = i === numYears - 1;
-        const isRemovable = numYears > 3 && !isLastRate;
-        const normalRateValue = normalRates[i];
-        const mrtaRateValue = mrtaRates[i];
+        const isRemovable = numYears > 1; // Can remove any row if there's more than one
+        
+        const normalRateValue = normalRates[i] ?? "";
+        const mrtaRateValue = mrtaRates[i] ?? "";
+        
         const row = document.createElement('div');
         row.className = 'rate-year-row';
         row.dataset.yearIndex = i;
+
         let labelText = `ปีที่ ${year}:`;
-        let normalInputHTML = `<input type="number" class="rate-input normal-rate" value="${normalRateValue ?? ''}" placeholder="เช่น 3.25" step="0.01">`;
-        let mrtaInputHTML = `<input type="number" class="rate-input mrta-rate" value="${mrtaRateValue ?? ''}" placeholder="เช่น 3.15" step="0.01" style="display: ${showMrta ? 'block' : 'none'}">`;
+        let normalInputHTML, mrtaInputHTML;
+
         if (isLastRate) {
             labelText = `ปีที่ ${year} เป็นต้นไป:`;
             const mrrValue = (typeof normalRateValue === 'string' && normalRateValue.includes('MRR-')) ? N(normalRateValue.split('-')[1]) : '';
             const mrrMrtaValue = (typeof mrtaRateValue === 'string' && mrtaRateValue.includes('MRR-')) ? N(mrtaRateValue.split('-')[1]) : '';
+            
             normalInputHTML = `<div class="mrr-group"><span>MRR -</span><input type="number" class="rate-input normal-rate" value="${mrrValue}" placeholder="1.50" step="0.01"><span>%</span></div>`;
-            mrtaInputHTML = `<div class="mrr-group"><span>MRR -</span><input type="number" class="rate-input mrta-rate" value="${mrrMrtaValue}" placeholder="1.75" step="0.01" style="display: ${showMrta ? 'block' : 'none'}"><span>%</span></div>`;
+            mrtaInputHTML = `<div class="mrr-group" style="display: ${showMrta ? 'flex' : 'none'}"><span>MRR -</span><input type="number" class="rate-input mrta-rate" value="${mrrMrtaValue}" placeholder="1.75" step="0.01"><span>%</span></div>`;
+        } else {
+            normalInputHTML = `<input type="number" class="rate-input normal-rate" value="${normalRateValue}" placeholder="เช่น 3.25" step="0.01">`;
+            mrtaInputHTML = `<input type="number" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="เช่น 3.15" step="0.01" style="display: ${showMrta ? 'block' : 'none'}">`;
         }
+        
         row.innerHTML = `
             <label>${labelText}</label>
-            <div class="rate-inputs-group">${normalInputHTML}${mrtaInputHTML}</div>
+            <div class="rate-inputs-group">
+                ${normalInputHTML}
+                ${mrtaInputHTML}
+            </div>
             ${isRemovable ? `<button type="button" class="btn btn-danger btn-sm remove-rate-year-btn" data-year-index="${i}">ลบ</button>` : ''}
         `;
         ratesContainer.appendChild(row);
     }
 }
+
 
 async function renderPromotionsTable(promotionsTableBody, promotions) { 
     promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; 
@@ -312,45 +327,43 @@ function setupAppEventListeners(appElements) {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {
             const parent = field.closest('.mrr-group') || field;
-            parent.style.display = hasMrtaOptionCheckbox.checked ? 'block' : 'none';
+            parent.style.display = hasMrtaOptionCheckbox.checked ? (parent.classList.contains('mrr-group') ? 'flex' : 'block') : 'none';
         });
     });
-    appElements.addRateYearBtn.addEventListener('click', () => {
+    const getCurrentRatesFromDOM = () => {
         const ratesContainer = appElements.ratesContainer;
         const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
         const normalRates = rateRows.map((row, index) => {
             const input = row.querySelector('.normal-rate');
-            return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+            const isLastRate = index === rateRows.length - 1;
+            const value = N(input.value);
+            return isLastRate && value !== null ? `MRR-${value}` : value;
         });
         const mrtaRates = rateRows.map((row, index) => {
             const input = row.querySelector('.mrta-rate');
-            return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+            const isLastRate = index === rateRows.length - 1;
+            const value = N(input.value);
+            return isLastRate && value !== null ? `MRR-${value}` : value;
         });
-        const lastNormal = normalRates.pop();
-        const lastMrta = mrtaRates.pop();
-        normalRates.push(null);
-        mrtaRates.push(null);
-        normalRates.push(lastNormal);
-        mrtaRates.push(lastMrta);
-        renderInterestRateInputs(ratesContainer, { normal: normalRates, mrta: mrtaRates });
+        return { normal: normalRates, mrta: mrtaRates };
+    };
+    appElements.addRateYearBtn.addEventListener('click', () => {
+        const currentRates = getCurrentRatesFromDOM();
+        const lastNormal = currentRates.normal.pop();
+        const lastMrta = currentRates.mrta.pop();
+        currentRates.normal.push("");
+        currentRates.mrta.push("");
+        currentRates.normal.push(lastNormal);
+        currentRates.mrta.push(lastMrta);
+        renderInterestRateInputs(appElements.ratesContainer, currentRates);
     });
     appElements.ratesContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-rate-year-btn')) {
-            const ratesContainer = appElements.ratesContainer;
-            const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
-            if (rateRows.length <= 1) return;
-            const normalRates = rateRows.map((row, index) => {
-                const input = row.querySelector('.normal-rate');
-                return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
-            });
-            const mrtaRates = rateRows.map((row, index) => {
-                const input = row.querySelector('.mrta-rate');
-                return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
-            });
             const indexToRemove = parseInt(e.target.dataset.yearIndex, 10);
-            normalRates.splice(indexToRemove, 1);
-            mrtaRates.splice(indexToRemove, 1);
-            renderInterestRateInputs(ratesContainer, { normal: normalRates, mrta: mrtaRates });
+            const currentRates = getCurrentRatesFromDOM();
+            currentRates.normal.splice(indexToRemove, 1);
+            currentRates.mrta.splice(indexToRemove, 1);
+            renderInterestRateInputs(appElements.ratesContainer, currentRates);
         }
     });
     appElements.promotionsTableBody.addEventListener('click', async (e) => {

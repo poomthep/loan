@@ -29,19 +29,4 @@ function average(arr) {
     return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-function buildAmortization(P, annualPct, years, maxRows = 24) {
-    const n = Math.max(12, Math.round(years * 12));
-    const pay = pmt(P, annualPct, n);
-    const r = (annualPct / 100) / 12;
-    let bal = P;
-    const rows = [];
-    for (let i = 1; i <= n && rows.length < maxRows; i++) {
-        const interest = bal * r;
-        const principal = pay - interest;
-        bal = Math.max(0, bal - principal);
-        rows.push({ period: i, payment: pay, principal, interest, balance: bal });
-    }
-    return { payment: pay, rows };
-}
-
-export const calc = { pmt, pv, parseFirst3Numeric, average, buildAmortization };
+export const calc = { pmt, pv, parseFirst3Numeric, average };

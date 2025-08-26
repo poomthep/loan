@@ -1,4 +1,3 @@
-/* === CSS Variables (Theme Definition) === */
 :root {
     --primary-color: #005A9C;
     --secondary-color: #6c757d;
@@ -13,7 +12,6 @@
     --border-radius: 8px;
 }
 
-/* === Base & Typography === */
 body {
     font-family: var(--font-family);
     background-color: var(--background-color);
@@ -50,7 +48,6 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
     border-bottom: none;
 }
 
-/* === Bank MRR Row Styles === */
 .bank-mrr-row {
     display: flex;
     align-items: flex-end;
@@ -71,8 +68,6 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
     flex-shrink: 0;
 }
 
-
-/* === Forms & Inputs === */
 .input-grid, .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -89,12 +84,16 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .checkbox-group { flex-direction: row; align-items: center; margin-top: 10px; }
 .checkbox-group input { margin-right: 10px; width: 1.2em; height: 1.2em; }
 
-/* === Interest Rate Row Styles === */
 .rate-year-row {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.rate-year-row:last-child {
+    border-bottom: none;
 }
 .rate-year-row > label {
     flex: 0 0 120px; 
@@ -102,20 +101,27 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 }
 .rate-inputs-group {
     flex-grow: 1;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
-.rate-inputs-group input { width: 100%; }
 .mrr-group {
     display: flex;
     align-items: center;
     gap: 5px;
+    width: 100%;
 }
 .mrr-group span {
     font-weight: 700;
 }
+.mrr-group input {
+    min-width: 50px;
+    text-align: center;
+}
+.rate-year-row .btn-danger {
+    flex-shrink: 0;
+}
 
-/* === Buttons === */
 .btn {
     padding: 12px 20px; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 1em; font-weight: 700; text-align: center; transition: all 0.2s;
 }
@@ -126,13 +132,11 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .btn-danger { background-color: var(--danger-color); color: white; }
 .button-group { display: flex; gap: 10px; margin-top: 10px; }
 
-/* === Tables === */
 .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
 .data-table th { background-color: var(--background-color); font-weight: 700; }
 .actions button { margin-right: 5px; }
 
-/* Result Card Styles */
 .result-card { border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; margin-bottom: 20px; box-shadow: var(--box-shadow); background-color: var(--surface-color); }
 .result-card.ineligible { opacity: 0.6; background-color: #f8f9fa; }
 .result-card h3 { margin-top: 0; }
@@ -140,7 +144,6 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .result-card ul { list-style-type: none; padding-left: 0; }
 .result-card li { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
 
-/* Stepped Payments & Details */
 .stepped-payments, .loan-details { font-size: 0.9em; background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: 5px; padding: 15px; margin: 15px 0; }
 .stepped-payments h4, .loan-details h4 { margin-top: 0; margin-bottom: 10px; }
 .stepped-payments ul { list-style: none; padding: 0; margin: 0; }
@@ -148,15 +151,11 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 .stepped-payments li:last-child, .loan-details p:last-child { border-bottom: none; }
 .stepped-payments .amount, .loan-details span:last-child { font-weight: bold; color: var(--primary-color); }
 
-
-/* === Modal === */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
 .modal-content { background-color: var(--surface-color); margin: 10vh auto; padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 600px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .close-btn { color: #aaa; position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
 .formula-display { padding: 10px; background: #f4f7f6; border-radius: 5px; margin: 10px 0; }
 
-
-/* === Responsive Design === */
 @media (max-width: 768px) {
     .container { margin: 10px; padding: 15px; }
     .input-grid, .form-grid { grid-template-columns: 1fr; }
