@@ -39,8 +39,11 @@
         
         <hr>
 
-        <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
-        <form id="promotion-form" class="form-grid">
+        <div class="section-header">
+            <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
+            <button id="toggle-promo-form-btn" class="btn btn-secondary">แสดง/ซ่อนฟอร์ม</button>
+        </div>
+        <form id="promotion-form" class="form-grid" style="display: none;">
             <div class="form-group">
                 <label for="bank_id">ธนาคาร:</label>
                 <select id="bank_id" name="bank_id" required></select>

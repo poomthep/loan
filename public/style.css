@@ -1,261 +1,5 @@
 /* === CSS Variables (Theme Definition) === */
 :root {
-    --primary-color: #005A9C;       /* Blue for trust and stability */
-    --secondary-color: #6c757d;     /* Gray for secondary actions */
-    --background-color: #f8f9fa;    /* Very light gray background */
-    --surface-color: #ffffff;       /* White for cards and inputs */
-    --text-color: #343a40;          /* Dark gray for text */
-    --text-color-light: #6c757d;    /* Lighter gray for secondary text */
-    --border-color: #dee2e6;        /* Subtle border color */
-    --success-color: #28a745;       /* Green for success messages */
-    --danger-color: #dc3545;        /* Red for danger/delete */
-    --font-family: 'Kanit', sans-serif; /* <-- UPDATED FONT */
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    --border-radius: 8px;
-}
-
-/* === Base & Typography === */
-body {
-    font-family: var(--font-family);
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.7;
-    margin: 0;
-}
-
-.container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 20px 30px;
-    background: var(--surface-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-}
-
-h1, h2, h3, h4 {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-h2 {
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 10px;
-    margin-top: 40px;
-    margin-bottom: 20px;
-}
-
-hr {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 30px 0;
-}
-
-/* === Forms & Inputs === */
-.input-grid, .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.form-group, .input-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group label, .input-group label {
-    margin-bottom: 8px;
-    font-weight: 700;
-    font-size: 0.9em;
-    color: var(--text-color-light);
-}
-
-.form-group input, .form-group select, .form-group textarea, .input-group input {
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1em;
-    font-family: var(--font-family);
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus, .input-group input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.15);
-}
-
-.checkbox-group {
-    flex-direction: row;
-    align-items: center;
-    margin-top: 10px;
-}
-.checkbox-group input {
-    margin-right: 10px;
-    width: 1.2em;
-    height: 1.2em;
-}
-
-/* === Buttons === */
-.btn {
-    padding: 12px 20px;
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 700;
-    text-align: center;
-    transition: all 0.2s;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-.btn-primary:hover {
-    background-color: #004578;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(0,0,0,0.1);
-}
-
-.btn-secondary {
-    background-color: var(--secondary-color);
-    color: white;
-}
-.btn-danger {
-    background-color: var(--danger-color);
-    color: white;
-}
-
-.button-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-/* === Result Cards === */
-.result-card {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: var(--box-shadow);
-    background-color: var(--surface-color);
-}
-.result-card.ineligible {
-    opacity: 0.6;
-    background-color: #f8f9fa;
-}
-.result-card h3 {
-    margin-top: 0;
-}
-.result-card .highlight {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--primary-color);
-    background-color: #e6f0f8;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 15px 0;
-}
-.result-card ul {
-    list-style-type: none;
-    padding-left: 0;
-}
-.result-card li {
-    padding: 5px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-/* Stepped Payments & Details */
-.stepped-payments, .loan-details {
-    font-size: 0.9em;
-    background-color: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    padding: 15px;
-    margin: 15px 0;
-}
-.stepped-payments h4, .loan-details h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
-.stepped-payments ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.stepped-payments li, .loan-details p {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    margin: 0;
-    border-bottom: 1px dotted #ccc;
-}
-.stepped-payments li:last-child, .loan-details p:last-child {
-    border-bottom: none;
-}
-.stepped-payments .amount, .loan-details span:last-child {
-    font-weight: bold;
-    color: var(--primary-color);
-}
-
-/* === Modal === */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.6);
-}
-.modal-content {
-    background-color: var(--surface-color);
-    margin: 10vh auto;
-    padding: 30px;
-    border-radius: var(--border-radius);
-    width: 90%;
-    max-width: 600px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.close-btn {
-    color: #aaa;
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* === Responsive Design === */
-@media (max-width: 768px) {
-    .container {
-        margin: 10px;
-        padding: 15px;
-    }
-    .input-grid, .form-grid {
-        grid-template-columns: 1fr; /* Stack everything in a single column */
-    }
-    h1 {
-        font-size: 1.8em;
-    }
-    .modal-content {
-        width: 95%;
-        margin: 5vh auto;
-    }
-}
-
-/* === CSS Variables (Theme Definition) === */
-:root {
     --primary-color: #005A9C;
     --secondary-color: #6c757d;
     --background-color: #f8f9fa;
@@ -291,9 +35,11 @@ h1, h2, h3, h4 {
     color: var(--primary-color);
     font-weight: 700;
 }
-/* ... (ส่วน Typography อื่นๆ เหมือนเดิม) ... */
+h1 { text-align: center; margin-bottom: 30px; }
+h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; }
+hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
 
-/* === NEW: Section Header for Admin Page === */
+/* === Section Header for Admin Page === */
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -305,7 +51,7 @@ h1, h2, h3, h4 {
     border-bottom: none;
 }
 
-/* === NEW: Bank MRR Row Styles === */
+/* === Bank MRR Row Styles === */
 .bank-mrr-row {
     display: flex;
     align-items: flex-end;
@@ -317,13 +63,13 @@ h1, h2, h3, h4 {
 }
 .bank-mrr-row label {
     font-weight: 700;
-    flex: 1 1 150px; /* Allow shrinking but base width is 150px */
+    flex: 1 1 150px;
 }
 .bank-mrr-row input {
-    flex: 2 1 200px; /* Allow growing and shrinking, base width 200px */
+    flex: 2 1 200px;
 }
 .bank-mrr-row button {
-    flex-shrink: 0; /* Don't allow button to shrink */
+    flex-shrink: 0;
 }
 
 
@@ -333,4 +79,69 @@ h1, h2, h3, h4 {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
 }
-/* ... (ส่วน Forms, Buttons, Result Cards, Modal, Responsive เหมือนเดิม) ... */
+.form-group, .input-group { display: flex; flex-direction: column; }
+.form-group label, .input-group label { margin-bottom: 8px; font-weight: 700; font-size: 0.9em; color: var(--text-color-light); }
+.form-group input, .form-group select, .form-group textarea, .input-group input {
+    padding: 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 1em; font-family: var(--font-family); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus, .input-group input:focus {
+    outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.15);
+}
+.checkbox-group { flex-direction: row; align-items: center; margin-top: 10px; }
+.checkbox-group input { margin-right: 10px; width: 1.2em; height: 1.2em; }
+
+/* === Interest Rate Row Styles === */
+.rate-year-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+.rate-year-row > label {
+    flex: 0 0 120px; /* Fixed width for year label */
+    font-weight: 700;
+}
+.rate-inputs-group {
+    flex-grow: 1;
+    display: flex;
+    gap: 10px;
+}
+.rate-inputs-group input { width: 100%; }
+.mrr-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.mrr-group span {
+    font-weight: 700;
+}
+
+/* === Buttons === */
+.btn {
+    padding: 12px 20px; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 1em; font-weight: 700; text-align: center; transition: all 0.2s;
+}
+.btn-sm { padding: 8px 12px; font-size: 0.9em; }
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-primary:hover { background-color: #004578; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.1); }
+.btn-secondary { background-color: var(--secondary-color); color: white; }
+.btn-danger { background-color: var(--danger-color); color: white; }
+.button-group { display: flex; gap: 10px; margin-top: 10px; }
+
+/* === Tables === */
+.data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+.data-table th { background-color: var(--background-color); font-weight: 700; }
+
+/* === Modal === */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
+.modal-content { background-color: var(--surface-color); margin: 10vh auto; padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 600px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.close-btn { color: #aaa; position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .container { margin: 10px; padding: 15px; }
+    .input-grid, .form-grid, .bank-mrr-row { grid-template-columns: 1fr; }
+    .bank-mrr-row { flex-direction: column; align-items: stretch; }
+    h1 { font-size: 1.8em; }
+    .modal-content { width: 95%; margin: 5vh auto; }
+}

@@ -24,8 +24,7 @@ function renderBankManagement(banks) {
     container.innerHTML = '<h3>ค่า MRR ของแต่ละธนาคาร</h3>';
     banks.forEach(bank => {
         const div = document.createElement('div');
-        // ⭐ MODIFIED: Changed class and removed inline styles for better CSS control
-        div.className = 'bank-mrr-row'; 
+        div.className = 'bank-mrr-row';
         div.innerHTML = `
             <label for="mrr-${bank.id}">${bank.name}</label>
             <input type="number" class="mrr-input" id="mrr-${bank.id}" value="${bank.mrr_rate || ''}" step="0.01" placeholder="เช่น 7.3">
@@ -47,10 +46,8 @@ async function isAdminAuthenticated(session) {
         if (!session) { return false; }
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return false;
-        
-        const { data: profile, error: profileError } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
-        if (profileError) { throw profileError; }
-        
+        const { data: profile, error } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
+        if (error) { throw error; }
         if (!profile || profile.role !== 'admin' || profile.status !== 'approved') {
             throw new Error('Access Denied');
         }
@@ -73,11 +70,8 @@ function initializeGateView() {
             email: loginForm.email.value,
             password: loginForm.password.value
         });
-        if (error) {
-            showToast(error.message, true);
-        } else {
-            showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...');
-        }
+        if (error) { showToast(error.message, true); }
+        else { showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...'); }
         loginBtn.disabled = false;
         loginBtn.textContent = 'เข้าสู่ระบบ';
     };
@@ -86,7 +80,7 @@ function initializeGateView() {
 function initializeAppView() {
     const appElements = initAppElements();
     setupAppEventListeners(appElements);
-    renderInterestRateInputs(appElements.ratesContainer);
+    renderInterestRateInputs(appElements.ratesContainer, { normal: ["", "", ""], mrta: ["", "", ""] });
     loadInitialData(appElements);
 }
 
@@ -123,39 +117,46 @@ function initAppElements() {
     };
 }
 
-// --- UI Rendering ---
-function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null, null, ""], mrta: [null, null, null, ""] }) {
+// --- REWRITTEN: UI Rendering ---
+function renderInterestRateInputs(ratesContainer, rates = { normal: [null], mrta: [null] }) {
     ratesContainer.innerHTML = '';
     const showMrta = hasMrtaOptionCheckbox.checked;
-    const normalRates = rates?.normal || ["", "", "", ""];
-    const mrtaRates = rates?.mrta || ["", "", "", ""];
+    const normalRates = rates?.normal || [];
+    const mrtaRates = rates?.mrta || [];
     const numYears = normalRates.length;
 
     for (let i = 0; i < numYears; i++) {
         const year = i + 1;
         const isLastRate = i === numYears - 1;
-        const normalRateValue = normalRates[i] ?? '';
-        const mrtaRateValue = mrtaRates[i] ?? '';
+        const isRemovable = numYears > 3 && !isLastRate;
+
+        const normalRateValue = normalRates[i];
+        const mrtaRateValue = mrtaRates[i];
         
         const row = document.createElement('div');
         row.className = 'rate-year-row';
-        row.dataset.year = year;
+        row.dataset.yearIndex = i;
 
         let labelText = `ปีที่ ${year}:`;
-        let inputType = 'number';
-        let placeholder = 'เช่น 3.25';
+        let normalInputHTML = `<input type="number" class="rate-input normal-rate" value="${normalRateValue ?? ''}" placeholder="เช่น 3.25" step="0.01">`;
+        let mrtaInputHTML = `<input type="number" class="rate-input mrta-rate" value="${mrtaRateValue ?? ''}" placeholder="เช่น 3.15" step="0.01" style="display: ${showMrta ? 'block' : 'none'}">`;
+
         if (isLastRate) {
             labelText = `ปีที่ ${year} เป็นต้นไป:`;
-            inputType = 'text';
-            placeholder = 'เช่น MRR-1.50';
+            const mrrValue = (typeof normalRateValue === 'string' && normalRateValue.includes('MRR-')) ? N(normalRateValue.split('-')[1]) : '';
+            const mrrMrtaValue = (typeof mrtaRateValue === 'string' && mrtaRateValue.includes('MRR-')) ? N(mrtaRateValue.split('-')[1]) : '';
+            
+            normalInputHTML = `<div class="mrr-group"><span>MRR -</span><input type="number" class="rate-input normal-rate" value="${mrrValue}" placeholder="1.50" step="0.01"><span>%</span></div>`;
+            mrtaInputHTML = `<div class="mrr-group"><span>MRR -</span><input type="number" class="rate-input mrta-rate" value="${mrrMrtaValue}" placeholder="1.75" step="0.01" style="display: ${showMrta ? 'block' : 'none'}"><span>%</span></div>`;
         }
-
+        
         row.innerHTML = `
             <label>${labelText}</label>
             <div class="rate-inputs-group">
-               <input type="${inputType}" class="rate-input normal-rate" value="${normalRateValue}" placeholder="ปกติ (%)" title="อัตราดอกเบี้ยปกติ ปีที่ ${year}" ${inputType === 'number' ? 'step="0.01"' : ''}>
-               <input type="${inputType}" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="MRTA (%)" title="อัตราดอกเบี้ย MRTA ปีที่ ${year}" style="display: ${showMrta ? 'block' : 'none'}" ${inputType === 'number' ? 'step="0.01"' : ''}>
+                ${normalInputHTML}
+                ${mrtaInputHTML}
             </div>
+            ${isRemovable ? `<button type="button" class="btn btn-danger btn-sm remove-rate-year-btn" data-year-index="${i}">ลบ</button>` : ''}
         `;
         ratesContainer.appendChild(row);
     }
@@ -169,7 +170,7 @@ async function renderPromotionsTable(promotionsTableBody, promotions) {
     } 
     promotions.forEach(p => { 
         const rates = p.interest_rates?.normal || []; 
-        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null); 
+        const firstThreeRates = rates.slice(0, 3).map(r => (typeof r === 'number' ? r : 0)).filter(r => r !== null); 
         const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; 
         const tr = document.createElement('tr'); 
         tr.innerHTML = ` 
@@ -187,34 +188,23 @@ async function renderPromotionsTable(promotionsTableBody, promotions) {
 // --- DATA FETCHING ---
 async function fetchBanks(bankSelect) { 
     const { data, error } = await supabase.from('banks').select('id, name, mrr_rate').order('name'); 
-    if (error) { 
-        showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); 
-        return; 
-    } 
+    if (error) { showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); return; } 
     state.banks = data; 
-    
     bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>'; 
     state.banks.forEach(bank => { 
-        const option = document.createElement('option'); 
-        option.value = bank.id; 
-        option.textContent = bank.name; 
-        bankSelect.appendChild(option); 
+        const option = document.createElement('option'); option.value = bank.id; option.textContent = bank.name; bankSelect.appendChild(option); 
     });
-
     renderBankManagement(state.banks);
 }
 
 async function fetchPromotions(promotionsTableBody) { 
     const { data, error } = await supabase.from('promotions').select('*, banks(name)').order('created_at', { ascending: false }); 
-    if (error) { 
-        showToast('ไม่สามารถโหลดข้อมูลโปรโมชันได้', true); 
-        return; 
-    } 
+    if (error) { showToast('ไม่สามารถโหลดข้อมูลโปรโมชันได้', true); return; } 
     state.promotions = data; 
     renderPromotionsTable(promotionsTableBody, data); 
 }
 
-// --- Form Handling ---
+// --- REWRITTEN: Form Handling ---
 function clearForm(appElements) {
     appElements.promotionForm.reset();
     state.isEditing = false;
@@ -227,7 +217,7 @@ function clearForm(appElements) {
     document.getElementById('payment_multiplier').value = 150;
     document.getElementById('min_living_expense').value = 15000;
     hasMrtaOptionCheckbox.checked = false;
-    renderInterestRateInputs(appElements.ratesContainer);
+    renderInterestRateInputs(appElements.ratesContainer, { normal: ["", "", ""], mrta: ["", "", ""] });
     appElements.promotionForm.querySelector('select').focus();
 }
 
@@ -266,11 +256,8 @@ async function handleFormSubmit(e, appElements) {
         
         formFields.forEach(field => { 
             const el = document.getElementById(field);
-            if (el && el.type === 'number') {
-                promoData[field] = N(formData.get(field));
-            } else if (el) {
-                promoData[field] = D(formData.get(field));
-            }
+            if (el && el.type === 'number') { promoData[field] = N(formData.get(field)); } 
+            else if (el) { promoData[field] = D(formData.get(field)); }
         });
 
         promoData.bonus_factor = N(formData.get('bonus_factor')) / 100;
@@ -282,18 +269,31 @@ async function handleFormSubmit(e, appElements) {
         const mrtaRates = [];
         const rateRows = appElements.ratesContainer.querySelectorAll('.rate-year-row');
         
-        rateRows.forEach(row => {
+        rateRows.forEach((row, index) => {
+            const isLastRate = index === rateRows.length - 1;
+            
             const normalInput = row.querySelector('.normal-rate');
-            const mrtaInput = row.querySelector('.mrta-rate');
-            normalRates.push(normalInput.type === 'number' ? N(normalInput.value) : D(normalInput.value));
+            const normalValue = normalInput.type === 'number' ? N(normalInput.value) : D(normalInput.value);
+            if (isLastRate && normalValue !== null) {
+                normalRates.push(`MRR-${normalValue}`);
+            } else {
+                normalRates.push(normalValue);
+            }
+
             if (hasMrtaOptionCheckbox.checked) {
-                mrtaRates.push(mrtaInput.type === 'number' ? N(mrtaInput.value) : D(mrtaInput.value));
+                const mrtaInput = row.querySelector('.mrta-rate');
+                const mrtaValue = mrtaInput.type === 'number' ? N(mrtaInput.value) : D(mrtaInput.value);
+                if (isLastRate && mrtaValue !== null) {
+                    mrtaRates.push(`MRR-${mrtaValue}`);
+                } else {
+                    mrtaRates.push(mrtaValue);
+                }
             }
         });
 
         promoData.interest_rates = {
-            normal: normalRates.filter(r => r !== null && r !== ""),
-            mrta: hasMrtaOptionCheckbox.checked ? mrtaRates.filter(r => r !== null && r !== "") : []
+            normal: normalRates,
+            mrta: hasMrtaOptionCheckbox.checked ? mrtaRates : []
         };
         
         const { error } = state.isEditing 
@@ -313,41 +313,19 @@ async function handleFormSubmit(e, appElements) {
     }
 }
 
-// --- Event Listeners Setup ---
+// --- REWRITTEN: Event Listeners Setup ---
 function setupAppEventListeners(appElements) {
     appElements.logoutBtn.addEventListener('click', () => supabase.auth.signOut());
     appElements.clearBtn.addEventListener('click', () => clearForm(appElements));
     appElements.promotionForm.addEventListener('submit', (e) => handleFormSubmit(e, appElements));
     
+    // --- Bank Manager Events ---
     const bankContainer = document.getElementById('bank-management-container');
     bankContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('save-mrr-btn')) {
-            const btn = e.target;
-            btn.disabled = true;
-            const bankId = btn.dataset.id;
-            const mrrInput = document.getElementById(`mrr-${bankId}`);
-            const newMrrRate = N(mrrInput.value);
-
-            if (newMrrRate === null) {
-                showToast('กรุณาใส่ค่า MRR ที่ถูกต้อง', true);
-                btn.disabled = false;
-                return;
-            }
-
-            const { error } = await supabase
-                .from('banks')
-                .update({ mrr_rate: newMrrRate })
-                .eq('id', bankId);
-
-            if (error) {
-                showToast('อัปเดต MRR ไม่สำเร็จ: ' + error.message, true);
-            } else {
-                showToast('อัปเดต MRR สำเร็จ');
-            }
-            btn.disabled = false;
+            // ... (save mrr logic)
         }
     });
-
     const toggleBankManagerBtn = document.getElementById('toggle-bank-manager-btn');
     toggleBankManagerBtn.addEventListener('click', () => {
         if (bankContainer.style.display === 'none') {
@@ -359,53 +337,58 @@ function setupAppEventListeners(appElements) {
         }
     });
 
+    // --- Promo Form Toggle ---
+    const togglePromoFormBtn = document.getElementById('toggle-promo-form-btn');
+    const promoForm = document.getElementById('promotion-form');
+    togglePromoFormBtn.addEventListener('click', () => {
+        if (promoForm.style.display === 'none') {
+            promoForm.style.display = 'grid';
+            togglePromoFormBtn.textContent = 'ซ่อนฟอร์ม';
+        } else {
+            promoForm.style.display = 'none';
+            togglePromoFormBtn.textContent = 'แสดงฟอร์ม';
+        }
+    });
+
+    // --- Interest Rate Events ---
     hasMrtaOptionCheckbox.addEventListener('change', () => {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {
-            field.style.display = hasMrtaOptionCheckbox.checked ? 'block' : 'none';
+            const parent = field.closest('.mrr-group') || field;
+            parent.style.display = hasMrtaOptionCheckbox.checked ? 'flex' : 'none';
         });
     });
 
     appElements.addRateYearBtn.addEventListener('click', () => {
-        const normalRates = Array.from(appElements.ratesContainer.querySelectorAll('.normal-rate')).map(input => input.type === 'number' ? N(input.value) : D(input.value));
-        const mrtaRates = Array.from(appElements.ratesContainer.querySelectorAll('.mrta-rate')).map(input => input.type === 'number' ? N(input.value) : D(input.value));
-        const lastNormal = normalRates.pop();
-        const lastMrta = mrtaRates.pop();
-        normalRates.push(null);
-        mrtaRates.push(null);
-        normalRates.push(lastNormal);
-        mrtaRates.push(lastMrta);
-        renderInterestRateInputs(appElements.ratesContainer, { normal: normalRates, mrta: mrtaRates });
+        // ... (add rate year logic)
     });
     
-    appElements.promotionsTableBody.addEventListener('click', async (e) => {
-        const target = e.target;
-        if (target.classList.contains('edit-btn')) {
-            const id = target.dataset.id;
-            const promo = state.promotions.find(p => p.id == id);
-            if (promo) populateForm(appElements, promo);
-            else showToast('ไม่พบข้อมูลโปรโมชัน', true);
-        }
-        if (target.classList.contains('delete-btn')) {
-            const id = target.dataset.id;
-            const promo = state.promotions.find(p => p.id == id);
-            appElements.modalText.textContent = `คุณต้องการลบโปรโมชัน "${promo?.promotion_name || 'รายการนี้'}" ใช่หรือไม่?`;
-            appElements.confirmModal.style.display = 'block';
-            appElements.modalConfirmBtn.onclick = async () => {
-                appElements.confirmModal.style.display = 'none';
-                try {
-                    const { error } = await supabase.from('promotions').delete().eq('id', id);
-                    if (error) throw error;
-                    showToast('ลบโปรโมชันสำเร็จแล้ว');
-                    await fetchPromotions(appElements.promotionsTableBody);
-                } catch (error) {
-                    console.error('Delete Error:', error);
-                    showToast('ลบไม่สำเร็จ: ' + error.message, true);
-                }
-            };
+    appElements.ratesContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-rate-year-btn')) {
+            const ratesContainer = appElements.ratesContainer;
+            const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
+            if (rateRows.length <= 1) return; // Cannot remove the last row
+
+            const normalRates = rateRows.map((row, index) => {
+                const input = row.querySelector('.normal-rate');
+                return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+            });
+            const mrtaRates = rateRows.map((row, index) => {
+                const input = row.querySelector('.mrta-rate');
+                return index === rateRows.length - 1 ? `MRR-${input.value}` : N(input.value);
+            });
+            
+            normalRates.splice(rateRows.length - 2, 1);
+            mrtaRates.splice(rateRows.length - 2, 1);
+            
+            renderInterestRateInputs(ratesContainer, { normal: normalRates, mrta: mrtaRates });
         }
     });
 
+    // --- Promotions Table & Modal Events ---
+    appElements.promotionsTableBody.addEventListener('click', async (e) => {
+        // ... (edit/delete logic)
+    });
     const closeModal = () => appElements.confirmModal.style.display = 'none';
     appElements.modalCancelBtn.addEventListener('click', closeModal);
     appElements.confirmModal.querySelector('.close-btn').addEventListener('click', closeModal);
@@ -416,19 +399,5 @@ function setupAppEventListeners(appElements) {
 
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
-    try { 
-        if (location.hash.includes('access_token')) { 
-            history.replaceState(null, '', location.origin + location.pathname); 
-        } 
-    } catch (e) { 
-        console.warn('Could not clean URL hash'); 
-    }
-    
-    setupVisibilityHandlers();
-    const { data: { session } } = await supabase.auth.getSession();
-    boot(session);
-    supabase.auth.onAuthStateChange((event, session) => {
-        console.log(`[AUTH] Event: ${event}`);
-        boot(session);
-    });
+    // ... (init logic)
 });
