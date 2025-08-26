@@ -67,7 +67,15 @@ function handleAnalysis() {
         const totalMonthlyIncome = userInfo.salary + monthlyBonus + monthlyOtherIncome;
 
         const assessmentFactor = promo.income_assessment_factor ?? 1.0;
-        const assessedMonthlyIncome = totalMonthlyIncome * assessmentFactor;
+        const grossAssessedIncome = totalMonthlyIncome * assessmentFactor;
+
+        // --- ⭐ NEW LOGIC: หักหนี้สินออกจากรายได้ก่อนการคำนวณ ---
+        const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
+
+        // ถ้าหลังหักหนี้แล้วรายได้ติดลบหรือเป็นศูนย์ ถือว่ากู้ไม่ได้
+        if (netIncomeForCalculation <= 0) {
+            return null;
+        }
 
         const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
@@ -96,25 +104,26 @@ function handleAnalysis() {
                 return null;
             }
 
+            // --- วิธีที่ 1: คำนวณจาก DSR โดยใช้รายได้หลังหักหนี้ ---
             const promoDSRLimit = promo.dsr_limit || 70;
-            const maxTotalDebtPayment = assessedMonthlyIncome * (promoDSRLimit / 100);
-            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
-            if (maxAffordablePayment <= 0) {
-                return null;
-            }
+            // ความสามารถในการผ่อนคือ DSR% ของรายได้ที่เหลือหลังหักหนี้แล้ว
+            const maxAffordablePayment = netIncomeForCalculation * (promoDSRLimit / 100);
+            if (maxAffordablePayment <= 0) return null;
             const maxLoanByPV = calc.pv(maxAffordablePayment, avgInterest, actualTerm * 12);
 
+            // --- วิธีที่ 2: คำนวณจากเกณฑ์รายได้ โดยใช้รายได้หลังหักหนี้ ---
             const incomePerMillionReq = promo.income_per_million || 25000;
-            const maxLoanByIncome = (assessedMonthlyIncome / incomePerMillionReq) * 1000000;
+            const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
 
             finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
             
             calculationDetails = {
-                totalMonthlyIncome, assessmentFactor, assessedMonthlyIncome, promoDSRLimit, maxTotalDebtPayment,
-                existingDebt: userInfo.debt, maxAffordablePayment, avgInterest, actualTerm,
-                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12, maxLoanByPV,
-                maxLoanByIncome,
-                incomePerMillionReq // ⭐ NEW: เพิ่ม incomePerMillionReq เข้าไปใน details
+                totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
+                existingDebt: userInfo.debt,
+                netIncomeForCalculation, // ส่งค่าใหม่นี้ไปด้วย
+                promoDSRLimit, maxAffordablePayment, avgInterest, actualTerm,
+                monthlyRate: (avgInterest / 100) / 12, totalMonths: actualTerm * 12,
+                maxLoanByPV, maxLoanByIncome, incomePerMillionReq
             };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
@@ -123,11 +132,13 @@ function handleAnalysis() {
             if (isNaN(avgInterest)) return null;
 
             const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
-            const userDSR = assessedMonthlyIncome > 0 ? ((userInfo.debt + estPayment) / assessedMonthlyIncome) * 100 : 100;
-
+            // DSR คือ (หนี้เดิม + หนี้ใหม่) / รายได้รวม (ก่อนหักหนี้)
+            const userDSR = grossAssessedIncome > 0 ? ((userInfo.debt + estPayment) / grossAssessedIncome) * 100 : 100;
             const dsrCheck = userDSR < (promo.dsr_limit || 100);
+            
+            // เกณฑ์รายได้เทียบกับรายได้หลังหักหนี้
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
-            const incomeCheck = assessedMonthlyIncome >= minIncome;
+            const incomeCheck = netIncomeForCalculation >= minIncome;
 
             if (!dsrCheck || !incomeCheck) {
                 return null;
@@ -168,10 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
             modalContent.innerHTML = '<p>ไม่มีรายละเอียดการคำนวณสำหรับรายการนี้ (อาจเกิดจากการกรอกวงเงินกู้โดยตรง)</p>';
         } else {
             const assessmentFactorText = details.assessmentFactor < 1 ? `(ปรับลด ${((1 - details.assessmentFactor) * 100).toFixed(0)}%)` : '';
-            // ⭐ NEW: อัปเดตการแสดงผลของวิธีที่ 2 ให้มีการแทนค่า
+            // ⭐ NEW: อัปเดตการแสดงผลใน Modal
             modalContent.innerHTML = `
                 <p><span>รายได้รวม (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
-                <p><span>รายได้ที่ใช้ประเมิน ${assessmentFactorText}:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
+                <p><span>รายได้หลังปรับลด ${assessmentFactorText}:</span> <span>${fmt.baht(details.grossAssessedIncome)}</span></p>
+                <p><span>หักภาระหนี้สินเดิม:</span> <span>-${fmt.baht(details.existingDebt)}</span></p>
+                <p><span><b>รายได้สุทธิที่ใช้คำนวณ:</b></span> <span><b>${fmt.baht(details.netIncomeForCalculation)}</b></span></p>
+                <hr>
                 <p><span>ความสามารถในการผ่อนต่อเดือน:</span> <span>${fmt.baht(details.maxAffordablePayment)}</span></p>
                 <p><span>อัตราดอกเบี้ยเฉลี่ย (3 ปี):</span> <span>${details.avgInterest.toFixed(2)}%</span></p>
                 <p><span>ระยะเวลา:</span> <span>${details.actualTerm} ปี</span></p>
@@ -190,10 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <hr>
                 <h4>วิธีคำนวณที่ 2: ตามเกณฑ์รายได้</h4>
                  <div class="formula-display">
-                  <p><span><b>สูตร:</b></span> <span>(รายได้ที่ใช้ประเมิน / เกณฑ์) × 1 ล้าน</span></p>
+                  <p><span><b>สูตร:</b></span> <span>(รายได้สุทธิ / เกณฑ์) × 1 ล้าน</span></p>
                   <hr>
                   <p><span><b>การแทนค่า:</b></span> <span></span></p>
-                  <p><span>รายได้ที่ใช้ประเมิน:</span> <span>${fmt.baht(details.assessedMonthlyIncome)}</span></p>
+                  <p><span>รายได้สุทธิ:</span> <span>${fmt.baht(details.netIncomeForCalculation)}</span></p>
                   <p><span>เกณฑ์ (รายได้ต่อล้าน):</span> <span>${details.incomePerMillionReq.toLocaleString('th-TH')}</span></p>
                   <hr>
                   <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByIncome)}</b></span></p>
