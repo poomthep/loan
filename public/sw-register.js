@@ -1,26 +1,40 @@
-export async function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      if (reg.waiting) {
-        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // new SW activated, reload to get fresh assets
-              location.reload();
+// sw-register.js — robust SW registration with auto-update
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+
+  function sendSkipWaiting(reg){
+    if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
+      .then(reg => {
+        // Proactively check on load
+        try { reg.update(); } catch(e) {}
+
+        // Listen for new SW installing
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed') {
+              // A new SW is waiting
+              sendSkipWaiting(reg);
             }
           });
-        }
-      });
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        location.reload();
-      });
-    } catch (e) {
-      console.warn('SW register failed', e);
-    }
-  }
-}
+        });
+
+        // If a new controller takes over, reload once to get fresh assets
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        // Poll for updates every 20 minutes
+        setInterval(() => { try { reg.update(); } catch(e) {} }, 20 * 60 * 1000);
+      })
+      .catch(err => console.error('[sw-register] registration error:', err));
+  });
+})();

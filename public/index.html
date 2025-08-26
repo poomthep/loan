@@ -1,62 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Loan App</title>
-  <meta name="theme-color" content="#111827">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin: 0; color: #111; }
-    .container { max-width: 880px; margin: 32px auto; padding: 0 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.04); }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .hidden { display: none; }
-    .badge { display:inline-block; }
-    .btn { border: 1px solid #111827; background:#111827; color:#fff; padding:10px 16px; border-radius: 10px; cursor:pointer; }
-    .btn.outline { background:#fff; color:#111827; }
-    input { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; }
-    a { color: #2563eb; text-decoration: none; }
-    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
-  </style>
-  <script type="module">
-    import { registerServiceWorker } from './sw-register.js';
-    import { startSessionGuard } from './js/session-guard.js';
-    import { handleAuthUI } from './js/auth.js';
-    registerServiceWorker();
-    startSessionGuard();
-    handleAuthUI();
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องมือวิเคราะห์สินเชื่อบ้าน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="print.css" media="print">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="favicon.ico">
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h1>Loan App</h1>
-      <div class="row">
-        <span id="role-badge" class="badge px-2 py-1 rounded-full text-xs font-semibold bg-gray-200">GUEST</span>
-        <button id="btn-logout" class="btn outline hidden">ออกจากระบบ</button>
-      </div>
-    </header>
+<body class="container">
 
-    <div class="card" id="login-form">
-      <h3>เข้าสู่ระบบ</h3>
-      <form>
-        <div class="row">
-          <input id="email" type="email" placeholder="อีเมล" required>
-          <input id="password" type="password" placeholder="รหัสผ่าน" required>
-          <button class="btn" type="submit">ล็อกอิน</button>
+    <h1>เครื่องมือวิเคราะห์สินเชื่อบ้าน 🏡</h1>
+    <div id="statusBanner"></div>
+
+    <div class="user-info-container">
+        <h2>กรอกข้อมูลของคุณเพื่อวิเคราะห์</h2>
+        <div class="input-grid">
+            <div class="form-group">
+                <label for="userAge">อายุ (ปี):</label>
+                <input type="number" id="userAge" placeholder="เช่น 47" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label for="monthlySalary">เงินเดือน (บาท/เดือน):</label>
+                <input type="number" id="monthlySalary" placeholder="เช่น 59000" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="annualBonus">โบนัส (รวมทั้งปี):</label>
+                <input type="number" id="annualBonus" placeholder="เช่น 14000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="otherIncome6M">รายได้อื่นๆ (รวม 6 เดือนย้อนหลัง):</label>
+                <input type="number" id="otherIncome6M" placeholder="เช่น 64000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="monthlyDebt">หนี้สินในบูโร (ภาระผ่อนต่อเดือน):</label>
+                <input type="number" id="monthlyDebt" placeholder="เช่น 15000" value="0" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label for="profession">อาชีพ:</label>
+                <select id="profession">
+                    <option value="salaried">พนักงานประจำ</option>
+                    <option value="business">เจ้าของกิจการ / อาชีพอิสระ</option>
+                </select>
+            </div>
         </div>
-      </form>
-      <p style="margin-top:8px;color:#6b7280">* ถ้าเป็นแอดมิน จะเห็นปุ่มจัดการในหน้า Admin</p>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="wantsMRTA">
+            <label for="wantsMRTA">สนใจโปรโมชันที่ต้องทำประกัน MRTA (เพื่อรับดอกเบี้ยพิเศษ)</label>
+        </div>
     </div>
 
-    <div class="card" style="margin-top:20px;">
-      <h3>โปรไฟล์</h3>
-      <div class="row" style="gap:16px">
-        <div>อีเมล: <strong id="user-email">—</strong></div>
-        <a class="btn outline" href="/admin.html">ไปหน้า Admin</a>
-      </div>
+    <hr>
+
+    <h2>กรอกข้อมูลสินเชื่อที่ต้องการ</h2>
+    <div class="input-group">
+        <label for="loanAmount">วงเงินกู้ที่ต้องการ (บาท):</label>
+        <input type="number" id="loanAmount" placeholder="เว้นว่างเพื่อคำนวณวงเงินสูงสุด" inputmode="decimal" pattern="[0-9]*">
     </div>
-  </div>
+    <div class="input-group">
+        <label for="loanTerm">ระยะเวลากู้ที่ต้องการ (ปี):</label>
+        <input type="number" id="loanTerm" placeholder="สูงสุดตามเงื่อนไข" inputmode="numeric" pattern="[0-9]*">
+    </div>
+
+    <button id="compareBtn" class="btn btn-primary">วิเคราะห์และเปรียบเทียบโปรโมชัน</button>
+
+    <hr>
+    
+    <div class="controls-container print-hide">
+        <div class="control-group"><label for="filterBank">ค้นหาชื่อธนาคาร:</label><input type="text" id="filterBank" placeholder="เช่น ธนาคาร A"></div>
+        <div class="control-group"><label for="sortOrder">จัดเรียงตาม:</label><select id="sortOrder"><option value="default">ค่าเริ่มต้น</option><option value="rate_asc">ดอกเบี้ยเฉลี่ย (น้อยไปมาก)</option><option value="rate_desc">ดอกเบี้ยเฉลี่ย (มากไปน้อย)</option></select></div>
+    </div>
+    
+    <div id="exportToolbar" class="controls-container print-hide" style="justify-content:flex-end"></div>
+    <div id="resultsContainer">
+        <div id="loading-spinner" style="display: none;"></div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>รายละเอียดการคำนวณ</h2>
+            <div id="modal-details-content">
+                </div>
+        </div>
+    </div>
+
+    <script src="/api/config" type="module"></script>
+    <script src="supabase-client.js" type="module"></script>
+    <script src="calc.js" type="module"></script>
+    <script src="format.js" type="module"></script>
+    <script src="render.js" type="module"></script>
+    <script src="app.js" type="module"></script>
+    <script src="sw-register.js" defer></script>
 </body>
 </html>

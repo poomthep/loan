@@ -1,37 +1,11 @@
 {
-  "version": 2,
-  "public": true,
-  "routes": [
-    {
-      "src": "/sw.js",
-      "headers": {
-        "cache-control": "no-store"
-      }
-    },
-    {
-      "src": "/public/(.*)",
-      "headers": {
-        "cache-control": "no-store"
-      }
-    },
-    {
-      "src": "/(index\\.html|admin\\.html)$",
-      "headers": {
-        "cache-control": "no-store"
-      }
-    },
-    {
-      "src": "/api/config",
-      "dest": "/api/config.js"
-    }
-  ],
   "headers": [
     {
-      "source": "/(index.html|admin.html)",
+      "source": "/(index|admin)\\.html",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store"
+          "value": "no-store, no-cache, must-revalidate"
         }
       ]
     },
@@ -40,18 +14,24 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store"
+          "value": "no-store, no-cache, must-revalidate"
         }
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/api/config",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store"
+          "value": "no-store, no-cache, must-revalidate"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/config.js",
+      "destination": "/api/config"
     }
   ]
 }
