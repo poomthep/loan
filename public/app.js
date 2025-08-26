@@ -70,11 +70,6 @@ function handleAnalysis() {
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
         if (maxAllowedTerm < 1) return null;
 
-        let finalLoanAmount = 0;
-        let actualTerm = 0;
-        let calculationDetails = {};
-        let steppedPayments = [];
-
         const resolveRate = (rate) => {
             const bankMRR = promo.banks?.mrr_rate || 7.3;
             if (typeof rate === 'string' && rate.toUpperCase().includes('MRR')) {
@@ -85,49 +80,38 @@ function handleAnalysis() {
             return parseFloat(rate);
         };
 
+        // --- RESTRUCTURED LOGIC: Calculate max loan potential EVERY time ---
+        const termForMaxCalc = maxAllowedTerm;
+        const ratesForMaxCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        const avgInterestForMaxCalc = calc.average(calc.parseFirst3Numeric(ratesForMaxCalc.map(resolveRate)));
+
+        if(isNaN(avgInterestForMaxCalc)) return null;
+
+        const promoDSRLimit = promo.dsr_limit || 40;
+        const maxTotalDebtPayment = grossAssessedIncome * (promoDSRLimit / 100);
+        const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
+        
+        const paymentMultiplier = promo.payment_multiplier || 150;
+        const maxLoanByDSRHeuristic = maxAffordablePayment > 0 ? (maxAffordablePayment * paymentMultiplier) : 0;
+        
+        const incomePerMillionReq = promo.income_per_million || 25000;
+        const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
+        const maxLoanByIncome = (netIncomeForCalculation > 0) ? (netIncomeForCalculation / incomePerMillionReq) * 1000000 : 0;
+
+
+        let finalLoanAmount = 0;
+        let actualTerm = 0;
+        
         if (isCalculatingMaxLoan) {
             actualTerm = maxAllowedTerm;
-            
-            const promoDSRLimit = promo.dsr_limit || 40;
-            const maxTotalDebtPayment = grossAssessedIncome * (promoDSRLimit / 100);
-            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
-            
-            const minLivingExpense = promo.min_living_expense || 0;
-            const paymentLimitByLivingExpense = grossAssessedIncome - userInfo.debt - minLivingExpense;
-
-            const finalMaxAffordablePayment = Math.min(maxAffordablePayment, paymentLimitByLivingExpense);
-
-            if (finalMaxAffordablePayment <= 0) return null;
-
-            const paymentMultiplier = promo.payment_multiplier || 150;
-            const maxLoanByDSRHeuristic = finalMaxAffordablePayment * paymentMultiplier;
-
-            const incomePerMillionReq = promo.income_per_million || 25000;
-            const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
-            const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
-            
             finalLoanAmount = Math.min(maxLoanByDSRHeuristic, maxLoanByIncome, promo.max_loan_amount || Infinity);
-            
-            calculationDetails = {
-                totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
-                existingDebt: userInfo.debt, netIncomeForCalculation,
-                promoDSRLimit, maxAffordablePayment: finalMaxAffordablePayment, 
-                minLivingExpense,
-                maxLoanByDSRHeuristic, maxLoanByIncome, incomePerMillionReq, paymentMultiplier,
-                actualTerm
-            };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
-            const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
-            if (isNaN(avgInterest)) return null;
-
-            const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
+            const estPayment = calc.pmt(loanInfo.amount, avgInterestForMaxCalc, actualTerm * 12);
             const userDSR = grossAssessedIncome > 0 ? ((userInfo.debt + estPayment) / grossAssessedIncome) * 100 : 100;
             const dsrCheck = userDSR < (promo.dsr_limit || 100);
             
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
-            const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
             const incomeCheck = netIncomeForCalculation >= minIncome;
 
             const minLivingExpense = promo.min_living_expense || 0;
@@ -138,7 +122,18 @@ function handleAnalysis() {
             finalLoanAmount = loanInfo.amount;
         }
 
+        const calculationDetails = {
+            totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
+            existingDebt: userInfo.debt, netIncomeForCalculation,
+            promoDSRLimit, maxAffordablePayment, 
+            minLivingExpense: promo.min_living_expense || 0,
+            maxLoanByDSRHeuristic, maxLoanByIncome, incomePerMillionReq, paymentMultiplier,
+            actualTerm: termForMaxCalc,
+            avgInterest: avgInterestForMaxCalc,
+        };
+        
         const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+        let steppedPayments = [];
         if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
             const rateGroups = [];
             let lastRate = null;
@@ -151,7 +146,6 @@ function handleAnalysis() {
                     rateGroups.push({ rate: numericRate, startYear: index + 1, endYear: index + 1 });
                 }
             });
-
             rateGroups.forEach((group, index) => {
                 const isLastGroup = index === rateGroups.length - 1;
                 const payment = calc.pmt(finalLoanAmount, group.rate, actualTerm * 12);
@@ -170,8 +164,13 @@ function handleAnalysis() {
         const avgInterest3yr = calc.average(calc.parseFirst3Numeric(ratesToCalc.map(resolveRate)));
         
         return {
-            ...promo, maxAffordableLoan: finalLoanAmount, avgInterest3yr: avgInterest3yr,
-            ratesToDisplay: ratesToCalc, displayTerm: actualTerm, calculationDetails, steppedPayments
+            ...promo,
+            maxAffordableLoan: finalLoanAmount,
+            avgInterest3yr: avgInterest3yr,
+            ratesToDisplay: ratesToCalc,
+            displayTerm: actualTerm,
+            calculationDetails,
+            steppedPayments
         };
     }).filter(offer => offer !== null && offer.maxAffordableLoan > 0);
 
