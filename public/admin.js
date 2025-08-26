@@ -1,9 +1,12 @@
 import { supabase } from './supabase-client.js';
 import { scheduleSessionRefresh, setupVisibilityHandlers } from './session-guard.js';
 
+// --- DOM Elements ---
 const views = { gate: document.getElementById('gate'), app: document.getElementById('app') };
 const toast = document.getElementById('toast');
 const hasMrtaOptionCheckbox = document.getElementById('has_mrta_option');
+
+// --- State & Utility Functions ---
 let state = { isEditing: false, editingId: null, banks: [], promotions: [] };
 let appBooted = false;
 const N = (v) => (v === '' || v === null || isNaN(parseFloat(v))) ? null : parseFloat(v);
@@ -14,6 +17,7 @@ const showView = (viewName) => {
     if (views[viewName]) views[viewName].style.display = 'block';
 };
 
+// --- Bank (MRR) Management ---
 function renderBankManagement(banks) {
     const container = document.getElementById('bank-management-container');
     if (!container) return;
@@ -30,6 +34,7 @@ function renderBankManagement(banks) {
     });
 }
 
+// --- Core Application Logic ---
 async function loadInitialData(appElements) {
     await fetchBanks(appElements.bankSelect);
     await fetchPromotions(appElements.promotionsTableBody);
@@ -57,13 +62,11 @@ function initializeGateView() {
     loginForm.onsubmit = async (e) => {
         e.preventDefault();
         const loginBtn = document.getElementById('login-btn');
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+        loginBtn.disabled = true; loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
         const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email.value, password: loginForm.password.value });
         if (error) { showToast(error.message, true); }
         else { showToast('เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...'); }
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'เข้าสู่ระบบ';
+        loginBtn.disabled = false; loginBtn.textContent = 'เข้าสู่ระบบ';
     };
 }
 
@@ -98,7 +101,6 @@ function initAppElements() {
         clearBtn: document.getElementById('clear-btn'),
         bankSelect: document.getElementById('bank_id'),
         ratesContainer: document.getElementById('interest-rates-container'),
-        addRateYearBtn: document.getElementById('add-rate-year-btn'),
         confirmModal: document.getElementById('confirm-modal'),
         modalText: document.getElementById('modal-text'),
         modalConfirmBtn: document.getElementById('modal-confirm-btn'),
@@ -106,8 +108,9 @@ function initAppElements() {
     };
 }
 
+// --- REWRITTEN: UI Rendering for Interest Rates ---
 function renderInterestRateInputs(ratesContainer, rates = { normal: [""], mrta: [""] }) {
-    ratesContainer.innerHTML = '';
+    ratesContainer.innerHTML = ''; // Clear previous content
     const showMrta = hasMrtaOptionCheckbox.checked;
     const normalRates = rates?.normal || [];
     const mrtaRates = rates?.mrta || [];
@@ -119,7 +122,7 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [""], mrta: 
     for (let i = 0; i < numYears; i++) {
         const year = i + 1;
         const isLastRate = i === numYears - 1;
-        const isRemovable = numYears > 1; // Can remove any row if there's more than one
+        const isRemovable = numYears > 1;
         
         const normalRateValue = normalRates[i] ?? "";
         const mrtaRateValue = mrtaRates[i] ?? "";
@@ -143,18 +146,25 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [""], mrta: 
             mrtaInputHTML = `<input type="number" class="rate-input mrta-rate" value="${mrtaRateValue}" placeholder="เช่น 3.15" step="0.01" style="display: ${showMrta ? 'block' : 'none'}">`;
         }
         
+        const removeButtonHTML = isRemovable ? `<button type="button" class="btn btn-danger btn-sm remove-rate-year-btn" data-year-index="${i}">ลบ</button>` : '';
+
         row.innerHTML = `
             <label>${labelText}</label>
-            <div class="rate-inputs-group">
+            <div class="rate-inputs-group ${showMrta ? 'has-mrta' : ''}">
                 ${normalInputHTML}
                 ${mrtaInputHTML}
             </div>
-            ${isRemovable ? `<button type="button" class="btn btn-danger btn-sm remove-rate-year-btn" data-year-index="${i}">ลบ</button>` : ''}
+            ${removeButtonHTML}
         `;
         ratesContainer.appendChild(row);
     }
-}
 
+    // Add control buttons at the end
+    const controls = document.createElement('div');
+    controls.className = 'rate-controls';
+    controls.innerHTML = `<button type="button" id="add-rate-year-btn" class="btn btn-secondary btn-sm">เพิ่มปี</button>`;
+    ratesContainer.appendChild(controls);
+}
 
 async function renderPromotionsTable(promotionsTableBody, promotions) { 
     promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; 
@@ -170,6 +180,7 @@ async function renderPromotionsTable(promotionsTableBody, promotions) {
     }); 
 }
 
+// --- DATA FETCHING ---
 async function fetchBanks(bankSelect) { 
     const { data, error } = await supabase.from('banks').select('id, name, mrr_rate').order('name'); 
     if (error) { showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); return; } 
@@ -188,6 +199,7 @@ async function fetchPromotions(promotionsTableBody) {
     renderPromotionsTable(promotionsTableBody, data); 
 }
 
+// --- Form Handling ---
 function clearForm(appElements) {
     appElements.promotionForm.reset();
     state.isEditing = false;
@@ -261,8 +273,8 @@ async function handleFormSubmit(e, appElements) {
             }
         });
         promoData.interest_rates = {
-            normal: normalRates,
-            mrta: hasMrtaOptionCheckbox.checked ? mrtaRates : []
+            normal: normalRates.filter(r => r !== null),
+            mrta: hasMrtaOptionCheckbox.checked ? mrtaRates.filter(r => r !== null) : []
         };
         const { error } = state.isEditing 
             ? await supabase.from('promotions').update(promoData).eq('id', state.editingId) 
@@ -279,10 +291,12 @@ async function handleFormSubmit(e, appElements) {
     }
 }
 
+// --- REWRITTEN: Event Listeners Setup ---
 function setupAppEventListeners(appElements) {
     appElements.logoutBtn.addEventListener('click', () => supabase.auth.signOut());
     appElements.clearBtn.addEventListener('click', () => clearForm(appElements));
     appElements.promotionForm.addEventListener('submit', (e) => handleFormSubmit(e, appElements));
+    
     const bankContainer = document.getElementById('bank-management-container');
     bankContainer.addEventListener('click', async (e) => {
         if (e.target.classList.contains('save-mrr-btn')) {
@@ -302,6 +316,7 @@ function setupAppEventListeners(appElements) {
             btn.disabled = false;
         }
     });
+
     const toggleBankManagerBtn = document.getElementById('toggle-bank-manager-btn');
     toggleBankManagerBtn.addEventListener('click', () => {
         if (bankContainer.style.display === 'none') {
@@ -312,6 +327,7 @@ function setupAppEventListeners(appElements) {
             toggleBankManagerBtn.textContent = 'แก้ไข MRR ธนาคาร';
         }
     });
+
     const togglePromoFormBtn = document.getElementById('toggle-promo-form-btn');
     const promoForm = document.getElementById('promotion-form');
     togglePromoFormBtn.addEventListener('click', () => {
@@ -323,15 +339,10 @@ function setupAppEventListeners(appElements) {
             togglePromoFormBtn.textContent = 'แสดงฟอร์ม';
         }
     });
-    hasMrtaOptionCheckbox.addEventListener('change', () => {
-        const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
-        mrtaFields.forEach(field => {
-            const parent = field.closest('.mrr-group') || field;
-            parent.style.display = hasMrtaOptionCheckbox.checked ? (parent.classList.contains('mrr-group') ? 'flex' : 'block') : 'none';
-        });
-    });
+
+    const ratesContainer = appElements.ratesContainer;
+    
     const getCurrentRatesFromDOM = () => {
-        const ratesContainer = appElements.ratesContainer;
         const rateRows = Array.from(ratesContainer.querySelectorAll('.rate-year-row'));
         const normalRates = rateRows.map((row, index) => {
             const input = row.querySelector('.normal-rate');
@@ -347,25 +358,32 @@ function setupAppEventListeners(appElements) {
         });
         return { normal: normalRates, mrta: mrtaRates };
     };
-    appElements.addRateYearBtn.addEventListener('click', () => {
+
+    hasMrtaOptionCheckbox.addEventListener('change', () => {
         const currentRates = getCurrentRatesFromDOM();
-        const lastNormal = currentRates.normal.pop();
-        const lastMrta = currentRates.mrta.pop();
-        currentRates.normal.push("");
-        currentRates.mrta.push("");
-        currentRates.normal.push(lastNormal);
-        currentRates.mrta.push(lastMrta);
-        renderInterestRateInputs(appElements.ratesContainer, currentRates);
+        renderInterestRateInputs(ratesContainer, currentRates);
     });
-    appElements.ratesContainer.addEventListener('click', (e) => {
+
+    ratesContainer.addEventListener('click', (e) => {
+        if (e.target.id === 'add-rate-year-btn') {
+            const currentRates = getCurrentRatesFromDOM();
+            const lastNormal = currentRates.normal.pop();
+            const lastMrta = currentRates.mrta.pop();
+            currentRates.normal.push(""); // Add an empty string for the new year
+            currentRates.mrta.push("");
+            currentRates.normal.push(lastNormal); // Add the 'MRR-' rate back at the end
+            currentRates.mrta.push(lastMrta);
+            renderInterestRateInputs(ratesContainer, currentRates);
+        }
         if (e.target.classList.contains('remove-rate-year-btn')) {
             const indexToRemove = parseInt(e.target.dataset.yearIndex, 10);
             const currentRates = getCurrentRatesFromDOM();
             currentRates.normal.splice(indexToRemove, 1);
             currentRates.mrta.splice(indexToRemove, 1);
-            renderInterestRateInputs(appElements.ratesContainer, currentRates);
+            renderInterestRateInputs(ratesContainer, currentRates);
         }
     });
+    
     appElements.promotionsTableBody.addEventListener('click', async (e) => {
         const target = e.target;
         if (target.classList.contains('edit-btn')) {
@@ -395,6 +413,7 @@ function setupAppEventListeners(appElements) {
             };
         }
     });
+
     const closeModal = () => appElements.confirmModal.style.display = 'none';
     appElements.modalCancelBtn.addEventListener('click', closeModal);
     appElements.confirmModal.querySelector('.close-btn').addEventListener('click', closeModal);
@@ -403,6 +422,7 @@ function setupAppEventListeners(appElements) {
     });
 }
 
+// --- App Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     try { 
         if (location.hash.includes('access_token')) { 
