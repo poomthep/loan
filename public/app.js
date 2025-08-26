@@ -3,9 +3,6 @@ import { render } from './render.js';
 import { calc } from './calc.js';
 import { fmt } from './format.js';
 
-// --- ค่าคงที่ MRR อ้างอิง ---
-const MRR = 7.3; // สมมติ MRR ปัจจุบันอยู่ที่ 7.3% (ปรับเปลี่ยนได้ตามต้องการ)
-
 // --- 1. DOM Elements ---
 const compareBtn = document.getElementById('compareBtn');
 const resultsContainer = document.getElementById('resultsContainer');
@@ -69,17 +66,9 @@ function handleAnalysis() {
         const assessmentFactor = promo.income_assessment_factor ?? 1.0;
         const grossAssessedIncome = totalMonthlyIncome * assessmentFactor;
 
-        const netIncomeForCalculation = grossAssessedIncome - userInfo.debt;
-
-        if (netIncomeForCalculation <= 0) {
-            return null;
-        }
-
         const maxAge = userInfo.profession === 'salaried' ? promo.max_age_salaried : promo.max_age_business;
         const maxAllowedTerm = (maxAge || 99) - userInfo.age;
-        if (maxAllowedTerm < 1) {
-            return null;
-        }
+        if (maxAllowedTerm < 1) return null;
 
         let finalLoanAmount = 0;
         let actualTerm = 0;
@@ -95,45 +84,45 @@ function handleAnalysis() {
             }
             return parseFloat(rate);
         };
-        
-        // --- คำนวณวงเงินกู้สูงสุด (ทำทุกครั้ง) ---
-        const tempActualTerm = isCalculatingMaxLoan ? maxAllowedTerm : Math.min(loanInfo.term, maxAllowedTerm);
-        const tempRates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
-        const tempAvgInterest = calc.average(calc.parseFirst3Numeric(tempRates.map(resolveRate)));
-
-        if(isNaN(tempAvgInterest)) return null;
-
-        const promoDSRLimit = promo.dsr_limit || 70;
-        const maxAffordablePayment = netIncomeForCalculation * (promoDSRLimit / 100);
-        const maxLoanByPV = maxAffordablePayment > 0 ? calc.pv(maxAffordablePayment, tempAvgInterest, tempActualTerm * 12) : 0;
-        
-        const incomePerMillionReq = promo.income_per_million || 25000;
-        const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
 
         if (isCalculatingMaxLoan) {
             actualTerm = maxAllowedTerm;
-            finalLoanAmount = Math.min(maxLoanByPV, maxLoanByIncome, promo.max_loan_amount || Infinity);
+            const promoDSRLimit = promo.dsr_limit || 40;
+            const maxTotalDebtPayment = grossAssessedIncome * (promoDSRLimit / 100);
+            const maxAffordablePayment = maxTotalDebtPayment - userInfo.debt;
+            if (maxAffordablePayment <= 0) return null;
+
+            const paymentMultiplier = promo.payment_multiplier || 150;
+            const maxLoanByDSRHeuristic = maxAffordablePayment * paymentMultiplier;
+
+            const incomePerMillionReq = promo.income_per_million || 25000;
+            const maxLoanByIncome = (netIncomeForCalculation / incomePerMillionReq) * 1000000;
+            
+            finalLoanAmount = Math.min(maxLoanByDSRHeuristic, maxLoanByIncome, promo.max_loan_amount || Infinity);
+            
+            calculationDetails = {
+                totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
+                existingDebt: userInfo.debt, netIncomeForCalculation: grossAssessedIncome - userInfo.debt, // Recalc for modal
+                promoDSRLimit, maxAffordablePayment,
+                maxLoanByDSRHeuristic, maxLoanByIncome, incomePerMillionReq, paymentMultiplier
+            };
         } else {
             actualTerm = Math.min(loanInfo.term, maxAllowedTerm);
-            const estPayment = calc.pmt(loanInfo.amount, tempAvgInterest, actualTerm * 12);
+            const rates = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
+            const avgInterest = calc.average(calc.parseFirst3Numeric(rates.map(resolveRate)));
+            if (isNaN(avgInterest)) return null;
+
+            const estPayment = calc.pmt(loanInfo.amount, avgInterest, actualTerm * 12);
             const userDSR = grossAssessedIncome > 0 ? ((userInfo.debt + estPayment) / grossAssessedIncome) * 100 : 100;
             const dsrCheck = userDSR < (promo.dsr_limit || 100);
             
             const minIncome = (promo.income_per_million || 0) * (loanInfo.amount / 1000000);
-            const incomeCheck = netIncomeForCalculation >= minIncome;
-            
+            const incomeCheck = (grossAssessedIncome - userInfo.debt) >= minIncome;
+
             if (!dsrCheck || !incomeCheck) return null;
             finalLoanAmount = loanInfo.amount;
         }
 
-        calculationDetails = {
-            totalMonthlyIncome, assessmentFactor, grossAssessedIncome, 
-            existingDebt: userInfo.debt, netIncomeForCalculation,
-            promoDSRLimit, maxAffordablePayment, avgInterest: tempAvgInterest, actualTerm,
-            monthlyRate: (tempAvgInterest / 100) / 12, totalMonths: actualTerm * 12,
-            maxLoanByPV, maxLoanByIncome, incomePerMillionReq
-        };
-        
         const ratesToCalc = userInfo.wantsMRTA && promo.has_mrta_option ? promo.interest_rates.mrta : promo.interest_rates.normal;
         if (ratesToCalc && ratesToCalc.length > 0 && finalLoanAmount > 0) {
             const rateGroups = [];
@@ -151,7 +140,6 @@ function handleAnalysis() {
             rateGroups.forEach((group, index) => {
                 const isLastGroup = index === rateGroups.length - 1;
                 const payment = calc.pmt(finalLoanAmount, group.rate, actualTerm * 12);
-                
                 let periodLabel = '';
                 if(isLastGroup && group.startYear < actualTerm) {
                     periodLabel = `ปีที่ ${group.startYear} เป็นต้นไป`;
@@ -200,28 +188,23 @@ document.addEventListener('DOMContentLoaded', () => {
             modalContent.innerHTML = `
                 <p><span>รายได้รวม (ก่อนปรับลด):</span> <span>${fmt.baht(details.totalMonthlyIncome)}</span></p>
                 <p><span>รายได้หลังปรับลด ${assessmentFactorText}:</span> <span>${fmt.baht(details.grossAssessedIncome)}</span></p>
-                <p><span>หักภาระหนี้สินเดิม:</span> <span>-${fmt.baht(details.existingDebt)}</span></p>
-                <p><span><b>รายได้สุทธิที่ใช้คำนวณ:</b></span> <span><b>${fmt.baht(details.netIncomeForCalculation)}</b></span></p>
+                <p><span><b>รายได้ที่ใช้คำนวณ DSR:</b></span> <span><b>${fmt.baht(details.grossAssessedIncome)}</b></span></p>
                 <hr>
-                <h4>วิธีคำนวณที่ 1: ตามภาระผ่อน (DSR)</h4>
+                <h4>วิธีคำนวณที่ 1: ตามภาระผ่อน (DSR Heuristic)</h4>
                 <div class="formula-display">
-                  <p><span><b>สูตร:</b></span> <span>PV = PMT × [1-(1+r)<sup>-n</sup>]/r</span></p>
+                  <p><span><b>สูตร:</b></span> <span>((รายได้ × DSR%) - หนี้เดิม) × ตัวคูณ</span></p>
                   <hr>
                   <p><span><b>การแทนค่า:</b></span> <span></span></p>
-                  <p><span>PMT (ค่างวด):</span> <span>${details.maxAffordablePayment.toLocaleString('th-TH')}</span></p>
-                  <p><span>r (ดอกเบี้ย/เดือน):</span> <span>${details.monthlyRate.toFixed(8)} (${details.avgInterest.toFixed(2)}% / 12)</span></p>
-                  <p><span>n (จำนวนงวด):</span> <span>${details.totalMonths} เดือน (${details.actualTerm} ปี)</span></p>
+                  <p><span>ความสามารถในการผ่อน:</span> <span>(${fmt.baht(details.grossAssessedIncome)} × ${details.promoDSRLimit}%) - ${fmt.baht(details.existingDebt)} = ${fmt.baht(details.maxAffordablePayment)}</span></p>
+                  <p><span>ตัวคูณยอดผ่อน:</span> <span>${details.paymentMultiplier}</span></p>
                   <hr>
-                  <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByPV)}</b></span></p>
+                  <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByDSRHeuristic)}</b></span></p>
                 </div>
                 <hr>
                 <h4>วิธีคำนวณที่ 2: ตามเกณฑ์รายได้</h4>
                  <div class="formula-display">
                   <p><span><b>สูตร:</b></span> <span>(รายได้สุทธิ / เกณฑ์) × 1 ล้าน</span></p>
-                  <hr>
-                  <p><span><b>การแทนค่า:</b></span> <span></span></p>
-                  <p><span>รายได้สุทธิ:</span> <span>${fmt.baht(details.netIncomeForCalculation)}</span></p>
-                  <p><span>เกณฑ์ (รายได้ต่อล้าน):</span> <span>${details.incomePerMillionReq.toLocaleString('th-TH')}</span></p>
+                  <p><span><b>การแทนค่า:</b></span> <span>(${fmt.baht(details.netIncomeForCalculation)} / ${details.incomePerMillionReq.toLocaleString('th-TH')}) × 1,000,000</span></p>
                   <hr>
                   <p><span><b>ผลลัพธ์:</b></span> <span><b>${fmt.baht(details.maxLoanByIncome)}</b></span></p>
                 </div>

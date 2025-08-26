@@ -30,6 +30,12 @@
             <button id="logout-btn" class="btn btn-danger">ออกจากระบบ</button>
         </div>
 
+        <h2>จัดการข้อมูลธนาคาร (MRR)</h2>
+        <div id="bank-management-container">
+            </div>
+        
+        <hr>
+
         <h2>เพิ่ม / แก้ไข โปรโมชัน</h2>
         <form id="promotion-form" class="form-grid">
             <div class="form-group">
@@ -70,6 +76,10 @@
             <div class="form-group">
                 <label for="income_assessment_factor">สัดส่วนรายได้ที่ใช้ประเมิน (%):</label>
                 <input type="number" id="income_assessment_factor" name="income_assessment_factor" value="100" step="1">
+            </div>
+            <div class="form-group">
+                <label for="payment_multiplier">ตัวคูณยอดผ่อน (เช่น 150):</label>
+                <input type="number" id="payment_multiplier" name="payment_multiplier" value="150">
             </div>
 
             <hr class="full-width">

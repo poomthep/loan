@@ -17,6 +17,28 @@ const showView = (viewName) => {
     if (views[viewName]) views[viewName].style.display = 'block';
 };
 
+// --- Bank (MRR) Management ---
+function renderBankManagement(banks) {
+    const container = document.getElementById('bank-management-container');
+    if (!container) return;
+    container.innerHTML = '<h3>ค่า MRR ของแต่ละธนาคาร</h3>';
+    banks.forEach(bank => {
+        const div = document.createElement('div');
+        div.className = 'form-grid';
+        div.style.alignItems = 'flex-end';
+        div.innerHTML = `
+            <div class="form-group">
+                <label>${bank.name}</label>
+                <input type="number" class="mrr-input" id="mrr-${bank.id}" value="${bank.mrr_rate || ''}" step="0.01" placeholder="เช่น 7.3">
+            </div>
+            <div class="form-group">
+                <button class="btn btn-secondary save-mrr-btn" data-id="${bank.id}">บันทึก</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
 // --- Core Application Logic ---
 async function loadInitialData(appElements) {
     console.log('[DATA] Fetching initial data...');
@@ -44,7 +66,6 @@ async function isAdminAuthenticated(session) {
     }
 }
 
-// --- View Initializers ---
 function initializeGateView() {
     const loginForm = document.getElementById('login-form');
     loginForm.onsubmit = async (e) => {
@@ -144,48 +165,47 @@ function renderInterestRateInputs(ratesContainer, rates = { normal: [null, null,
     }
 }
 
-// ชื่อไฟล์: admin.js (เฉพาะฟังก์ชัน renderPromotionsTable)
-
-async function renderPromotionsTable(promotionsTableBody, promotions) {
-    promotionsTableBody.innerHTML = '';
-    if (!promotions || promotions.length === 0) {
-        promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>';
-        return;
-    }
-    promotions.forEach(p => {
-        const rates = p.interest_rates?.normal || [];
-        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null);
-        const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A';
-        const tr = document.createElement('tr');
-        
-        // ⭐ NEW: เพิ่ม data-label ในแต่ละ <td>
+async function renderPromotionsTable(promotionsTableBody, promotions) { 
+    promotionsTableBody.innerHTML = ''; 
+    if (!promotions || promotions.length === 0) { 
+        promotionsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>'; 
+        return; 
+    } 
+    promotions.forEach(p => { 
+        const rates = p.interest_rates?.normal || []; 
+        const firstThreeRates = rates.slice(0, 3).map(r => N(r)).filter(r => r !== null); 
+        const avg = firstThreeRates.length > 0 ? (firstThreeRates.reduce((a, b) => a + b, 0) / firstThreeRates.length).toFixed(2) : 'N/A'; 
+        const tr = document.createElement('tr'); 
         tr.innerHTML = ` 
-            <td data-label="ธนาคาร">${p.banks?.name || 'N/A'}</td> 
-            <td data-label="โปรโมชัน" class="promo-name">${p.promotion_name}</td> 
-            <td data-label="เฉลี่ย 3 ปี (%)">${avg}</td> 
-            <td data-label="การจัดการ" class="actions"> 
+            <td>${p.banks?.name || 'N/A'}</td> 
+            <td class="promo-name">${p.promotion_name}</td> 
+            <td>${avg}</td> 
+            <td class="actions"> 
                 <button class="btn-secondary btn-sm edit-btn" data-id="${p.id}">แก้ไข</button> 
                 <button class="btn-danger btn-sm delete-btn" data-id="${p.id}">ลบ</button> 
-            </td>`;
-        promotionsTableBody.appendChild(tr);
-    });
+            </td>`; 
+        promotionsTableBody.appendChild(tr); 
+    }); 
 }
 
-
+// --- DATA FETCHING ---
 async function fetchBanks(bankSelect) { 
-    const { data, error } = await supabase.from('banks').select('id, name').order('name'); 
+    const { data, error } = await supabase.from('banks').select('id, name, mrr_rate').order('name'); 
     if (error) { 
         showToast('ไม่สามารถโหลดข้อมูลธนาคารได้', true); 
         return; 
     } 
     state.banks = data; 
+    
     bankSelect.innerHTML = '<option value="">-- เลือกธนาคาร --</option>'; 
     state.banks.forEach(bank => { 
         const option = document.createElement('option'); 
         option.value = bank.id; 
         option.textContent = bank.name; 
         bankSelect.appendChild(option); 
-    }); 
+    });
+
+    renderBankManagement(state.banks);
 }
 
 async function fetchPromotions(promotionsTableBody) { 
@@ -208,6 +228,7 @@ function clearForm(appElements) {
     document.getElementById('bonus_factor').value = 70;
     document.getElementById('other_income_factor').value = 50;
     document.getElementById('income_assessment_factor').value = 100;
+    document.getElementById('payment_multiplier').value = 150;
     hasMrtaOptionCheckbox.checked = false;
     renderInterestRateInputs(appElements.ratesContainer);
     appElements.promotionForm.querySelector('select').focus();
@@ -244,7 +265,7 @@ async function handleFormSubmit(e, appElements) {
     try {
         const formData = new FormData(appElements.promotionForm);
         const promoData = {};
-        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'dsr_limit', 'income_per_million', 'notes'];
+        const formFields = ['bank_id', 'promotion_name', 'start_date', 'end_date', 'dsr_limit', 'income_per_million', 'payment_multiplier', 'notes'];
         
         formFields.forEach(field => { 
             const el = document.getElementById(field);
@@ -258,7 +279,6 @@ async function handleFormSubmit(e, appElements) {
         promoData.bonus_factor = N(formData.get('bonus_factor')) / 100;
         promoData.other_income_factor = N(formData.get('other_income_factor')) / 100;
         promoData.income_assessment_factor = N(formData.get('income_assessment_factor')) / 100;
-
         promoData.has_mrta_option = hasMrtaOptionCheckbox.checked;
 
         const normalRates = [];
@@ -302,6 +322,35 @@ function setupAppEventListeners(appElements) {
     appElements.clearBtn.addEventListener('click', () => clearForm(appElements));
     appElements.promotionForm.addEventListener('submit', (e) => handleFormSubmit(e, appElements));
     
+    const bankContainer = document.getElementById('bank-management-container');
+    bankContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('save-mrr-btn')) {
+            const btn = e.target;
+            btn.disabled = true;
+            const bankId = btn.dataset.id;
+            const mrrInput = document.getElementById(`mrr-${bankId}`);
+            const newMrrRate = N(mrrInput.value);
+
+            if (newMrrRate === null) {
+                showToast('กรุณาใส่ค่า MRR ที่ถูกต้อง', true);
+                btn.disabled = false;
+                return;
+            }
+
+            const { error } = await supabase
+                .from('banks')
+                .update({ mrr_rate: newMrrRate })
+                .eq('id', bankId);
+
+            if (error) {
+                showToast('อัปเดต MRR ไม่สำเร็จ: ' + error.message, true);
+            } else {
+                showToast('อัปเดต MRR สำเร็จ');
+            }
+            btn.disabled = false;
+        }
+    });
+
     hasMrtaOptionCheckbox.addEventListener('change', () => {
         const mrtaFields = appElements.ratesContainer.querySelectorAll('.mrta-rate');
         mrtaFields.forEach(field => {
@@ -368,12 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     setupVisibilityHandlers();
-
+    const { data: { session } } = await supabase.auth.getSession();
+    boot(session);
     supabase.auth.onAuthStateChange((event, session) => {
         console.log(`[AUTH] Event: ${event}`);
         boot(session);
     });
-
-    const { data: { session } } = await supabase.auth.getSession();
-    boot(session);
 });
