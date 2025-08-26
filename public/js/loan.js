@@ -35,15 +35,16 @@ async function selectWithFallback(table, selectSets, filterActive=true) {
       if (filterActive) q = q.eq('active', true);
       const { data, error } = await q;
       if (!error) return data || [];
-      // continue on "does not exist" or 400
-      const msg = (error.message || '').toLowerCase();
-      if (error.code === 'PGRST100' or (error.status||0)===400 or msg.includes('does not exist') or msg.includes('unknown')) {
+      // continue on "unknown column/table" or 400 Bad Request
+      const msg = (error?.message || '').toLowerCase();
+      const status = error?.status || 0;
+      if (error?.code === 'PGRST100' || status === 400 || msg.includes('does not exist') || msg.includes('unknown') || msg.includes('column')) {
         continue;
       }
       // otherwise throw
       throw error;
     } catch (e) {
-      // keep trying next select format
+      // try next select format
       continue;
     }
   }
