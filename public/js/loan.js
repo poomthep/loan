@@ -14,7 +14,6 @@ function pmt(rateMonthly, nMonths, principal) {
 
 async function loadBanks() {
   const supabase = await getSupabase();
-  // allow flexible column names like earlier
   const tries = ['id, bank_name, mrr', 'id, name, mrr', 'id, bank, mrr', 'id, mrr'];
   for (const cols of tries) {
     const { data, error } = await supabase.from('banks').select(cols).order('mrr', { ascending: true }).limit(10);
@@ -30,9 +29,24 @@ async function loadBanks() {
 
 async function loadPromotions() {
   const supabase = await getSupabase();
-  const { data, error } = await supabase.from('promotions').select('id, title, detail, active').eq('active', true).order('title');
-  if (error) return [];
-  return data || [];
+  // try with active column first
+  let { data, error } = await supabase
+    .from('promotions')
+    .select('id, title, detail, active')
+    .eq('active', true)
+    .order('title');
+  // if 400 (e.g., column/table missing), try without filter
+  if (error && (error.code === 'PGRST100' || (error.message||'').toLowerCase().includes('does not exist') || (error.status || 0) === 400)) {
+    ({ data, error } = await supabase
+      .from('promotions')
+      .select('id, title, detail, active')
+      .order('title'));
+  }
+  if (error) {
+    console.warn('loadPromotions error:', error);
+    return [];
+  }
+  return (data || []).filter(p => p.active === undefined ? true : !!p.active);
 }
 
 export async function runLoanPage(){
@@ -47,6 +61,7 @@ export async function runLoanPage(){
 
   const banks = await loadBanks();
   const promos = await loadPromotions();
+
   promoList.innerHTML = '';
   promos.forEach(p => {
     const li = document.createElement('li');
