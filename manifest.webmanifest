@@ -1,9 +1,0 @@
-{
-  "name": "Loan App",
-  "short_name": "Loan",
-  "start_url": "/index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111827",
-  "icons": []
-}
