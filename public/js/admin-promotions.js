@@ -76,17 +76,36 @@ function render(rows,bks){
   qsa('.p-del').forEach(btn=>btn.onclick=async()=>{ if(confirm('ลบโปรนี้?')){ await removeRow(btn.dataset.id); btn.closest('tr')?.remove(); } });
 }
 
+
+async function loadBanksToNewSelect(){
+  const sb = await getSupabase();
+  const { data } = await sb.from('banks').select('id, bank_name').order('bank_name',{ascending:true});
+  const sel = qs('#new-bank');
+  sel.innerHTML = (data||[]).map(b => `<option value="${b.id}">${b.bank_name}</option>`).join('');
+}
+
 async function addNew(){
-  const sb=await getSupabase();
-  const title=(qs('#new-title')?.value||'').trim(); if(!title) return alert('กรอกชื่อโปร');
-  const detail=(qs('#new-detail')?.value||'').trim();
-  const product=qs('#new-product')?.value||'MORTGAGE';
-  const active=qs('#new-active')?.checked??true;
-  await sb.from('promotions').insert([{title, detail, product_type:product, active}]);
+  const sb = await getSupabase();
+  const title   = (qs('#new-title')?.value || '').trim();
+  if (!title){ alert('กรุณากรอกชื่อโปร'); return; }
+  const detail  = (qs('#new-detail')?.value || '').trim();
+  const product = qs('#new-product')?.value || 'MORTGAGE';
+  const bankId  = qs('#new-bank')?.value || null; // ต้องไม่เป็น null ถ้า bank_id NOT NULL
+  const active  = qs('#new-active')?.checked ?? true;
+
+  if (!bankId){ alert('กรุณาเลือกธนาคาร'); return; }
+
+  const { error } = await sb.from('promotions')
+    .insert([{ bank_id: bankId, title, detail, product_type: product, active }], { returning: 'minimal' });
+
+  if (error){ console.error(error); alert(error.message || 'บันทึกไม่สำเร็จ'); return; }
   qs('#new-title').value=''; qs('#new-detail').value='';
   await refresh();
 }
 
-export async function refresh(){ const [bks,rows]=await Promise.all([banks(),list()]); render(rows,bks); }
-export async function initAdminPromotionsAdvanced(){ qs('#btn-promo-add')?.addEventListener('click',addNew); qs('#btn-promo-refresh')?.addEventListener('click',refresh); await refresh(); }
-export async function initAdminPromotions(){ return initAdminPromotionsAdvanced(); }
+export async function initAdminPromotionsAdvanced(){
+  qs('#btn-promo-add')?.addEventListener('click', addNew);
+  qs('#btn-promo-refresh')?.addEventListener('click', refresh);
+  await loadBanksToNewSelect();
+  await refresh();
+}
