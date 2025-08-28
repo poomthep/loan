@@ -1,53 +1,152 @@
-<!doctype html><html lang="th"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Admin Console</title>
-<link rel="stylesheet" href="./css/styles.css"/>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Console</title>
 
-<script type="module">
-  import { initAdminPromotionsAdvanced } from './js/admin-promotions.js?v=0827v3';
-  import { initAdminRules } from './js/admin-rules.js?v=0827v3';
-  window.addEventListener('DOMContentLoaded',()=>{ initAdminPromotionsAdvanced(); initAdminRules(); });
-</script>
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet" />
 
+  <!-- Custom Styles (ถ้ามี) -->
+  <link rel="stylesheet" href="./css/styles.css" />
 
-</head><body>
-<div class="topbar"><div class="topbar-inner">
-  <div class="brand"><div class="logo"></div><h1 style="font-size:18px;margin:0">Admin Console</h1><span class="badge">MRR • โปร • กติกา</span></div>
-  <div class="nav"><a class="btn secondary" href="/index.html">← หน้าหลัก</a><a class="btn" href="/loan.html">ไปหน้าวิเคราะห์สินเชื่อ</a></div>
-</div></div>
+  <script type="module">
+    import { initAdminPromotionsAdvanced } from './js/admin-promotions.js?v=0827v3';
+    import { initAdminRules } from './js/admin-rules.js?v=0827v3';
+    window.addEventListener('DOMContentLoaded', () => {
+      initAdminPromotionsAdvanced();
+      initAdminRules();
+    });
+  </script>
+</head>
 
-<div class="container">
-  <div class="card">
-    <h3 style="margin:0 0 10px">โปรโมชัน (หลายช่วง)</h3>
-    <div class="table-wrap">
-      <table><thead><tr>
-        <th class="col-bank">ธนาคาร</th><th class="col-product">ผลิตภัณฑ์</th><th class="col-title">ชื่อโปร</th>
-        <th class="col-detail">รายละเอียด</th><th class="col-discount">ส่วนลด(bps)</th><th class="col-fixedRate">คงที่(%)</th>
-        <th class="col-fixedMonths">เดือนคงที่</th><th class="col-y1">ปี1 (%)</th><th class="col-y1m">เดือนปี1</th>
-        <th class="col-y2">ปี2 (%)</th><th class="col-y2m">เดือนปี2</th><th class="col-y3">ปี3 (%)</th><th class="col-y3m">เดือนปี3</th>
-        <th class="col-later">ถัดไป = MRR - bps</th><th class="col-ltv">LTV override</th><th class="col-start">เริ่ม</th><th class="col-end">จบ</th>
-        <th class="col-active">เปิดใช้</th><th class="col-actions">การทำงาน</th>
-      </tr></thead><tbody id="promo-body"></tbody></table>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-      <input id="new-title" placeholder="ชื่อโปร"/><textarea id="new-detail" placeholder="รายละเอียด" style="flex:1"></textarea>
-      <select id="new-product"><option>MORTGAGE</option><option>REFINANCE</option><option>PERSONAL</option><option>SME</option></select>
-      <label><input id="new-active" type="checkbox" checked/> เปิดใช้งาน</label>
-      <button id="btn-promo-add" class="btn">+ เพิ่มโปร</button>
-      <button id="btn-promo-refresh" class="btn secondary">↻ รีเฟรช</button>
+<body class="bg-gray-50 text-sm text-gray-800">
+  <!-- Topbar -->
+  <div class="bg-white shadow sticky top-0 z-10">
+    <div class="flex justify-between items-center px-4 py-2">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-blue-500 rounded-full"></div>
+        <h1 class="text-lg font-semibold">Admin Console</h1>
+        <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">MRR • โปร • กติกา</span>
+      </div>
+      <div class="flex gap-2">
+        <a class="btn bg-gray-200 px-3 py-1 rounded" href="/index.html">← หน้าหลัก</a>
+        <a class="btn bg-blue-600 text-white px-3 py-1 rounded" href="/loan.html">ไปหน้าวิเคราะห์สินเชื่อ</a>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">กติกาธนาคาร (DSR/LTV/อายุ/ค่าครองชีพ)</h3>
-    <div class="table-wrap">
-      <table><thead><tr>
-        <th>ธนาคาร</th><th class="col-product">ผลิตภัณฑ์</th><th class="col-prop">ทรัพย์</th><th class="col-home">บ้านหลัง</th>
-        <th>DSR cap</th><th class="col-ltv">LTV cap</th><th>ผ่อนสูงสุด(ปี)</th><th>อายุสูงสุดเมื่อผ่อนครบ</th>
-        <th class="col-mininc">รายได้ขั้นต่ำ</th><th class="col-mlc">ค่าครองชีพขั้นต่ำ/เดือน</th><th>การทำงาน</th>
-      </tr></thead><tbody id="rules-body"></tbody></table>
+  <div class="p-4 space-y-8">
+
+    <!-- โปรโมชัน -->
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-base font-semibold mb-4">โปรโมชัน (หลายช่วง)</h2>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border text-xs">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-2 py-1">ธนาคาร</th>
+              <th>ผลิตภัณฑ์</th>
+              <th>ชื่อโปร</th>
+              <th>รายละเอียด</th>
+              <th>ส่วนลด (bps)</th>
+              <th>คงที่ (%)</th>
+              <th>เดือนคงที่</th>
+              <th>ปี1 (%)</th>
+              <th>เดือนปี1</th>
+              <th>ปี2 (%)</th>
+              <th>เดือนปี2</th>
+              <th>ปี3 (%)</th>
+              <th>เดือนปี3</th>
+              <th>ถัดไป = MRR - bps</th>
+              <th>LTV override</th>
+              <th>เริ่ม</th>
+              <th>จบ</th>
+              <th>เปิดใช้</th>
+              <th>การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody id="promo-body"></tbody>
+        </table>
+      </div>
+
+      <!-- ฟอร์มเพิ่มโปรโมชัน -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <select id="new-bank" class="border rounded px-2 py-1">
+          <option value="">เลือกธนาคาร</option>
+        </select>
+        <select id="new-product" class="border rounded px-2 py-1">
+          <option>MORTGAGE</option>
+          <option>REFINANCE</option>
+          <option>PERSONAL</option>
+          <option>SME</option>
+        </select>
+        <input id="new-title" placeholder="ชื่อโปร" class="border rounded px-2 py-1" />
+        <textarea id="new-detail" placeholder="รายละเอียด" class="border rounded px-2 py-1 col-span-full"></textarea>
+        <label class="flex items-center gap-2">
+          <input id="new-active" type="checkbox" checked />
+          เปิดใช้งาน
+        </label>
+        <div class="flex gap-2">
+          <button id="btn-promo-add" class="bg-blue-600 text-white px-4 py-2 rounded">+ เพิ่มโปร</button>
+          <button id="btn-promo-refresh" class="bg-gray-300 px-4 py-2 rounded">↻ รีเฟรช</button>
+        </div>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:10px"><button id="btn-rules-add" class="btn">+ เพิ่ม</button><button id="btn-rules-refresh" class="btn secondary">↻ รีเฟรช</button></div>
+
+    <!-- กติกาธนาคาร -->
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-base font-semibold mb-4">กติกาธนาคาร (DSR/LTV/อายุ/ค่าครองชีพ)</h2>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border text-xs">
+          <thead class="bg-gray-100">
+            <tr>
+              <th>ธนาคาร</th>
+              <th>ผลิตภัณฑ์</th>
+              <th>ทรัพย์</th>
+              <th>บ้านหลัง</th>
+              <th>DSR cap</th>
+              <th>LTV cap</th>
+              <th>ผ่อนสูงสุด (ปี)</th>
+              <th>อายุสูงสุดเมื่อผ่อนครบ</th>
+              <th>รายได้ขั้นต่ำ</th>
+              <th>ค่าครองชีพขั้นต่ำ/เดือน</th>
+              <th>การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody id="rules-body"></tbody>
+        </table>
+      </div>
+
+      <!-- ฟอร์มเพิ่มกติกา -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <select id="new-rule-bank" class="border rounded px-2 py-1">
+          <option value="">เลือกธนาคาร</option>
+        </select>
+        <select id="new-rule-product" class="border rounded px-2 py-1">
+          <option>MORTGAGE</option>
+          <option>REFINANCE</option>
+          <option>PERSONAL</option>
+          <option>SME</option>
+        </select>
+        <input id="new-rule-prop" placeholder="ประเภททรัพย์" class="border rounded px-2 py-1" />
+        <input id="new-rule-home" type="number" placeholder="บ้านหลังที่" class="border rounded px-2 py-1" />
+        <input id="new-rule-dsr" type="number" placeholder="DSR cap (%)" class="border rounded px-2 py-1" />
+        <input id="new-rule-ltv" type="number" placeholder="LTV cap (%)" class="border rounded px-2 py-1" />
+        <input id="new-rule-years" type="number" placeholder="ผ่อนสูงสุด (ปี)" class="border rounded px-2 py-1" />
+        <input id="new-rule-age" type="number" placeholder="อายุสูงสุด" class="border rounded px-2 py-1" />
+        <input id="new-rule-income" type="number" placeholder="รายได้ขั้นต่ำ" class="border rounded px-2 py-1" />
+        <input id="new-rule-mlc" type="number" placeholder="ค่าครองชีพขั้นต่ำ" class="border rounded px-2 py-1" />
+        <div class="flex gap-2 col-span-full">
+          <button id="btn-rules-add" class="bg-green-600 text-white px-4 py-2 rounded">+ เพิ่ม</button>
+          <button id="btn-rules-refresh" class="bg-gray-300 px-4 py-2 rounded">↻ รีเฟรช</button>
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
-</body></html>
+</body>
+</html>
