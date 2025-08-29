@@ -258,51 +258,35 @@
     }
   </style>
 <script type="module">
+// Admin bootstrap: simple, robust
 async function loadAuthModule() {
-  const candidates = ['/js/auth-manager.js','./js/auth-manager.js','./auth-manager.js','/auth-manager.js'];
-  for (const p of candidates) {
-    try { const m = await import(p); console.log('[Auth] loaded from', p); return m; }
-    catch { console.warn('[Auth] not found at', p); }
-  }
+  const c = ['/js/auth-manager.js','./js/auth-manager.js','./auth-manager.js','/auth-manager.js'];
+  for (const p of c) { try { return await import(p); } catch(e){ console.warn('[Auth] not at', p); } }
   return null;
 }
 
-
-
-import AdminManager from './js/admin-manager-supabase.js';
-
-
-async function waitForAdmin(timeoutMs=15000) {
-  const t0 = Date.now();
-  // ensure a profile fetch happens at least once
-  try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
-  while (Date.now() - t0 < timeoutMs) {
-    try {
-      if (AuthManager.userProfile && AuthManager.userProfile.role === 'admin') return true;
-    } catch(e){}
-    await new Promise(r=>setTimeout(r, 300));
-    try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
-  }
-  return false;
-}
-
-
-(async () => {
+(async() => {
   console.log('Admin bootstrap starting...');
   const auth = await loadAuthModule();
-  if (!auth) { console.error('AuthManager module not found'); return; }
+  if (!auth) { console.error('Auth module not found'); window.showMessage && window.showMessage('โหลดระบบผู้ใช้ไม่สำเร็จ', 'error'); return; }
   const { AuthManager } = auth;
-  const ok = await waitForAdmin();
-  if (!ok) {
-    window.showMessage && window.showMessage('Access denied: Admin only', 'error');
-    console.error('Access denied: Admin privileges required');
-    return;
-  }
-  const adminManager = new AdminManager();
-  await adminManager.initialize();
-  console.log('Admin bootstrap done.');
-})();
 
+  // init auth + profile
+  try { await (AuthManager.initialize?.()); } catch(e){}
+  try { await (AuthManager.loadUserProfile?.()); } catch(e){}
+  try { console.log('Role:', AuthManager.userProfile?.role); } catch(e){}
+
+  // proceed to admin manager directly; it will re-check role internally
+  try {
+    const AdminManager = (await import('./js/admin-manager-supabase.js')).default;
+    const adminManager = new AdminManager();
+    await adminManager.initialize();
+    console.log('Admin Manager ready.');
+  } catch (err) {
+    console.error(err);
+    window.showMessage && window.showMessage(err?.message || 'เกิดข้อผิดพลาดในหน้าแอดมิน', 'error');
+  }
+})();
 </script>
 </head>
 <body class="bg-gray-50">
