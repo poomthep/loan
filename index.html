@@ -10,6 +10,7 @@
   <!-- PWA Support -->
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Loan App">
   
@@ -21,7 +22,9 @@
   
   <!-- App Initialization -->
   <script type="module">
+<script type="module">
     import { AuthManager } from './js/auth-manager.js';
+    import { ErrorHandler } from './js/error-handler.js';
     import { registerServiceWorker } from './sw-register.js';
     import './js/supabase-client.js';
 
