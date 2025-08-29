@@ -23,23 +23,45 @@
   
 <!-- App Initialization -->
   <script type="module">
-    // Disable complex imports temporarily to fix syntax errors
-    import { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton } from './auth-manager.js';
-    // (optional) import ErrorHandler if needed
-    // SW registration is added at the bottom
-    // Supabase client is imported inside auth-manager.js
+  // Dynamic import with path fallbacks for Netlify/Vercel (root or /js/)
+  async function loadAuthModule() {
+    const candidates = [
+      './auth-manager.js',
+      '/auth-manager.js',
+      './js/auth-manager.js',
+      '/js/auth-manager.js'
+    ];
+    for (const p of candidates) {
+      try {
+        const m = await import(p);
+        console.log('[Auth] loaded from', p);
+        return m;
+      } catch (e) {
+        console.warn('[Auth] not found at', p);
+      }
+    }
+    return null;
+  }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      console.log('App starting...');
-      await AuthManager.initialize();
-      setupLoginForm();
-      setupLogoutButton();
-      updateAuthUI();
-      setupUI();
-      setupPWA();
-    });
+  document.addEventListener('DOMContentLoaded', async () => {
+    console.log('App starting...');
+    const auth = await loadAuthModule();
+    if (auth) {
+      const { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton } = auth;
+      try { await AuthManager.initialize(); } catch (e) { console.error('Auth init failed', e); }
+      try { setupLoginForm && setupLoginForm(); } catch(e){ console.warn(e); }
+      try { setupLogoutButton && setupLogoutButton(); } catch(e){ console.warn(e); }
+      try { updateAuthUI && updateAuthUI(); } catch(e){ console.warn(e); }
+    } else {
+      console.error('AuthManager module not found — login UI will be static (GUEST).');
+    }
 
-    function setupUI() {
+    // Recreate minimal previous bootstrap
+    try { setupUI && setupUI(); } catch(e){}
+    try { setupPWA && setupPWA(); } catch(e){}
+  });
+</script>
+function setupUI() {
       // Connection status indicator
       updateConnectionStatus();
       
