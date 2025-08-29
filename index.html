@@ -1,28 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Loan App - เครื่องมือวิเคราะห์สินเชื่อ</title>
-  <meta name="description" content="เครื่องมือวิเคราะห์และเปรียบเทียบสินเชื่อจากธนาคารชั้นนำ">
-  <meta name="theme-color" content="#111827">
-  
-  <!-- PWA Support -->
-  <link rel="manifest" href="./manifest.webmanifest">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Loan App">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏦</text></svg>">
-  
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- Styles -->
-  <link rel="stylesheet" href="./css/styles.css">
-  
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Loan App - เครื่องมือวิเคราะห์สินเชื่อ</title>
+<meta content="เครื่องมือวิเคราะห์และเปรียบเทียบสินเชื่อจากธนาคารชั้นนำ" name="description"/>
+<meta content="#111827" name="theme-color"/>
+<!-- PWA Support -->
+<link href="./manifest.webmanifest" rel="manifest"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="Loan App" name="apple-mobile-web-app-title"/>
+<link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='0.9em' font-size='90'&gt;🏦&lt;/text&gt;&lt;/svg&gt;" rel="icon"/>
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.tailwindcss.com"></script>
+<!-- Styles -->
+<link href="./css/styles.css" rel="stylesheet"/>
 <!-- App Initialization -->
-  <script type="module">
+<script type="module">
   // ===== Auth dynamic import with fallbacks =====
   async function loadAuthModule() {
     const candidates = [
@@ -108,158 +105,161 @@
     } catch(e){ console.log(msg); }
   };
 </script>
+<style>/* loan-app-base-styles */
 
-</head>
+:root { --ink:#111827; --ink-2:#374151; --muted:#6b7280; --brand:#2563eb; --ok:#22c55e; --warn:#f59e0b; --surface:#ffffff; --line:#e5e7eb; --shadow:0 1px 2px rgba(0,0,0,.06); }
+*{box-sizing:border-box}
+body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji'; color:var(--ink); background:#fff;}
 
+.container{max-width:1100px;margin:0 auto;padding:16px;}
+.status-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px auto;padding:8px 12px;background:#f9fafb;border:1px solid var(--line);border-radius:10px}
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:9999px;background:#e5e7eb;color:var(--ink-2);font-weight:600;font-size:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid transparent;background:var(--ink);color:#fff;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(1px)}
+.btn.outline{background:#fff;color:var(--ink);border-color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.hero{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-radius:18px;padding:18px 22px;margin:12px 0}
+h1{font-size:34px;font-weight:800;margin:6px 0}
+h2{font-size:20px;font-weight:700;margin:14px 0 8px}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+input,select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+label{display:block;font-weight:600;margin-bottom:6px}
+</style></head>
 <body>
-  <!-- Status Bar -->
-  <div class="status-bar">
-    <div>
-      <span id="connection-status">🟡 กำลังเชื่อมต่อ...</span>
-      <span style="margin-left: 20px;">
+<!-- Status Bar -->
+<div class="status-bar">
+<div>
+<span id="connection-status">🟡 กำลังเชื่อมต่อ...</span>
+<span style="margin-left: 20px;">
         ผู้ใช้: <strong id="user-email">—</strong>
-      </span>
-    </div>
-    <div>
-      <span id="role-badge" class="badge px-2 py-1 rounded-full text-xs font-semibold bg-gray-200">GUEST</span>
-      <button id="btn-logout" class="btn outline hidden" style="margin-left: 10px;">ออกจากระบบ</button>
-    </div>
-  </div>
-
-  <div class="container">
-    <!-- Hero Section -->
-    <div class="hero">
-      <h1>🏦 Loan App</h1>
-      <p>เครื่องมือวิเคราะห์และเปรียบเทียบสินเชื่อจากธนาคารชั้นนำ<br>
+</span>
+</div>
+<div>
+<span class="badge px-2 py-1 rounded-full text-xs font-semibold bg-gray-200" id="role-badge">GUEST</span>
+<button class="btn outline hidden" id="btn-logout" style="margin-left: 10px;">ออกจากระบบ</button>
+</div>
+</div>
+<div class="container">
+<!-- Hero Section -->
+<div class="hero">
+<h1>🏦 Loan App</h1>
+<p>เครื่องมือวิเคราะห์และเปรียบเทียบสินเชื่อจากธนาคารชั้นนำ<br/>
       คำนวณ DSR, LTV และค้นหาข้อเสนอที่ดีที่สุดสำหรับคุณ</p>
-    </div>
-
-    <!-- Login Section -->
-    <div class="card" id="login-form">
-      <h3>🔐 เข้าสู่ระบบ</h3>
-      <p style="color: #666; margin-bottom: 20px;">
+</div>
+<!-- Login Section -->
+<div class="card" id="login-form">
+<h3>🔐 เข้าสู่ระบบ</h3>
+<p style="color: #666; margin-bottom: 20px;">
         เข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบและบันทึกประวัติการคำนวณ
       </p>
-      
-      <form>
-        <div class="form-grid">
-          <div>
-            <label>อีเมล</label>
-            <input id="email" type="email" placeholder="your@email.com" required>
-          </div>
-          <div>
-            <label>รหัสผ่าน</label>
-            <input id="password" type="password" placeholder="รหัสผ่าน" required>
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button class="btn" type="submit">เข้าสู่ระบบ</button>
-            <button class="btn outline" type="button" onclick="showSignupForm()">สมัครสมาชิก</button>
-          </div>
-        </div>
-      </form>
-      
-      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-        <p style="font-size: 0.9em; color: #999; margin: 0;">
-          💡 <strong>สำหรับ Admin:</strong> ใช้อีเมลที่มีคำว่า "admin" เพื่อเข้าสู่ระบบจัดการ<br>
+<form>
+<div class="form-grid">
+<div>
+<label>อีเมล</label>
+<input id="email" placeholder="your@email.com" required="" type="email"/>
+</div>
+<div>
+<label>รหัสผ่าน</label>
+<input id="password" placeholder="รหัสผ่าน" required="" type="password"/>
+</div>
+<div style="display: flex; gap: 10px;">
+<button class="btn" type="submit">เข้าสู่ระบบ</button>
+<button class="btn outline" onclick="showSignupForm()" type="button">สมัครสมาชิก</button>
+</div>
+</div>
+</form>
+<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+<p style="font-size: 0.9em; color: #999; margin: 0;">
+          💡 <strong>สำหรับ Admin:</strong> ใช้อีเมลที่มีคำว่า "admin" เพื่อเข้าสู่ระบบจัดการ<br/>
           🔒 ข้อมูลของคุณปลอดภัยด้วย Supabase Authentication
         </p>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <div class="action-card">
-        <h4>🧮 คำนวณสินเชื่อ</h4>
-        <p>คำนวณวงเงินสูงสุดและเปรียบเทียบข้อเสนอจากธนาคารต่างๆ</p>
-        <a class="btn btn-full" href="./loan.html">เริ่มคำนวณ</a>
-      </div>
-
-      <div class="action-card">
-        <h4>⚙️ จัดการระบบ</h4>
-        <p>สำหรับ Admin: จัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์</p>
-        <a class="btn btn-full outline" href="./admin.html">Admin Panel</a>
-      </div>
-
-      <div class="action-card">
-        <h4>📊 ประวัติการคำนวณ</h4>
-        <p>ดูประวัติการคำนวณและเปรียบเทียบผลลัพธ์ที่ผ่านมา</p>
-        <button class="btn btn-full outline" onclick="showHistory()">ดูประวัติ</button>
-      </div>
-    </div>
-
-    <!-- Features Section -->
-    <div class="features">
-      <div class="feature">
-        <span class="feature-icon">💰</span>
-        <h3>คำนวณแม่นยำ</h3>
-        <p>คำนวณ DSR และ LTV ตามมาตรฐานธนาคาร พร้อมพิจารณาโปรโมชันและเงื่อนไขต่างๆ</p>
-      </div>
-
-      <div class="feature">
-        <span class="feature-icon">🏦</span>
-        <h3>เปรียบเทียบธนาคาร</h3>
-        <p>เปรียบเทียบข้อเสนอจากธนาคารชั้นนำ 10+ แห่ง เพื่อหาข้อเสนอที่ดีที่สุด</p>
-      </div>
-
-      <div class="feature">
-        <span class="feature-icon">📱</span>
-        <h3>ใช้งานง่าย</h3>
-        <p>รองรับการใช้งานบนทุกอุปกรณ์ พร้อม PWA ที่สามารถติดตั้งเป็น App ได้</p>
-      </div>
-
-      <div class="feature">
-        <span class="feature-icon">⚡</span>
-        <h3>Real-time Updates</h3>
-        <p>อัปเดตข้อมูลอัตราดอกเบี้ยและโปรโมชันแบบ Real-time ผ่าน Supabase</p>
-      </div>
-
-      <div class="feature">
-        <span class="feature-icon">🔒</span>
-        <h3>ปลอดภัย</h3>
-        <p>ระบบรักษาความปลอดภัยด้วย Supabase Auth และ Row Level Security</p>
-      </div>
-
-      <div class="feature">
-        <span class="feature-icon">📈</span>
-        <h3>วิเคราะห์ลึก</h3>
-        <p>วิเคราะห์ Total Cost of Ownership, Payment Schedule และ Sensitivity Analysis</p>
-      </div>
-    </div>
-
-    <!-- Info Section -->
-    <div class="card" style="background: #f8f9fa; margin-top: 40px;">
-      <h3 style="margin-top: 0;">📋 ประเภทสินเชื่อที่รองรับ</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        <div>
-          <strong>🏠 สินเชื่อบ้าน (Mortgage)</strong>
-          <p style="font-size: 0.9em; color: #666; margin: 5px 0;">สำหรับซื้อบ้านครั้งแรกและครั้งถัดไป</p>
-        </div>
-        <div>
-          <strong>🔄 รีไฟแนนซ์ (Refinance)</strong>
-          <p style="font-size: 0.9em; color: #666; margin: 5px 0;">เปลี่ยนธนาคารเพื่อลดดอกเบี้ย</p>
-        </div>
-        <div>
-          <strong>👤 สินเชื่อส่วนบุคคล</strong>
-          <p style="font-size: 0.9em; color: #666; margin: 5px 0;">สินเชื่อไม่มีหลักประกัน</p>
-        </div>
-        <div>
-          <strong>🏢 สินเชื่อ SME</strong>
-          <p style="font-size: 0.9em; color: #666; margin: 5px 0;">สำหรับธุรกิจขนาดกลางและเล็ก</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    <p>&copy; 2024 Loan App - เครื่องมือวิเคราะห์สินเชื่อ</p>
-    <p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="quick-actions">
+<div class="action-card">
+<h4>🧮 คำนวณสินเชื่อ</h4>
+<p>คำนวณวงเงินสูงสุดและเปรียบเทียบข้อเสนอจากธนาคารต่างๆ</p>
+<a class="btn btn-full" href="./loan.html">เริ่มคำนวณ</a>
+</div>
+<div class="action-card">
+<h4>⚙️ จัดการระบบ</h4>
+<p>สำหรับ Admin: จัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์</p>
+<a class="btn btn-full outline" href="./admin.html">Admin Panel</a>
+</div>
+<div class="action-card">
+<h4>📊 ประวัติการคำนวณ</h4>
+<p>ดูประวัติการคำนวณและเปรียบเทียบผลลัพธ์ที่ผ่านมา</p>
+<button class="btn btn-full outline" onclick="showHistory()">ดูประวัติ</button>
+</div>
+</div>
+<!-- Features Section -->
+<div class="features">
+<div class="feature">
+<span class="feature-icon">💰</span>
+<h3>คำนวณแม่นยำ</h3>
+<p>คำนวณ DSR และ LTV ตามมาตรฐานธนาคาร พร้อมพิจารณาโปรโมชันและเงื่อนไขต่างๆ</p>
+</div>
+<div class="feature">
+<span class="feature-icon">🏦</span>
+<h3>เปรียบเทียบธนาคาร</h3>
+<p>เปรียบเทียบข้อเสนอจากธนาคารชั้นนำ 10+ แห่ง เพื่อหาข้อเสนอที่ดีที่สุด</p>
+</div>
+<div class="feature">
+<span class="feature-icon">📱</span>
+<h3>ใช้งานง่าย</h3>
+<p>รองรับการใช้งานบนทุกอุปกรณ์ พร้อม PWA ที่สามารถติดตั้งเป็น App ได้</p>
+</div>
+<div class="feature">
+<span class="feature-icon">⚡</span>
+<h3>Real-time Updates</h3>
+<p>อัปเดตข้อมูลอัตราดอกเบี้ยและโปรโมชันแบบ Real-time ผ่าน Supabase</p>
+</div>
+<div class="feature">
+<span class="feature-icon">🔒</span>
+<h3>ปลอดภัย</h3>
+<p>ระบบรักษาความปลอดภัยด้วย Supabase Auth และ Row Level Security</p>
+</div>
+<div class="feature">
+<span class="feature-icon">📈</span>
+<h3>วิเคราะห์ลึก</h3>
+<p>วิเคราะห์ Total Cost of Ownership, Payment Schedule และ Sensitivity Analysis</p>
+</div>
+</div>
+<!-- Info Section -->
+<div class="card" style="background: #f8f9fa; margin-top: 40px;">
+<h3 style="margin-top: 0;">📋 ประเภทสินเชื่อที่รองรับ</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+<div>
+<strong>🏠 สินเชื่อบ้าน (Mortgage)</strong>
+<p style="font-size: 0.9em; color: #666; margin: 5px 0;">สำหรับซื้อบ้านครั้งแรกและครั้งถัดไป</p>
+</div>
+<div>
+<strong>🔄 รีไฟแนนซ์ (Refinance)</strong>
+<p style="font-size: 0.9em; color: #666; margin: 5px 0;">เปลี่ยนธนาคารเพื่อลดดอกเบี้ย</p>
+</div>
+<div>
+<strong>👤 สินเชื่อส่วนบุคคล</strong>
+<p style="font-size: 0.9em; color: #666; margin: 5px 0;">สินเชื่อไม่มีหลักประกัน</p>
+</div>
+<div>
+<strong>🏢 สินเชื่อ SME</strong>
+<p style="font-size: 0.9em; color: #666; margin: 5px 0;">สำหรับธุรกิจขนาดกลางและเล็ก</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="footer">
+<p>© 2024 Loan App - เครื่องมือวิเคราะห์สินเชื่อ</p>
+<p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">
       Powered by Supabase • Made with ❤️ in Thailand
     </p>
-  </div>
-
-  <!-- Scripts -->
-  <script>
+</div>
+<!-- Scripts -->
+<script>
     function showSignupForm() {
       alert('ระบบสมัครสมาชิกจะเปิดใช้งานเร็วๆ นี้\nหรือติดต่อ Admin เพื่อสร้างบัญชีให้');
     }
@@ -360,9 +360,8 @@ window.addEventListener('beforeinstallprompt', function(e) {
       }, 10000);
     }
   </script>
-  
-  <!-- Scripts -->
-  <script>
+<!-- Scripts -->
+<script>
     // Global message function
     function showMessage(message, type = 'info') {
       const messageBox = document.createElement('div');
@@ -452,6 +451,4 @@ window.addEventListener('beforeinstallprompt', function(e) {
   </script>
 </body>
 </html>
-  
-</body>
-</html>
+
