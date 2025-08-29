@@ -26,10 +26,10 @@
   // Dynamic import with path fallbacks for Netlify/Vercel (root or /js/)
   async function loadAuthModule() {
     const candidates = [
-      './auth-manager.js',
-      '/auth-manager.js',
+      '/js/auth-manager.js',
       './js/auth-manager.js',
-      '/js/auth-manager.js'
+      './auth-manager.js',
+      '/auth-manager.js'
     ];
     for (const p of candidates) {
       try {
@@ -52,6 +52,7 @@
       try { setupLoginForm && setupLoginForm(); } catch(e){ console.warn(e); }
       try { setupLogoutButton && setupLogoutButton(); } catch(e){ console.warn(e); }
       try { updateAuthUI && updateAuthUI(); } catch(e){ console.warn(e); }
+      try { AuthManager && AuthManager.addAuthListener(() => updateAuthUI && updateAuthUI()); } catch(e){}
     } else {
       console.error('AuthManager module not found — login UI will be static (GUEST).');
     }
