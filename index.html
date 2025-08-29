@@ -21,22 +21,20 @@
   <link rel="stylesheet" href="./css/styles.css">
   
   <!-- App Initialization -->
+<!-- App Initialization -->
   <script type="module">
-<script type="module">
-    //import { AuthManager } from './js/auth-manager.js';
-    //import { ErrorHandler } from './js/error-handler.js';
-    //import { registerServiceWorker } from './sw-register.js';
-    //import './js/supabase-client.js';
+    // Disable complex imports temporarily to fix syntax errors
+    // import { AuthManager } from './js/auth-manager.js';
+    // import { ErrorHandler } from './js/error-handler.js';
+    // import { registerServiceWorker } from './sw-register.js';
+    // import './js/supabase-client.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Register Service Worker
-      await registerServiceWorker();
+      console.log('App starting...');
       
-      // Initialize Auth Manager
-      await AuthManager.initialize();
-      
-      // Setup UI handlers
+      // Basic setup without external modules
       setupUI();
+      setupPWA();
     });
 
     function setupUI() {
@@ -53,7 +51,7 @@
     function updateConnectionStatus() {
       const statusEl = document.getElementById('connection-status');
       if (statusEl) {
-        statusEl.innerHTML = '🟢 เชื่อมต่อแล้ว';
+        statusEl.innerHTML = '🟢 พร้อมใช้งาน';
         statusEl.style.color = '#28a745';
       }
     }
@@ -82,6 +80,113 @@
         });
       });
     }
+
+    function setupPWA() {
+      // PWA install prompt handling
+      let deferredPrompt;
+      
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallButton();
+      });
+
+      function showInstallButton() {
+        const installBtn = document.createElement('button');
+        installBtn.textContent = '📱 ติดตั้ง App';
+        installBtn.className = 'btn outline';
+        installBtn.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 1000;
+        `;
+        
+        installBtn.addEventListener('click', () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted PWA install');
+              }
+              deferredPrompt = null;
+              installBtn.remove();
+            });
+          }
+        });
+        
+        document.body.appendChild(installBtn);
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          if (installBtn.parentNode) {
+            installBtn.remove();
+          }
+        }, 10000);
+      }
+    }
+
+    // Export to global scope for other functions
+    window.showMessage = function(message, type = 'info') {
+      const messageBox = document.createElement('div');
+      
+      let backgroundColor = '#2196F3';
+      if (type === 'error') backgroundColor = '#f44336';
+      if (type === 'success') backgroundColor = '#4CAF50';
+      if (type === 'warning') backgroundColor = '#ff9800';
+      
+      messageBox.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${backgroundColor};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 350px;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 14px;
+      `;
+      
+      messageBox.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" 
+                  style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: 15px;">×</button>
+        </div>
+      `;
+      
+      document.body.appendChild(messageBox);
+      
+      setTimeout(() => {
+        if (messageBox.parentElement) {
+          messageBox.remove();
+        }
+      }, 5000);
+    };
+  </script>
+
+  <!-- Regular JavaScript Functions -->
+  <script>
+    function showSignupForm() {
+      showMessage('ระบบสมัครสมาชิกจะเปิดใช้งานเร็วๆ นี้', 'info');
+    }
+
+    function showHistory() {
+      const userEmail = document.getElementById('user-email').textContent;
+      if (!userEmail || userEmail === '—') {
+        showMessage('กรุณาเข้าสู่ระบบก่อนเพื่อดูประวัติ', 'warning');
+      } else {
+        window.location.href = './loan.html#history';
+      }
+    }
+
+    // Show welcome message when page loads
+    setTimeout(() => {
+      showMessage('ยินดีต้อนรับสู่ Loan App!', 'success');
+    }, 2000);
   </script>
   
   <style>
