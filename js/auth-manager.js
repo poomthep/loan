@@ -1,6 +1,6 @@
 // js/auth-manager.js
 // ========================================
-// AUTHENTICATION MANAGER
+// AUTHENTICATION MANAGER - FIXED VERSION
 // ========================================
 
 import supabase, { handleSupabaseError } from './supabase-client.js';
@@ -191,18 +191,6 @@ export class AuthManager {
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert({
-  /**
-   * อัพเดตข้อมูลโปรไฟล์ผู้ใช้
-   */
-  static async updateUserProfile(updates) {
-    if (!this.currentUser) {
-      throw new Error('ต้องเข้าสู่ระบบก่อน');
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert({
           id: this.currentUser.id,
           ...updates,
           updated_at: new Date().toISOString()
@@ -259,7 +247,7 @@ export class AuthManager {
    * ฟังการเปลี่ยนแปลง auth state
    */
   static setupAuthListener() {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
+    const authListener = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state changed:', event);
 
       switch (event) {
@@ -283,6 +271,8 @@ export class AuthManager {
           break;
       }
     });
+
+    return authListener;
   }
 
   /**
@@ -366,25 +356,30 @@ export class AuthManager {
   // ========================================
 
   /**
-   * เริ่มต้นระบบ Auth Manager
+   * เริ่มต้นระบบ Auth Manager - FIXED VERSION
    */
-  static async initialize() {
-    try {
-      console.log('🚀 Initializing Auth Manager...');
+  static initialize() {
+    return new Promise((resolve) => {
+      try {
+        console.log('🚀 Initializing Auth Manager...');
 
-      // ตรวจสอบ session ที่มีอยู่
-      await this.checkSession();
+        // ตรวจสอบ session ที่มีอยู่
+        this.checkSession().then(() => {
+          // ตั้งค่า auth listener
+          this.setupAuthListener();
+          
+          console.log('✅ Auth Manager initialized successfully');
+          resolve(true);
+        }).catch((error) => {
+          console.error('❌ Auth Manager initialization failed:', error);
+          resolve(false);
+        });
 
-      // ตั้งค่า auth listener
-      this.setupAuthListener();
-
-      console.log('✅ Auth Manager initialized successfully');
-      return true;
-
-    } catch (error) {
-      console.error('❌ Auth Manager initialization failed:', error);
-      return false;
-    }
+      } catch (error) {
+        console.error('❌ Auth Manager initialization failed:', error);
+        resolve(false);
+      }
+    });
   }
 
   /**
@@ -441,7 +436,7 @@ export function updateAuthUI() {
   }
 
   // แสดง/ซ่อนลิงก์ admin (เฉพาะ admin)
-  const adminLinks = document.querySelectorAll('[href="/admin.html"]');
+  const adminLinks = document.querySelectorAll('[href="/admin.html"], [href="./admin.html"]');
   adminLinks.forEach(link => {
     link.style.display = userData.isAdmin ? 'inline-block' : 'none';
   });
@@ -542,46 +537,41 @@ export function showNotification(message, type = 'info', duration = 3000) {
   };
   
   notification.className += ` ${colors[type] || colors.info} fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm`;
-  notification.textContent = message;
+  notification.innerHTML = message;
   
   // เพิ่มใน DOM
   document.body.appendChild(notification);
   
   // ลบหลังจากเวลาที่กำหนด
   setTimeout(() => {
-    notification.remove();
+    if (notification.parentNode) {
+      notification.remove();
+    }
   }, duration);
 }
 
 // ========================================
-// AUTO INITIALIZATION
+// AUTO INITIALIZATION - FIXED
 // ========================================
 
 // เริ่มต้น Auth Manager เมื่อโหลดหน้าเสร็จ
+function initializeAuth() {
+  AuthManager.initialize().then(() => {
+    updateAuthUI();
+    setupLoginForm();
+    setupLogoutButton();
+    
+    // เพิ่ม auth listener สำหรับอัพเดต UI อัตโนมัติ
+    AuthManager.addAuthListener(() => {
+      updateAuthUI();
+    });
+  });
+}
+
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', async () => {
-      await AuthManager.initialize();
-      updateAuthUI();
-      setupLoginForm();
-      setupLogoutButton();
-      
-      // เพิ่ม auth listener สำหรับอัพเดต UI อัตโนมัติ
-      AuthManager.addAuthListener(() => {
-        updateAuthUI();
-      });
-    });
+    document.addEventListener('DOMContentLoaded', initializeAuth);
   } else {
-    // หากโหลดเสร็จแล้ว
-    (async () => {
-      await AuthManager.initialize();
-      updateAuthUI();
-      setupLoginForm();
-      setupLogoutButton();
-      
-      AuthManager.addAuthListener(() => {
-        updateAuthUI();
-      });
-    })();
+    initializeAuth();
   }
 }
