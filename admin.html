@@ -9,7 +9,7 @@
 <!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet"/>
 <!-- Custom Styles -->
 <link href="./css/styles.css" rel="stylesheet"/>
 <style>
@@ -258,37 +258,52 @@
     }
   </style>
 <script type="module">
-// Admin bootstrap: simple, robust
+// Robust admin bootstrap: retry until profile==admin then init AdminManager
 async function loadAuthModule() {
-  const c = ['/js/auth-manager.js','./js/auth-manager.js','./auth-manager.js','/auth-manager.js'];
-  for (const p of c) { try { return await import(p); } catch(e){ console.warn('[Auth] not at', p); } }
+  const candidates = ['/js/auth-manager.js','./js/auth-manager.js','./auth-manager.js','/auth-manager.js'];
+  for (const p of candidates) {
+    try { const m = await import(p); console.log('[Auth] loaded from', p); return m; }
+    catch { console.warn('[Auth] not found at', p); }
+  }
   return null;
 }
 
-(async() => {
+(async () => {
   console.log('Admin bootstrap starting...');
   const auth = await loadAuthModule();
-  if (!auth) { console.error('Auth module not found'); window.showMessage && window.showMessage('โหลดระบบผู้ใช้ไม่สำเร็จ', 'error'); return; }
+  if (!auth) { console.error('AuthManager module not found'); return; }
   const { AuthManager } = auth;
 
-  // init auth + profile
-  try { await (AuthManager.initialize?.()); } catch(e){}
-  try { await (AuthManager.loadUserProfile?.()); } catch(e){}
-  try { console.log('Role:', AuthManager.userProfile?.role); } catch(e){}
+  // Preload profile once
+  try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch {}
 
-  // proceed to admin manager directly; it will re-check role internally
-  try {
-    const AdminManager = (await import('./js/admin-manager-supabase.js')).default;
-    const adminManager = new AdminManager();
-    await adminManager.initialize();
-    console.log('Admin Manager ready.');
-  } catch (err) {
-    console.error(err);
-    window.showMessage && window.showMessage(err?.message || 'เกิดข้อผิดพลาดในหน้าแอดมิน', 'error');
+  const t0 = Date.now();
+  const deadline = 15000; // 15s
+  let lastErr = null;
+
+  while (Date.now() - t0 < deadline) {
+    try {
+      const role = AuthManager.userProfile && AuthManager.userProfile.role;
+      if (role === 'admin') {
+        const { default: AdminManager } = await import('./js/admin-manager-supabase.js');
+        const adminManager = new AdminManager();
+        await adminManager.initialize();
+        console.log('Admin ready.');
+        return;
+      }
+      // Not admin yet: refresh profile and retry
+      await (AuthManager.loadUserProfile && AuthManager.loadUserProfile());
+    } catch (e) {
+      lastErr = e;
+    }
+    await new Promise(r => setTimeout(r, 400));
   }
+
+  console.error('Access denied: Admin privileges required', lastErr || '');
+  window.showMessage && window.showMessage('Access denied: Admin only', 'error');
 })();
 </script>
-</head>
+<script src="https://cdn.tailwindcss.com"></script></head>
 <body class="bg-gray-50">
 <!-- Header -->
 <div class="admin-header">
