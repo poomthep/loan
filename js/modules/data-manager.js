@@ -36,3 +36,5 @@ export class DataManager {
   
   // ... เพิ่ม methods สำหรับ addPromotion, addRule, update, delete
 }
+
+export default DataManager;
