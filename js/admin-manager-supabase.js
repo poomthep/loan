@@ -3,7 +3,7 @@
 // ADMIN MANAGER - COMPLETE INTEGRATION
 // ========================================
 
-import { AuthManager } from './auth-manager.js';
+import { AuthManager } from '../auth-manager.js';
 import DataManager from './data-manager.js';
 
 /**

@@ -3,7 +3,7 @@
 // AUTHENTICATION MANAGER - FIXED VERSION
 // ========================================
 
-import supabase, { handleSupabaseError } from './supabase-client.js';
+import supabase, { handleSupabaseError } from '../supabase-client.js';
 
 /**
  * จัดการระบบ Authentication ทั้งหมด
