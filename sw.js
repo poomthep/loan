@@ -3,7 +3,7 @@
 // PROGRESSIVE WEB APP SERVICE WORKER
 // ========================================
 
-const VERSION = 'v2024-12-19-1';
+const VERSION = 'v2025-08-29-1';
 const CACHE_NAME = `loan-app-${VERSION}`;
 
 // ไฟล์ที่ต้อง cache สำหรับ offline
