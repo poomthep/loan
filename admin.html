@@ -271,20 +271,21 @@ async function loadAuthModule() {
 
 import AdminManager from './js/admin-manager-supabase.js';
 
+
 async function waitForAdmin(timeoutMs=15000) {
   const t0 = Date.now();
-  // ensure auth init
-  try { await AuthManager.initialize(); } catch(e){}
+  // ensure a profile fetch happens at least once
+  try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
   while (Date.now() - t0 < timeoutMs) {
     try {
-      if (await AuthManager.isAdmin()) return true;
+      if (AuthManager.userProfile && AuthManager.userProfile.role === 'admin') return true;
     } catch(e){}
     await new Promise(r=>setTimeout(r, 300));
-    // try refresh profile in case it's stale
     try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
   }
   return false;
 }
+
 
 (async () => {
   console.log('Admin bootstrap starting...');
