@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet" />
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="./css/styles.css" />
@@ -262,33 +262,39 @@
   </style>
 
   <script type="module">
-    import AdminManager from './js/admin-manager-supabase.js';
-    import './js/supabase-client.js';
-    
-    window.addEventListener('DOMContentLoaded', () => {
-      const adminManager = new AdminManager();
-      adminManager.initialize();
-      
-      // Export to global scope for button handlers
-      window.adminManager = adminManager;
-      
-      // Add keyboard shortcuts
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          switch (e.key) {
-            case 'r':
-              e.preventDefault();
-              adminManager.refreshAll();
-              break;
-            case 's':
-              e.preventDefault();
-              adminManager.exportAllData();
-              break;
-          }
-        }
-      });
-    });
-  </script>
+
+import { AuthManager } from './auth-manager.js';
+import AdminManager from './js/admin-manager-supabase.js';
+
+async function waitForAdmin(timeoutMs=15000) {
+  const t0 = Date.now();
+  // ensure auth init
+  try { await AuthManager.initialize(); } catch(e){}
+  while (Date.now() - t0 < timeoutMs) {
+    try {
+      if (await AuthManager.isAdmin()) return true;
+    } catch(e){}
+    await new Promise(r=>setTimeout(r, 300));
+    // try refresh profile in case it's stale
+    try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
+  }
+  return false;
+}
+
+(async () => {
+  console.log('Admin bootstrap starting...');
+  const ok = await waitForAdmin();
+  if (!ok) {
+    window.showMessage && window.showMessage('Access denied: Admin only', 'error');
+    console.error('Access denied: Admin privileges required');
+    return;
+  }
+  const adminManager = new AdminManager();
+  await adminManager.initialize();
+  console.log('Admin bootstrap done.');
+})();
+
+</script>
 </head>
 
 <body class="bg-gray-50">
