@@ -1,21 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Console - Loan App</title>
-  <meta name="description" content="ระบบจัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์สำหรับ Loan App">
-
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet" />
-
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="./css/styles.css" />
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Admin Console - Loan App</title>
+<meta content="ระบบจัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์สำหรับ Loan App" name="description"/>
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Custom Styles -->
+<link href="./css/styles.css" rel="stylesheet"/>
+<style>
     /* Admin specific styles */
     .admin-header {
       background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
@@ -260,10 +257,18 @@
       }
     }
   </style>
+<script type="module">
+async function loadAuthModule() {
+  const candidates = ['/js/auth-manager.js','./js/auth-manager.js','./auth-manager.js','/auth-manager.js'];
+  for (const p of candidates) {
+    try { const m = await import(p); console.log('[Auth] loaded from', p); return m; }
+    catch { console.warn('[Auth] not found at', p); }
+  }
+  return null;
+}
 
-  <script type="module">
 
-import { AuthManager } from './auth-manager.js';
+
 import AdminManager from './js/admin-manager-supabase.js';
 
 async function waitForAdmin(timeoutMs=15000) {
@@ -283,6 +288,9 @@ async function waitForAdmin(timeoutMs=15000) {
 
 (async () => {
   console.log('Admin bootstrap starting...');
+  const auth = await loadAuthModule();
+  if (!auth) { console.error('AuthManager module not found'); return; }
+  const { AuthManager } = auth;
   const ok = await waitForAdmin();
   if (!ok) {
     window.showMessage && window.showMessage('Access denied: Admin only', 'error');
@@ -296,405 +304,385 @@ async function waitForAdmin(timeoutMs=15000) {
 
 </script>
 </head>
-
 <body class="bg-gray-50">
-  <!-- Header -->
-  <div class="admin-header">
-    <div class="flex justify-between items-center">
-      <div class="flex items-center gap-4">
-        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+<!-- Header -->
+<div class="admin-header">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
           ⚙️
         </div>
-        <div>
-          <h1 class="text-2xl font-bold m-0">Admin Console</h1>
-          <p class="m-0 opacity-90">จัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์</p>
-        </div>
-      </div>
-      <div class="flex gap-3">
-        <a class="btn-admin secondary" href="./index.html">🏠 หน้าหลัก</a>
-        <a class="btn-admin" href="./loan.html">🧮 วิเคราะห์สินเชื่อ</a>
-      </div>
-    </div>
-  </div>
-
-  <div class="container mx-auto px-4">
-    <!-- Stats Dashboard -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-number" id="stat-banks">—</div>
-        <div class="stat-label">ธนาคาร</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="stat-promotions">—</div>
-        <div class="stat-label">โปรโมชัน</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="stat-rules">—</div>
-        <div class="stat-label">กฎเกณฑ์</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="stat-calculations">—</div>
-        <div class="stat-label">การคำนวณวันนี้</div>
-      </div>
-    </div>
-
-    <!-- Promotions Management -->
-    <div class="admin-card">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+<div>
+<h1 class="text-2xl font-bold m-0">Admin Console</h1>
+<p class="m-0 opacity-90">จัดการข้อมูลธนาคาร โปรโมชัน และกฎเกณฑ์</p>
+</div>
+</div>
+<div class="flex gap-3">
+<a class="btn-admin secondary" href="./index.html">🏠 หน้าหลัก</a>
+<a class="btn-admin" href="./loan.html">🧮 วิเคราะห์สินเชื่อ</a>
+</div>
+</div>
+</div>
+<div class="container mx-auto px-4">
+<!-- Stats Dashboard -->
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-number" id="stat-banks">—</div>
+<div class="stat-label">ธนาคาร</div>
+</div>
+<div class="stat-card">
+<div class="stat-number" id="stat-promotions">—</div>
+<div class="stat-label">โปรโมชัน</div>
+</div>
+<div class="stat-card">
+<div class="stat-number" id="stat-rules">—</div>
+<div class="stat-label">กฎเกณฑ์</div>
+</div>
+<div class="stat-card">
+<div class="stat-number" id="stat-calculations">—</div>
+<div class="stat-label">การคำนวณวันนี้</div>
+</div>
+</div>
+<!-- Promotions Management -->
+<div class="admin-card">
+<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
         🎯 จัดการโปรโมชัน
         <span class="text-sm font-normal text-gray-500">(ข้อเสนอพิเศษและส่วนลด)</span>
-      </h2>
-
-      <!-- Promotions Table -->
-      <div class="overflow-x-auto">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ธนาคาร</th>
-              <th>ผลิตภัณฑ์</th>
-              <th>ชื่อโปร</th>
-              <th>รายละเอียด</th>
-              <th>ส่วนลด (bps)</th>
-              <th>คงที่ (%)</th>
-              <th>เดือนคงที่</th>
-              <th>ปี1 (%)</th>
-              <th>เดือนปี1</th>
-              <th>ปี2 (%)</th>
-              <th>เดือนปี2</th>
-              <th>ปี3 (%)</th>
-              <th>เดือนปี3</th>
-              <th>อัตราสุดท้าย</th>
-              <th>LTV พิเศษ</th>
-              <th>เริ่มต้น</th>
-              <th>สิ้นสุด</th>
-              <th>เปิดใช้</th>
-              <th>การทำงาน</th>
-            </tr>
-          </thead>
-          <tbody id="promo-body">
-            <tr>
-              <td colspan="19" class="text-center text-gray-500 py-4">กำลังโหลดข้อมูล...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Add Promotion Form -->
-      <div class="admin-form">
-        <div>
-          <label>ธนาคาร</label>
-          <select id="new-bank">
-            <option value="">เลือกธนาคาร</option>
-          </select>
-        </div>
-        <div>
-          <label>ผลิตภัณฑ์</label>
-          <select id="new-product">
-            <option>MORTGAGE</option>
-            <option>REFINANCE</option>
-            <option>PERSONAL</option>
-            <option>SME</option>
-          </select>
-        </div>
-        <div>
-          <label>ชื่อโปรโมชัน</label>
-          <input id="new-title" placeholder="เช่น โปรดอกพิเศษ" />
-        </div>
-        <div class="md:col-span-2">
-          <label>รายละเอียด</label>
-          <textarea id="new-detail" placeholder="รายละเอียดโปรโมชัน..."></textarea>
-        </div>
-        <div>
-          <label>ส่วนลด (basis points)</label>
-          <input id="new-discount-bps" type="number" placeholder="25" />
-        </div>
-        <div>
-          <label>อัตราปีแรก (%)</label>
-          <input id="new-year1-rate" type="number" step="0.01" placeholder="3.99" />
-        </div>
-        <div>
-          <label>จำนวนเดือนปีแรก</label>
-          <input id="new-year1-months" type="number" placeholder="12" />
-        </div>
-        <div>
-          <label>อัตราปีที่สอง (%)</label>
-          <input id="new-year2-rate" type="number" step="0.01" placeholder="5.99" />
-        </div>
-        <div>
-          <label>LTV Override (%)</label>
-          <input id="new-ltv-override" type="number" step="0.01" placeholder="95" />
-        </div>
-        <div>
-          <label>
-            <input id="new-active" type="checkbox" checked />
+</h2>
+<!-- Promotions Table -->
+<div class="overflow-x-auto">
+<table class="admin-table">
+<thead>
+<tr>
+<th>ธนาคาร</th>
+<th>ผลิตภัณฑ์</th>
+<th>ชื่อโปร</th>
+<th>รายละเอียด</th>
+<th>ส่วนลด (bps)</th>
+<th>คงที่ (%)</th>
+<th>เดือนคงที่</th>
+<th>ปี1 (%)</th>
+<th>เดือนปี1</th>
+<th>ปี2 (%)</th>
+<th>เดือนปี2</th>
+<th>ปี3 (%)</th>
+<th>เดือนปี3</th>
+<th>อัตราสุดท้าย</th>
+<th>LTV พิเศษ</th>
+<th>เริ่มต้น</th>
+<th>สิ้นสุด</th>
+<th>เปิดใช้</th>
+<th>การทำงาน</th>
+</tr>
+</thead>
+<tbody id="promo-body">
+<tr>
+<td class="text-center text-gray-500 py-4" colspan="19">กำลังโหลดข้อมูล...</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Add Promotion Form -->
+<div class="admin-form">
+<div>
+<label>ธนาคาร</label>
+<select id="new-bank">
+<option value="">เลือกธนาคาร</option>
+</select>
+</div>
+<div>
+<label>ผลิตภัณฑ์</label>
+<select id="new-product">
+<option>MORTGAGE</option>
+<option>REFINANCE</option>
+<option>PERSONAL</option>
+<option>SME</option>
+</select>
+</div>
+<div>
+<label>ชื่อโปรโมชัน</label>
+<input id="new-title" placeholder="เช่น โปรดอกพิเศษ"/>
+</div>
+<div class="md:col-span-2">
+<label>รายละเอียด</label>
+<textarea id="new-detail" placeholder="รายละเอียดโปรโมชัน..."></textarea>
+</div>
+<div>
+<label>ส่วนลด (basis points)</label>
+<input id="new-discount-bps" placeholder="25" type="number"/>
+</div>
+<div>
+<label>อัตราปีแรก (%)</label>
+<input id="new-year1-rate" placeholder="3.99" step="0.01" type="number"/>
+</div>
+<div>
+<label>จำนวนเดือนปีแรก</label>
+<input id="new-year1-months" placeholder="12" type="number"/>
+</div>
+<div>
+<label>อัตราปีที่สอง (%)</label>
+<input id="new-year2-rate" placeholder="5.99" step="0.01" type="number"/>
+</div>
+<div>
+<label>LTV Override (%)</label>
+<input id="new-ltv-override" placeholder="95" step="0.01" type="number"/>
+</div>
+<div>
+<label>
+<input checked="" id="new-active" type="checkbox"/>
             เปิดใช้งาน
           </label>
-        </div>
-        <div class="md:col-span-2">
-          <button id="btn-promo-add" class="btn-admin mr-2">➕ เพิ่มโปรโมชัน</button>
-          <button id="btn-promo-refresh" class="btn-admin secondary">🔄 รีเฟรช</button>
-          <button id="btn-promo-export" class="btn-admin secondary ml-2">📊 Export</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bank Rules Management -->
-    <div class="admin-card">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+</div>
+<div class="md:col-span-2">
+<button class="btn-admin mr-2" id="btn-promo-add">➕ เพิ่มโปรโมชัน</button>
+<button class="btn-admin secondary" id="btn-promo-refresh">🔄 รีเฟรช</button>
+<button class="btn-admin secondary ml-2" id="btn-promo-export">📊 Export</button>
+</div>
+</div>
+</div>
+<!-- Bank Rules Management -->
+<div class="admin-card">
+<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
         📋 จัดการกฎเกณฑ์ธนาคาร
         <span class="text-sm font-normal text-gray-500">(DSR/LTV/อายุ/รายได้/ค่าครองชีพ)</span>
-      </h2>
-
-      <!-- Rules Table -->
-      <div class="overflow-x-auto">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ธนาคาร</th>
-              <th>ผลิตภัณฑ์</th>
-              <th>ทรัพย์</th>
-              <th>บ้านหลังที่</th>
-              <th>DSR cap (%)</th>
-              <th>LTV cap (%)</th>
-              <th>ผ่อนสูงสุด (ปี)</th>
-              <th>อายุสูงสุดเมื่อผ่อนครบ</th>
-              <th>รายได้ขั้นต่ำ</th>
-              <th>ค่าครองชีพขั้นต่ำ/เดือน</th>
-              <th>ลำดับความสำคัญ</th>
-              <th>การทำงาน</th>
-            </tr>
-          </thead>
-          <tbody id="rules-body">
-            <tr>
-              <td colspan="12" class="text-center text-gray-500 py-4">กำลังโหลดข้อมูล...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Add Rule Form -->
-      <div class="admin-form">
-        <div>
-          <label>ธนาคาร</label>
-          <select id="new-rule-bank">
-            <option value="">เลือกธนาคาร</option>
-          </select>
-        </div>
-        <div>
-          <label>ผลิตภัณฑ์</label>
-          <select id="new-rule-product">
-            <option>MORTGAGE</option>
-            <option>REFINANCE</option>
-            <option>PERSONAL</option>
-            <option>SME</option>
-          </select>
-        </div>
-        <div>
-          <label>ประเภททรัพย์</label>
-          <select id="new-rule-prop">
-            <option value="">— ทุกประเภท —</option>
-            <option>HOUSE</option>
-            <option>TOWNHOME</option>
-            <option>CONDO</option>
-            <option>LAND+HOUSE</option>
-          </select>
-        </div>
-        <div>
-          <label>บ้านหลังที่</label>
-          <select id="new-rule-home">
-            <option value="">— ไม่ระบุ —</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3+</option>
-          </select>
-        </div>
-        <div>
-          <label>DSR cap (%)</label>
-          <input id="new-rule-dsr" type="number" step="0.01" placeholder="70" max="100" />
-        </div>
-        <div>
-          <label>LTV cap (%)</label>
-          <input id="new-rule-ltv" type="number" step="0.01" placeholder="90" max="100" />
-        </div>
-        <div>
-          <label>ผ่อนสูงสุด (ปี)</label>
-          <input id="new-rule-years" type="number" placeholder="30" max="50" />
-        </div>
-        <div>
-          <label>อายุสูงสุดเมื่อครบกำหนด</label>
-          <input id="new-rule-age" type="number" placeholder="70" max="100" />
-        </div>
-        <div>
-          <label>รายได้ขั้นต่ำ (บาท)</label>
-          <input id="new-rule-income" type="number" placeholder="15000" />
-        </div>
-        <div>
-          <label>ค่าครองชีพขั้นต่ำ/เดือน</label>
-          <input id="new-rule-mlc" type="number" placeholder="10000" />
-        </div>
-        <div>
-          <label>ลำดับความสำคัญ</label>
-          <input id="new-rule-priority" type="number" placeholder="1" min="1" />
-        </div>
-        <div class="md:col-span-2">
-          <button id="btn-rules-add" class="btn-admin mr-2">➕ เพิ่มกฎเกณฑ์</button>
-          <button id="btn-rules-refresh" class="btn-admin secondary">🔄 รีเฟรช</button>
-          <button id="btn-rules-export" class="btn-admin secondary ml-2">📊 Export</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MRR Rates Management -->
-    <div class="admin-card">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+</h2>
+<!-- Rules Table -->
+<div class="overflow-x-auto">
+<table class="admin-table">
+<thead>
+<tr>
+<th>ธนาคาร</th>
+<th>ผลิตภัณฑ์</th>
+<th>ทรัพย์</th>
+<th>บ้านหลังที่</th>
+<th>DSR cap (%)</th>
+<th>LTV cap (%)</th>
+<th>ผ่อนสูงสุด (ปี)</th>
+<th>อายุสูงสุดเมื่อผ่อนครบ</th>
+<th>รายได้ขั้นต่ำ</th>
+<th>ค่าครองชีพขั้นต่ำ/เดือน</th>
+<th>ลำดับความสำคัญ</th>
+<th>การทำงาน</th>
+</tr>
+</thead>
+<tbody id="rules-body">
+<tr>
+<td class="text-center text-gray-500 py-4" colspan="12">กำลังโหลดข้อมูล...</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Add Rule Form -->
+<div class="admin-form">
+<div>
+<label>ธนาคาร</label>
+<select id="new-rule-bank">
+<option value="">เลือกธนาคาร</option>
+</select>
+</div>
+<div>
+<label>ผลิตภัณฑ์</label>
+<select id="new-rule-product">
+<option>MORTGAGE</option>
+<option>REFINANCE</option>
+<option>PERSONAL</option>
+<option>SME</option>
+</select>
+</div>
+<div>
+<label>ประเภททรัพย์</label>
+<select id="new-rule-prop">
+<option value="">— ทุกประเภท —</option>
+<option>HOUSE</option>
+<option>TOWNHOME</option>
+<option>CONDO</option>
+<option>LAND+HOUSE</option>
+</select>
+</div>
+<div>
+<label>บ้านหลังที่</label>
+<select id="new-rule-home">
+<option value="">— ไม่ระบุ —</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3+</option>
+</select>
+</div>
+<div>
+<label>DSR cap (%)</label>
+<input id="new-rule-dsr" max="100" placeholder="70" step="0.01" type="number"/>
+</div>
+<div>
+<label>LTV cap (%)</label>
+<input id="new-rule-ltv" max="100" placeholder="90" step="0.01" type="number"/>
+</div>
+<div>
+<label>ผ่อนสูงสุด (ปี)</label>
+<input id="new-rule-years" max="50" placeholder="30" type="number"/>
+</div>
+<div>
+<label>อายุสูงสุดเมื่อครบกำหนด</label>
+<input id="new-rule-age" max="100" placeholder="70" type="number"/>
+</div>
+<div>
+<label>รายได้ขั้นต่ำ (บาท)</label>
+<input id="new-rule-income" placeholder="15000" type="number"/>
+</div>
+<div>
+<label>ค่าครองชีพขั้นต่ำ/เดือน</label>
+<input id="new-rule-mlc" placeholder="10000" type="number"/>
+</div>
+<div>
+<label>ลำดับความสำคัญ</label>
+<input id="new-rule-priority" min="1" placeholder="1" type="number"/>
+</div>
+<div class="md:col-span-2">
+<button class="btn-admin mr-2" id="btn-rules-add">➕ เพิ่มกฎเกณฑ์</button>
+<button class="btn-admin secondary" id="btn-rules-refresh">🔄 รีเฟรช</button>
+<button class="btn-admin secondary ml-2" id="btn-rules-export">📊 Export</button>
+</div>
+</div>
+</div>
+<!-- MRR Rates Management -->
+<div class="admin-card">
+<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
         📈 จัดการอัตรา MRR
         <span class="text-sm font-normal text-gray-500">(อัตราดอกเบี้ยอ้างอิง)</span>
-      </h2>
-
-      <!-- MRR Rates Table -->
-      <div class="overflow-x-auto">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ธนาคาร</th>
-              <th>ผลิตภัณฑ์</th>
-              <th>อัตรา MRR (%)</th>
-              <th>วันที่มีผล</th>
-              <th>สถานะ</th>
-              <th>การทำงาน</th>
-            </tr>
-          </thead>
-          <tbody id="mrr-body">
-            <tr>
-              <td colspan="6" class="text-center text-gray-500 py-4">กำลังโหลดข้อมูล...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Add MRR Rate Form -->
-      <div class="admin-form">
-        <div>
-          <label>ธนาคาร</label>
-          <select id="new-mrr-bank">
-            <option value="">เลือกธนาคาร</option>
-          </select>
-        </div>
-        <div>
-          <label>ผลิตภัณฑ์</label>
-          <select id="new-mrr-product">
-            <option>MORTGAGE</option>
-            <option>REFINANCE</option>
-            <option>PERSONAL</option>
-            <option>SME</option>
-          </select>
-        </div>
-        <div>
-          <label>อัตรา MRR (%)</label>
-          <input id="new-mrr-rate" type="number" step="0.01" placeholder="7.25" />
-        </div>
-        <div>
-          <label>วันที่มีผล</label>
-          <input id="new-mrr-date" type="date" />
-        </div>
-        <div class="md:col-span-2">
-          <button id="btn-mrr-add" class="btn-admin mr-2">➕ เพิ่มอัตรา MRR</button>
-          <button id="btn-mrr-refresh" class="btn-admin secondary">🔄 รีเฟรช</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- System Tools -->
-    <div class="admin-card">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+</h2>
+<!-- MRR Rates Table -->
+<div class="overflow-x-auto">
+<table class="admin-table">
+<thead>
+<tr>
+<th>ธนาคาร</th>
+<th>ผลิตภัณฑ์</th>
+<th>อัตรา MRR (%)</th>
+<th>วันที่มีผล</th>
+<th>สถานะ</th>
+<th>การทำงาน</th>
+</tr>
+</thead>
+<tbody id="mrr-body">
+<tr>
+<td class="text-center text-gray-500 py-4" colspan="6">กำลังโหลดข้อมูล...</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Add MRR Rate Form -->
+<div class="admin-form">
+<div>
+<label>ธนาคาร</label>
+<select id="new-mrr-bank">
+<option value="">เลือกธนาคาร</option>
+</select>
+</div>
+<div>
+<label>ผลิตภัณฑ์</label>
+<select id="new-mrr-product">
+<option>MORTGAGE</option>
+<option>REFINANCE</option>
+<option>PERSONAL</option>
+<option>SME</option>
+</select>
+</div>
+<div>
+<label>อัตรา MRR (%)</label>
+<input id="new-mrr-rate" placeholder="7.25" step="0.01" type="number"/>
+</div>
+<div>
+<label>วันที่มีผล</label>
+<input id="new-mrr-date" type="date"/>
+</div>
+<div class="md:col-span-2">
+<button class="btn-admin mr-2" id="btn-mrr-add">➕ เพิ่มอัตรา MRR</button>
+<button class="btn-admin secondary" id="btn-mrr-refresh">🔄 รีเฟรช</button>
+</div>
+</div>
+</div>
+<!-- System Tools -->
+<div class="admin-card">
+<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
         🛠️ เครื่องมือระบบ
       </h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <button class="btn-admin" onclick="adminManager?.exportAllData()">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<button class="btn-admin" onclick="adminManager?.exportAllData()">
           💾 Export ข้อมูลทั้งหมด
         </button>
-        <button class="btn-admin secondary" onclick="adminManager?.clearCache()">
+<button class="btn-admin secondary" onclick="adminManager?.clearCache()">
           🧹 ล้าง Cache
         </button>
-        <button class="btn-admin secondary" onclick="adminManager?.refreshAll()">
+<button class="btn-admin secondary" onclick="adminManager?.refreshAll()">
           🔄 รีเฟรชทั้งหมด
         </button>
-        <button class="btn-admin secondary" onclick="showSystemInfo()">
+<button class="btn-admin secondary" onclick="showSystemInfo()">
           ℹ️ ข้อมูลระบบ
         </button>
-      </div>
-
-      <!-- Activity Log -->
-      <div style="margin-top: 20px;">
-        <h4>📊 สถิติการใช้งาน (24 ชั่วโมงล่าสุด)</h4>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <div class="text-center p-3 bg-blue-50 rounded">
-            <div class="text-2xl font-bold text-blue-600" id="stat-page-views">—</div>
-            <div class="text-sm text-gray-600">Page Views</div>
-          </div>
-          <div class="text-center p-3 bg-green-50 rounded">
-            <div class="text-2xl font-bold text-green-600" id="stat-calculations-24h">—</div>
-            <div class="text-sm text-gray-600">การคำนวณ</div>
-          </div>
-          <div class="text-center p-3 bg-yellow-50 rounded">
-            <div class="text-2xl font-bold text-yellow-600" id="stat-active-users">—</div>
-            <div class="text-sm text-gray-600">ผู้ใช้ออนไลน์</div>
-          </div>
-          <div class="text-center p-3 bg-purple-50 rounded">
-            <div class="text-2xl font-bold text-purple-600" id="stat-errors">—</div>
-            <div class="text-sm text-gray-600">Errors</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="admin-card">
-      <h2 class="text-xl font-semibold mb-4">⚡ Quick Actions</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="p-4 border border-gray-200 rounded-lg">
-          <h4 class="font-semibold mb-2">🏦 เพิ่มธนาคารใหม่</h4>
-          <div class="space-y-2">
-            <input id="quick-bank-name" placeholder="ชื่อธนาคาร" class="w-full px-3 py-2 border rounded" />
-            <input id="quick-bank-short" placeholder="ชื่อย่อ (เช่น KBANK)" class="w-full px-3 py-2 border rounded" />
-            <button class="btn-admin w-full" onclick="quickAddBank()">เพิ่มธนาคาร</button>
-          </div>
-        </div>
-
-        <div class="p-4 border border-gray-200 rounded-lg">
-          <h4 class="font-semibold mb-2">🎯 เพิ่มโปรโมชันด่วน</h4>
-          <div class="space-y-2">
-            <select id="quick-promo-bank" class="w-full px-3 py-2 border rounded">
-              <option>เลือกธนาคาร</option>
-            </select>
-            <input id="quick-promo-title" placeholder="ชื่อโปรโมชัน" class="w-full px-3 py-2 border rounded" />
-            <input id="quick-promo-rate" placeholder="อัตราดอกเบี้ย %" class="w-full px-3 py-2 border rounded" />
-            <button class="btn-admin w-full" onclick="quickAddPromotion()">เพิ่มโปรโมชัน</button>
-          </div>
-        </div>
-
-        <div class="p-4 border border-gray-200 rounded-lg">
-          <h4 class="font-semibold mb-2">📊 รายงานด่วน</h4>
-          <div class="space-y-2">
-            <button class="btn-admin secondary w-full" onclick="generateDailyReport()">รายงานประจำวัน</button>
-            <button class="btn-admin secondary w-full" onclick="generateWeeklyReport()">รายงานประจำสัปดาห์</button>
-            <button class="btn-admin secondary w-full" onclick="generateMonthlyReport()">รายงานประจำเดือน</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="text-center py-8 text-gray-500">
-    <p>&copy; 2024 Loan App Admin Console</p>
-    <p class="text-sm mt-2">Powered by Supabase • Real-time Updates Enabled</p>
-  </div>
-
-  <!-- Scripts -->
-  <script>
+</div>
+<!-- Activity Log -->
+<div style="margin-top: 20px;">
+<h4>📊 สถิติการใช้งาน (24 ชั่วโมงล่าสุด)</h4>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+<div class="text-center p-3 bg-blue-50 rounded">
+<div class="text-2xl font-bold text-blue-600" id="stat-page-views">—</div>
+<div class="text-sm text-gray-600">Page Views</div>
+</div>
+<div class="text-center p-3 bg-green-50 rounded">
+<div class="text-2xl font-bold text-green-600" id="stat-calculations-24h">—</div>
+<div class="text-sm text-gray-600">การคำนวณ</div>
+</div>
+<div class="text-center p-3 bg-yellow-50 rounded">
+<div class="text-2xl font-bold text-yellow-600" id="stat-active-users">—</div>
+<div class="text-sm text-gray-600">ผู้ใช้ออนไลน์</div>
+</div>
+<div class="text-center p-3 bg-purple-50 rounded">
+<div class="text-2xl font-bold text-purple-600" id="stat-errors">—</div>
+<div class="text-sm text-gray-600">Errors</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="admin-card">
+<h2 class="text-xl font-semibold mb-4">⚡ Quick Actions</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="p-4 border border-gray-200 rounded-lg">
+<h4 class="font-semibold mb-2">🏦 เพิ่มธนาคารใหม่</h4>
+<div class="space-y-2">
+<input class="w-full px-3 py-2 border rounded" id="quick-bank-name" placeholder="ชื่อธนาคาร"/>
+<input class="w-full px-3 py-2 border rounded" id="quick-bank-short" placeholder="ชื่อย่อ (เช่น KBANK)"/>
+<button class="btn-admin w-full" onclick="quickAddBank()">เพิ่มธนาคาร</button>
+</div>
+</div>
+<div class="p-4 border border-gray-200 rounded-lg">
+<h4 class="font-semibold mb-2">🎯 เพิ่มโปรโมชันด่วน</h4>
+<div class="space-y-2">
+<select class="w-full px-3 py-2 border rounded" id="quick-promo-bank">
+<option>เลือกธนาคาร</option>
+</select>
+<input class="w-full px-3 py-2 border rounded" id="quick-promo-title" placeholder="ชื่อโปรโมชัน"/>
+<input class="w-full px-3 py-2 border rounded" id="quick-promo-rate" placeholder="อัตราดอกเบี้ย %"/>
+<button class="btn-admin w-full" onclick="quickAddPromotion()">เพิ่มโปรโมชัน</button>
+</div>
+</div>
+<div class="p-4 border border-gray-200 rounded-lg">
+<h4 class="font-semibold mb-2">📊 รายงานด่วน</h4>
+<div class="space-y-2">
+<button class="btn-admin secondary w-full" onclick="generateDailyReport()">รายงานประจำวัน</button>
+<button class="btn-admin secondary w-full" onclick="generateWeeklyReport()">รายงานประจำสัปดาห์</button>
+<button class="btn-admin secondary w-full" onclick="generateMonthlyReport()">รายงานประจำเดือน</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="text-center py-8 text-gray-500">
+<p>© 2024 Loan App Admin Console</p>
+<p class="text-sm mt-2">Powered by Supabase • Real-time Updates Enabled</p>
+</div>
+<!-- Scripts -->
+<script>
     // System info dialog
     function showSystemInfo() {
       alert(`🖥️ ข้อมูลระบบ
