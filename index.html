@@ -24,15 +24,17 @@
 <!-- App Initialization -->
   <script type="module">
     // Disable complex imports temporarily to fix syntax errors
-    // import { AuthManager } from './js/auth-manager.js';
-    // import { ErrorHandler } from './js/error-handler.js';
-    // import { registerServiceWorker } from './sw-register.js';
-    // import './js/supabase-client.js';
+    import { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton } from './auth-manager.js';
+    // (optional) import ErrorHandler if needed
+    // SW registration is added at the bottom
+    // Supabase client is imported inside auth-manager.js
 
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('App starting...');
-      
-      // Basic setup without external modules
+      await AuthManager.initialize();
+      setupLoginForm();
+      setupLogoutButton();
+      updateAuthUI();
       setupUI();
       setupPWA();
     });
