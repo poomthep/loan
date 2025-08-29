@@ -1,0 +1,113 @@
+{
+  "version": 2,
+  "name": "loan-app",
+  "alias": ["loan-app"],
+  "public": true,
+  "github": {
+    "enabled": true,
+    "autoAlias": true
+  },
+  "buildCommand": "echo 'Static site - no build needed'",
+  "outputDirectory": "./",
+  "installCommand": "echo 'No install needed for static site'",
+  "devCommand": "npx serve . --port 3000",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://your-supabase-project.supabase.co/rest/v1/$1"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/index.html",
+      "permanent": true
+    },
+    {
+      "source": "/calculator",
+      "destination": "/loan.html", 
+      "permanent": true
+    },
+    {
+      "source": "/admin-panel",
+      "destination": "/admin.html",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed", 
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/css/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control", 
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "trailingSlash": false,
+  "cleanUrls": true,
+  "functions": {
+    "app/api/health.js": {
+      "maxDuration": 10
+    }
+  },
+  "regions": ["iad1", "sin1"],
+  "crons": [],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
