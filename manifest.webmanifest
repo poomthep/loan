@@ -2,7 +2,7 @@
   "name": "Loan App - เครื่องมือวิเคราะห์สินเชื่อ",
   "short_name": "Loan App",
   "description": "เครื่องมือวิเคราะห์และเปรียบเทียบสินเชื่อจากธนาคารชั้นนำ คำนวณ DSR, LTV และหาข้อเสนอที่ดีที่สุด",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
@@ -12,7 +12,7 @@
   "categories": ["finance", "business", "productivity"],
   "icons": [
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHZpZXdCb3g9IjAgMCA3MiA3MiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiByeD0iMTYiIGZpbGw9IiMwMDdiZmYiLz4KPHRleHQgeD0iMzYiIHk9IjQ1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIyNCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj7wn4+mPC90ZXh0Pgo8L3N2Zz4K",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHZpZXdCb3g9IjAgMCA3MiA3MiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiByeD0iMTYiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSIxOCIgeT0iMTgiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01aDNWOWg0djNoM2wtNSA1eiIvPgo8L3N2Zz4KPC9zdmc+",
       "sizes": "72x72",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -36,13 +36,13 @@
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMS45OSAyQzYuNDcgMiAyIDYuNDggMiAxMnM0LjQ3IDEwIDkuOTkgMTBDMTcuNTIgMjIgMjIgMTcuNTIgMjIgMTJTMTcuNTIgMiAxMS45OSAyem0zLjMgMTRoLTIuNnYtMmgyLjZ2MnptLS44NC04Ljk2Yy0uMzMuNjUtLjc4IDEuMTctMS4zNCAxLjU2LS41Ni4zOS0xLjE1Ljc5LTEuNzggMS4xOS0uNjMuNDEtMS4xNy44OS0xLjYxIDEuNDYtLjQ0LjU3LS42NiAxLjI0LS42NiAyLjAydi40M2gyLjMzdi0uNDNjMC0uMzkuMTMtLjcxLjM5LS45Ni4yNi0uMjUuNjEtLjQ3IDEuMDQtLjY3LjQzLS4yLjg3LS40MyAxLjMxLS42OS40NC0uMjYuODEtLjU3IDEuMTEtLjkyLjMtLjM1LjQ1LS43Ny40NS0xLjI3IDAtLjU5LS4yMS0xLjA2LS42My0xLjQxLS40Mi0uMzUtMS4wMS0uNTMtMS43Ny0uNTMtLjc2IDAtMS4zNS4xOC0xLjc3LjUzLS40Mi4zNS0uNjMuODItLjYzIDEuNDF2LjE4SC0uMDhWMTJjMC0xLjI4LjM5LTIuMzEgMS4xNi0zLjEuNzctLjc5IDEuODYtMS4xOSAzLjI3LTEuMTlzMi41LjQgMy4yNyAxLjE5Yy43Ny43OSAxLjE2IDEuODIgMS4xNiAzLjEgMCAuNTgtLjEyIDEuMDktLjM0IDEuNTN6Ii8+Cjwvc3ZnPgo8L3N2Zz4K",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01aDNWOWg0djNoM2wtNSA1eiIvPgo8L3N2Zz4KPC9zdmc+",
       "sizes": "192x192",
       "type": "image/svg+xml", 
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTAwIiBmaWxsPSIjMDA3YmZmIi8+CjxzdmcgeD0iMTI4IiB5PSIxMjgiIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4em0zLjUtOUwxMiAxMy41VjdoMS41djZsMy43NSAzLjc1LTEuMDYgMS4wNnoiLz4KPC9zdmc+CjxzdmcgeD0iNjQiIHk9IjM1MiIgd2lkdGg9IjM4NCIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDM4NCA5NiIgZmlsbD0id2hpdGUiPgo8dGV4dCB4PSIxOTIiIHk9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI0OCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+TG9hbiBBcHA8L3RleHQ+CjwvU3ZnPgo8L3N2Zz4K",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTAwIiBmaWxsPSIjMDA3YmZmIi8+CjxzdmcgeD0iMTI4IiB5PSIxMjgiIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bS0yIDE1bC01LTVoM1Y5aDR2M2gzbC01IDV6Ii8+Cjwvc3ZnPgo8L3N2Zz4K",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -74,20 +74,6 @@
       ]
     }
   ],
-  "screenshots": [
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4MCIgaGVpZ2h0PSI3MjAiIHZpZXdCb3g9IjAgMCAxMjgwIDcyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyODAiIGhlaWdodD0iNzIwIiBmaWxsPSIjZjhmOWZhIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjQwIiByeD0iMjAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSI2NDAiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI0OCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjMzMzIj5Mb2FuIEFwcCAtIHZ3w6xyb8KK4oCRw6LCvcKCw4bDo8KCwonDhcOHw61Fcsudyr3DksKCwoDDqsKOwqTDuMKCwozDosK8wrfCtcOgwrnChoOBPC90ZXh0Pgo8cmVjdCB4PSIxMDAiIHk9IjIwMCIgd2lkdGg9IjUwMCIgaGVpZ2h0PSI0MDAiIHJ4PSIxMCIgZmlsbD0iIzAwN2JmZiIgb3BhY2l0eT0iMC4xIi8+CjxyZWN0IHg9IjY4MCIgeT0iMjAwIiB3aWR0aD0iNTAwIiBoZWlnaHQ9IjQwMCIgcng9IjEwIiBmaWxsPSIjMjhhNzQ1IiBvcGFjaXR5PSIwLjEiLz4KPHRleHQgeD0iMzUwIiB5PSI0MjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZmlsbD0iIzAwN2JmZiI+w6rDs8KCwqLDpsKDwqHDnsKAw7fDoMKCwqDDpcKCwqU8L3RleHQ+Cjx0ZXh0IHg9IjkzMCIgeT0iNDIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjI0IiBmb250LWZhbWlseT0iQXJpYWwiIGZpbGw9IiMyOGE3NDUiPkFkbWluIFBhbmVsPC90ZXh0Pgo8L3N2Zz4K",
-      "sizes": "1280x720",
-      "type": "image/svg+xml",
-      "form_factor": "wide"
-    },
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUwIiBoZWlnaHQ9IjEzMzQiIHZpZXdCb3g9IjAgMCA3NTAgMTMzNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijc1MCIgaGVpZ2h0PSIxMzM0IiBmaWxsPSIjZjhmOWZhIi8+CjxyZWN0IHg9IjIwIiB5PSI2MCIgd2lkdGg9IjcxMCIgaGVpZ2h0PSIxMjE0IiByeD0iNDAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSIzNzUiIHk9IjE0MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzNiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjMzMzIj5Mb2FuIEFwcDwvdGV4dD4KPHJlY3QgeD0iNjAiIHk9IjIwMCIgd2lkdGg9IjYzMCIgaGVpZ2h0PSI4MDAiIHJ4PSIyMCIgZmlsbD0iIzAwN2JmZiIgb3BhY2l0eT0iMC4wNSIvPgo8dGV4dCB4PSIzNzUiIHk9IjYyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjMDA3YmZmIj5Nb2JpbGUgUmVhZHk8L3RleHQ+CjwvcnJnPgo8L3N2Zz4K",
-      "sizes": "750x1334", 
-      "type": "image/svg+xml",
-      "form_factor": "narrow"
-    }
-  ],
   "related_applications": [],
   "prefer_related_applications": false,
   "dir": "ltr",
@@ -111,14 +97,5 @@
         "text/csv": [".csv"]
       }
     }
-  ],
-  "share_target": {
-    "action": "/loan.html",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
+  ]
 }
