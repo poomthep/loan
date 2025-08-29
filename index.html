@@ -13,6 +13,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Loan App">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏦</text></svg>">
   
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,7 +21,6 @@
   <!-- Styles -->
   <link rel="stylesheet" href="./css/styles.css">
   
-  <!-- App Initialization -->
 <!-- App Initialization -->
   <script type="module">
     // Disable complex imports temporarily to fix syntax errors
@@ -568,5 +568,98 @@ window.addEventListener('beforeinstallprompt', function(e) {
       }, 10000);
     }
   </script>
+  
+  <!-- Scripts -->
+  <script>
+    // Global message function
+    function showMessage(message, type = 'info') {
+      const messageBox = document.createElement('div');
+      
+      let backgroundColor = '#2196F3';
+      if (type === 'error') backgroundColor = '#f44336';
+      if (type === 'success') backgroundColor = '#4CAF50';
+      if (type === 'warning') backgroundColor = '#ff9800';
+      
+      messageBox.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${backgroundColor};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 350px;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 14px;
+      `;
+      
+      messageBox.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" 
+                  style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: 15px;">×</button>
+        </div>
+      `;
+      
+      document.body.appendChild(messageBox);
+      
+      setTimeout(() => {
+        if (messageBox.parentElement) {
+          messageBox.remove();
+        }
+      }, 5000);
+    }
+
+    function showSignupForm() {
+      showMessage('ระบบสมัครสมาชิกจะเปิดใช้งานเร็วๆ นี้', 'info');
+    }
+
+    function showHistory() {
+      const userEmail = document.getElementById('user-email').textContent;
+      if (!userEmail || userEmail === '—') {
+        showMessage('กรุณาเข้าสู่ระบบก่อนเพื่อดูประวัติ', 'warning');
+      } else {
+        window.location.href = './loan.html#history';
+      }
+    }
+
+    // PWA handling
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      console.log('PWA install prompt handled');
+    });
+
+    // Page initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('App starting...');
+      
+      // Update connection status
+      const statusEl = document.getElementById('connection-status');
+      if (statusEl) {
+        statusEl.innerHTML = '🟢 พร้อมใช้งาน';
+        statusEl.style.color = '#28a745';
+      }
+
+      // Add loading states to buttons
+      document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          if (this.href && !this.href.includes('#')) {
+            this.innerHTML = '⏳ กำลังโหลด...';
+            this.disabled = true;
+          }
+        });
+      });
+
+      // Show welcome message
+      setTimeout(() => {
+        showMessage('ยินดีต้อนรับสู่ Loan App!', 'success');
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
+  
 </body>
 </html>
