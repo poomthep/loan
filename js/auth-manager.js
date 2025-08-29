@@ -164,7 +164,7 @@ export class AuthManager {
         .from('user_profiles')
         .select('*')
         .eq('id', this.currentUser.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = row not found
         throw error;
