@@ -881,7 +881,8 @@ if (typeof window !== 'undefined') {
 // EXPORT
 // ========================================
 
-export default AdminManager;.innerHTML = '<td colspan="19" style="text-align: center; color: #666;">ไม่มีข้อมูลโปรโมชัน</td>';
+export default AdminManager;
+// stray removed: .innerHTML = '<td colspan="19" style="text-align: center; color: #666;">ไม่มีข้อมูลโปรโมชัน</td>';
       this.elements.promoBody.appendChild(row);
       return;
     }

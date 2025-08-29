@@ -1,9 +1,7 @@
 {
   "version": 2,
   "name": "loan-app",
-  "alias": [
-    "loan-app"
-  ],
+  "alias": ["loan-app"],
   "public": true,
   "github": {
     "enabled": true,
@@ -28,7 +26,7 @@
     },
     {
       "source": "/calculator",
-      "destination": "/loan.html",
+      "destination": "/loan.html", 
       "permanent": true
     },
     {
@@ -46,7 +44,7 @@
           "value": "public, max-age=0, must-revalidate"
         },
         {
-          "key": "Service-Worker-Allowed",
+          "key": "Service-Worker-Allowed", 
           "value": "/"
         }
       ]
@@ -94,26 +92,8 @@
       "source": "/js/(.*)",
       "headers": [
         {
-          "key": "Cache-Control",
+          "key": "Cache-Control", 
           "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store"
-        }
-      ]
-    },
-    {
-      "source": "/",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store"
         }
       ]
     }
@@ -125,10 +105,7 @@
       "maxDuration": 10
     }
   },
-  "regions": [
-    "iad1",
-    "sin1"
-  ],
+  "regions": ["iad1", "sin1"],
   "crons": [],
   "env": {
     "NODE_ENV": "production"

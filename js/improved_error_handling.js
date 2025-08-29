@@ -1,5 +1,5 @@
 // การจัดการข้อผิดพลาดที่ปรับปรุงแล้วสำหรับแอป Loan App
-class AppErrorHandler {
+class ErrorHandler {
   constructor() {
     this.setupGlobalErrorHandling();
   }
@@ -129,7 +129,7 @@ class AppErrorHandler {
 }
 
 // สร้าง instance ของ ErrorHandler
-const errorHandler = new AppErrorHandler();
+const errorHandler = new ErrorHandler();
 
 // ฟังก์ชันจัดการข้อผิดพลาด Supabase เฉพาะ
 class SupabaseErrorHandler {
@@ -192,5 +192,5 @@ window.addEventListener('offline', () => {
 
 // Export สำหรับใช้ในไฟล์อื่น
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AppErrorHandler, SupabaseErrorHandler, checkNetworkStatus };
+  module.exports = { ErrorHandler, SupabaseErrorHandler, checkNetworkStatus };
 }
