@@ -34,8 +34,24 @@ export class AdminManager {
       console.log('🔧 Initializing Admin Manager...');
 
       // Check admin permissions
-      if (!AuthManager.isAdmin()) {
-        throw new Error('Access denied: Admin privileges required');
+      // Ensure profile is loaded; then wait a little for role=admin
+      try { await AuthManager.loadUserProfile && AuthManager.loadUserProfile(); } catch(e){}
+      let role = (AuthManager.userProfile && AuthManager.userProfile.role) || null;
+      if (role !== 'admin') {
+        const t0 = Date.now();
+        while (Date.now() - t0 < 6000) { // retry up to 6s
+          try {
+            await (AuthManager.loadUserProfile && AuthManager.loadUserProfile());
+            role = (AuthManager.userProfile && AuthManager.userProfile.role) || null;
+            if (role === 'admin') break;
+          } catch(e){}
+          await new Promise(r=>setTimeout(r, 250));
+        }
+      }
+      if (role !== 'admin') {
+        console.error('Access denied: Admin privileges required');
+        window.showMessage && window.showMessage('Access denied: Admin only', 'error');
+        return; // don't throw; just stop initializing quietly
       }
 
       // Load initial data
