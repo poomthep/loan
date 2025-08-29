@@ -23,7 +23,7 @@
   
 <!-- App Initialization -->
   <script type="module">
-  // Dynamic import with path fallbacks for Netlify/Vercel (root or /js/)
+  // ===== Auth dynamic import with fallbacks =====
   async function loadAuthModule() {
     const candidates = [
       '/js/auth-manager.js',
@@ -32,13 +32,8 @@
       '/auth-manager.js'
     ];
     for (const p of candidates) {
-      try {
-        const m = await import(p);
-        console.log('[Auth] loaded from', p);
-        return m;
-      } catch (e) {
-        console.warn('[Auth] not found at', p);
-      }
+      try { const m = await import(p); console.log('[Auth] loaded from', p); return m; }
+      catch (e) { console.warn('[Auth] not found at', p); }
     }
     return null;
   }
@@ -48,7 +43,7 @@
     const auth = await loadAuthModule();
     if (auth) {
       const { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton } = auth;
-      try { await AuthManager.initialize(); } catch (e) { console.error('Auth init failed', e); }
+      try { await AuthManager.initialize(); } catch(e){ console.error(e); }
       try { setupLoginForm && setupLoginForm(); } catch(e){ console.warn(e); }
       try { setupLogoutButton && setupLogoutButton(); } catch(e){ console.warn(e); }
       try { updateAuthUI && updateAuthUI(); } catch(e){ console.warn(e); }
@@ -56,11 +51,12 @@
     } else {
       console.error('AuthManager module not found — login UI will be static (GUEST).');
     }
-
-    // Recreate minimal previous bootstrap
     try { setupUI && setupUI(); } catch(e){}
     try { setupPWA && setupPWA(); } catch(e){}
   });
+
+  // ===== Helpers (kept inside script; previously leaked to DOM) =====
+
 </script>
 function setupUI() {
       // Connection status indicator
