@@ -9,19 +9,28 @@ import LoanCalculator from './loan-calculator-supabase.js';
 /* ------------------------------------------------
  * Helpers: AuthManager (global) + wait until ready
  * ------------------------------------------------ */
+// ===== FIXED: helper ปลอดภัย ไม่โยน Error ถ้าไม่เจอ =====
 function getAM() {
-  if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
-  throw new Error('AuthManager ยังไม่พร้อม');
+  return (typeof window !== 'undefined' && window.AuthManager)
+    ? window.AuthManager
+    : null; // ให้ null แทนการ throw
 }
 
-async function waitForAuthManager(timeoutMs = 6000, step = 100) {
+// ===== NEW: รอให้ AuthManager พร้อมแบบยืดหยุ่น =====
+async function waitForAuthManager(maxWaitMs = 8000, intervalMs = 100) {
   const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
-    await new Promise(r => setTimeout(r, step));
+  while (Date.now() - start < maxWaitMs) {
+    const am = getAM();
+    if (am && typeof am.initialize === 'function') {
+      return am; // เจอแล้ว คืนออกทันที
+    }
+    await new Promise(r => setTimeout(r, intervalMs));
   }
-  throw new Error('AuthManager ยังไม่พร้อม');
+  // หมดเวลารอ: คืน null (ไม่ throw) แล้วให้ทำงานแบบ Guest ต่อ
+  console.warn('[LoanApp] AuthManager not found within wait window. Continue as GUEST mode.');
+  return null;
 }
+
 
 /**
  * จัดการแอปพลิเคชันหลักสำหรับการคำนวณสินเชื่อ
@@ -44,38 +53,40 @@ export class LoanAppManager {
 
   /**
    * เริ่มต้นแอปพลิเคชัน
-   */
-  async initialize() {
-    try {
-      console.log('🚀 Initializing Loan App...');
+// ===== FIXED: initialize() ไม่พังถ้า AuthManager ไม่พร้อม =====
+async initialize() {
+  try {
+    console.log('🚀 Initializing Loan App...');
 
-      // รอให้ AuthManager (global) พร้อมก่อน
-      await waitForAuthManager();
-      const AM = getAM();
-      await AM.initialize?.();
-
-      // Setup UI event listeners
-      this.setupEventListeners();
-
-      // Check database connection
-      const connected = await DataManager.checkDatabaseConnection();
-      this.updateConnectionStatus(connected);
-
-      // Setup real-time updates
-      this.setupRealTimeUpdates();
-
-      // Load initial data
-      await this.loadInitialData();
-
-      // Load calculation history
-      await this.loadCalculationHistory();
-
-      console.log('✅ Loan App initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize Loan App:', error);
-      this.showNotification('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง', 'error');
+    // รอ AuthManager (สูงสุด ~8s) ถ้าไม่เจอ จะทำงานต่อแบบ guest
+    const AM = await waitForAuthManager(8000);
+    if (AM) {
+      try {
+        await AM.initialize();
+      } catch (e) {
+        console.warn('[LoanApp] AuthManager.initialize() failed, continue as guest:', e);
+      }
     }
+
+    // ตั้งค่า event ต่าง ๆ ของ UI
+    this.setupEventListeners();
+
+    // ตรวจการเชื่อมต่อฐานข้อมูล
+    const connected = await DataManager.checkDatabaseConnection();
+    this.updateConnectionStatus(connected);
+
+    // ติด realtime และโหลดข้อมูลตั้งต้น + ประวัติ
+    this.setupRealTimeUpdates();
+    await this.loadInitialData();
+    await this.loadCalculationHistory();
+
+    console.log('✅ Loan App initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Loan App:', error);
+    this.showNotification('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง', 'error');
   }
+}
+
 
   /**
    * ผูก DOM elements
@@ -960,22 +971,26 @@ export class LoanAppManager {
   /**
    * ทำความสะอาดก่อนปิดแอป
    */
-  cleanup() {
-    // Cleanup calculator subscriptions
-    this.calculator.cleanup?.();
+// ===== FIXED: cleanup() เรียก AuthManager แบบปลอดภัย =====
+cleanup() {
+  // ปิด subscription ของ calculator
+  this.calculator.cleanup();
 
-    // Cleanup auth manager
-    try { getAM().cleanup?.(); } catch (_) {}
-
-    // Clear cache
-    DataManager.clearAllCache?.();
-
-    // Remove event listeners (อย่างง่าย)
-    this.elements = {};
-
-    console.log('🧹 Loan App cleaned up');
+  // cleanup ของ AuthManager (ถ้ามี)
+  const AM = getAM();
+  if (AM && typeof AM.cleanup === 'function') {
+    try { AM.cleanup(); } catch (_) {}
   }
+
+  // เคลียร์ cache ของ DataManager
+  DataManager.clearAllCache?.();
+
+  // เอา event ออก
+  this.removeEventListeners();
+
+  console.log('🧹 Loan App cleaned up');
 }
+
 
 // ========================================
 // UTILITY FUNCTIONS FOR BACKWARD COMPAT
