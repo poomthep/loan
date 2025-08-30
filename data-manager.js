@@ -4,6 +4,13 @@
  * - ผูก API ไว้ที่ window.DataManager
  * - ต้องมี window.supabase (โหลดจาก supabase-init.js มาก่อน)
  */
+ 
+  // /js/data-manager.js   (alias ไปที่ data-manager.fix.js)
+export * from './data-manager.fix.js';
+import * as NS from './data-manager.fix.js';
+export default (NS.default ?? NS);
+ 
+ 
 (function (global) {
   'use strict';
 
