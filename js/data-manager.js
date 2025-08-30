@@ -52,20 +52,26 @@
      */
 // ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
 init: function () {
-  // อ้างตรง ๆ เพื่อกัน this เพี้ยน
+  // อ้างตรงเพื่อตัดปัญหา this เพี้ยน
   return DataManager.preloadBanks().then(function () { return true; });
 },
 
 
+
     /**
      * โหลดรายชื่อธนาคารและแคช
-// ✅ วางทับในอ็อบเจ็กต์ DataManager ให้ตรงชื่อฟังก์ชันเดิม
+// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
 preloadBanks: function () {
   var self = this;
-  var sb = ensureClient();
+  var sb = (function () {
+    var s = window && window.supabase;
+    if (!s || typeof s.from !== 'function') throw new Error('Supabase client (window.supabase) is required');
+    return s;
+  })();
+
   return sb
     .from('banks')
-    // ❌ เอา bank_name ออก เพราะไม่มีคอลัมน์นี้ในตาราง
+    // เลือกเฉพาะคอลัมน์ที่มีจริงในตารางของกุ้ง
     .select('id, name, short_name, is_active')
     .order('short_name', { ascending: true })
     .then(function (resp) {
@@ -74,6 +80,7 @@ preloadBanks: function () {
       return self._cache.banks;
     });
 },
+
 
 
     /**

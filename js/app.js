@@ -1,179 +1,37 @@
-// js/app.js
-// ========================================
-// Main App Controller for index.html
-// ========================================
+/*! app.js (global, no-module) */
+(function () {
+  'use strict';
 
-import { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton, showNotification } from './auth-manager.js';
-
-import { registerServiceWorker } from '../sw-register.js';
-import { testSupabaseConnection } from './supabase-client.js';
-
-// ใช้ตัว global ที่มาจาก data-manager.js
-const DataManager = window.DataManager;
-
-// ✅ วางทับฟังก์ชันเริ่มต้นของเดิม
-// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
-function bootstrapApp() {
-  try {
-    if (!window.supabase || typeof window.supabase.from !== 'function') {
-      throw new Error('Supabase client not initialized');
-    }
-    const DM = window.DataManager;
-    if (!DM || typeof DM.init !== 'function') {
-      throw new Error('DataManager not ready');
-    }
-    // ถ้ามี AuthManager ให้เริ่มก่อน (ไม่บังคับ)
-    if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
-      window.AuthManager.initialize().finally(() => {
-        DM.init().then(() => console.log('App ready')).catch(console.error);
-      });
-    } else {
-      DM.init().then(() => console.log('App ready')).catch(console.error);
-    }
-  } catch (err) {
-    console.error('Bootstrap failed:', err);
-  }
-}
-document.addEventListener('DOMContentLoaded', bootstrapApp);
-
-
-document.addEventListener('DOMContentLoaded', bootstrapApp);
-
-
-/**
- * Main application class to manage the index page.
- */
-class AppManager {
-  constructor() {
-    this.elements = {};
-    this.bindElements();
-  }
-
-  /**
-   * Binds DOM elements to the class instance.
-   */
-  bindElements() {
-    this.elements = {
-      connectionStatus: document.getElementById('connection-status'),
-      installButton: null
-    };
-  }
-
-  /**
-   * Initializes the application.
-   */
-  async initialize() {
-    console.log('🚀 App starting...');
-
-    // Initialize AuthManager and UI
-    await AuthManager.initialize();
-    AuthManager.addAuthListener(updateAuthUI);
-    updateAuthUI();
-    setupLoginForm();
-    setupLogoutButton();
-
-    // Check database connection and update UI
-    await this.updateConnectionStatus();
-
-    // Setup PWA
-    registerServiceWorker();
-    this.setupPWAInstallPrompt();
-
-    // Set up other UI listeners
-    this.setupUIListeners();
-    
-    // Show welcome message
-    setTimeout(() => {
-      showNotification('ยินดีต้อนรับสู่ Loan App!', 'success');
-    }, 2000);
-
-    console.log('✅ App initialized successfully');
-  }
-  
-  /**
-   * Checks database connection and updates the UI.
-   */
-  async updateConnectionStatus() {
-    if (!this.elements.connectionStatus) return;
-
-    this.elements.connectionStatus.textContent = '🟡 กำลังเชื่อมต่อ...';
-    this.elements.connectionStatus.style.color = '#ffc107';
-
-    const isConnected = await testSupabaseConnection();
-    
-    if (isConnected) {
-      this.elements.connectionStatus.textContent = '🟢 พร้อมใช้งาน';
-      this.elements.connectionStatus.style.color = '#28a745';
-    } else {
-      this.elements.connectionStatus.textContent = '🔴 ไม่สามารถเชื่อมต่อได้';
-      this.elements.connectionStatus.style.color = '#dc3545';
-    }
-  }
-
-  /**
-   * Sets up event listeners for UI interactions.
-   */
-  setupUIListeners() {
-    // Add loading states to external links
-    document.querySelectorAll('a').forEach(anchor => {
-      anchor.addEventListener('click', function(e) {
-        if (this.href && !this.href.includes('#') && !this.href.includes('mailto')) {
-          this.innerHTML = '⏳ กำลังโหลด...';
-          this.disabled = true;
-        }
-      });
-    });
-  }
-
-  /**
-   * Handles the PWA install prompt.
-   */
-  setupPWAInstallPrompt() {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      let deferredPrompt = e;
-      this.showInstallButton(deferredPrompt);
-    });
-  }
-
-  /**
-   * Creates and displays the PWA install button.
-   */
-  showInstallButton(deferredPrompt) {
-    if (this.elements.installButton) return;
-
-    const installBtn = document.createElement('button');
-    installBtn.textContent = '📱 ติดตั้ง App';
-    installBtn.className = 'btn outline';
-    installBtn.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1000;
-    `;
-    
-    installBtn.addEventListener('click', () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted PWA install');
-          }
-          deferredPrompt = null;
-          installBtn.remove();
-          this.elements.installButton = null;
-        });
+  function bootstrapApp() {
+    try {
+      if (!window.supabase || typeof window.supabase.from !== 'function') {
+        throw new Error('Supabase client not initialized');
       }
-    });
+      var DM = window.DataManager;
+      if (!DM || typeof DM.init !== 'function') {
+        throw new Error('DataManager not ready');
+      }
 
-    document.body.appendChild(installBtn);
-    this.elements.installButton = installBtn;
+      // เริ่ม Auth (ถ้ามี) แล้วค่อย init DataManager
+      if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
+        window.AuthManager.initialize().finally(function () {
+          DM.init()
+            .then(function () { console.log('App ready'); })
+            .catch(function (err) { console.error('App init failed:', err); });
+        });
+      } else {
+        DM.init()
+          .then(function () { console.log('App ready'); })
+          .catch(function (err) { console.error('App init failed:', err); });
+      }
+    } catch (err) {
+      console.error('Bootstrap failed:', err);
+    }
   }
-}
 
-// Auto-initialize when the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  const app = new AppManager();
-  app.initialize();
-  window.appManager = app;
-});
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapApp);
+  } else {
+    bootstrapApp();
+  }
+})();
