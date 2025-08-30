@@ -26,8 +26,7 @@
     tbody td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-size:14px}
     .text-right{text-align:right}
     .actions{display:flex;gap:8px;justify-content:flex-end}
-    .danger{background:#dc2626}
-    .danger:hover{background:#991b1b}
+    .danger{background:#dc2626}.danger:hover{background:#991b1b}
     .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:8px}
     .badge{border-radius:9999px;padding:3px 8px;font-size:12px;border:1px solid #e5e7eb;background:#f9fafb}
     .note{color:#6b7280;font-size:13px}
@@ -147,47 +146,260 @@
     </div>
   </div>
 
-  <!-- === Scripts Order สำคัญมาก === -->
-  <!-- 1) Supabase -->
+  <!-- === ลำดับ Script สำคัญ === -->
   <script type="module" src="/supabase-init.js?v=1"></script>
-  <!-- 2) ส่วนกลางของแอป -->
   <script defer src="/data-manager.js?v=1"></script>
-  <!-- 3) จัดการล็อกอิน/สิทธิ์ -->
   <script defer src="/auth-manager.js?v=1"></script>
 
-  <!-- 4) โหลดสคริปต์ Admin แบบลองหลายพาธอัตโนมัติ -->
+  <!-- AdminManager (ESM) – ฝัง inline เพื่อตัดปัญหา 404 -->
   <script type="module">
-    (async () => {
-      const candidates = [
-        '/admin-manager-supabase.module.js?v=1',
-        '/js/admin-manager-supabase.module.js?v=1',
-        './admin-manager-supabase.module.js?v=1',
-        './js/admin-manager-supabase.module.js?v=1'
-      ];
-      let AdminManager = null;
-      let lastError = null;
+    function sbClient(){
+      const sb = window.supabase;
+      if(!sb || typeof sb.from !== 'function'){ throw new Error('Supabase client not initialized'); }
+      return sb;
+    }
+    function log(){ try{ console.log.apply(console, arguments);}catch(e){} }
+    function err(){ try{ console.error.apply(console, arguments);}catch(e){} }
+    function toNumber(v, def){ if(v===null||v===undefined||v==='')return def||0; const n=Number(v); return isNaN(n)?(def||0):n; }
+    function val(el){ return el && 'value' in el ? el.value : ''; }
 
-      for (const url of candidates) {
-        try {
-          const mod = await import(url);
-          AdminManager = mod && (mod.default || mod.AdminManager);
-          if (AdminManager) {
-            window.AdminManager = AdminManager; // เผื่อโค้ดอื่นเรียกผ่าน global
-            AdminManager.init();
-            console.info('[Admin] Loaded from', url);
-            break;
-          }
-        } catch (e) {
-          lastError = e;
-          console.debug('[Admin] try', url, '=>', e && e.message ? e.message : e);
+    const PROMO_TABLE = 'promotions';   // <-- ชื่อตารางโปรโมชัน
+    const BANKS_TABLE = 'banks';
+
+    const AdminManager = {
+      _cache:{ banks:null, promos:null },
+      _ui:{
+        bankSelect:null, productSelect:null, titleInput:null, detailInput:null,
+        bpsInput:null, fixedRateInput:null, firstMonthInput:null, yearRateInput:null,
+        gridTbody:null, form:null, saveBtn:null, deleteBtn:null, filterInput:null
+      },
+
+      init(){
+        try{
+          this._mapUI();
+          this._bindUI();
+          const self=this;
+          this.loadBanks()
+            .then(()=> self.loadPromotions())
+            .then(()=> { self.renderGrid(); log('[Admin] Ready'); })
+            .catch(e=> err('[Admin] init failed:', e));
+        }catch(e){ err('[Admin] init error:', e); }
+      },
+
+      _mapUI(){
+        const $ = (s)=>document.querySelector(s);
+        this._ui.bankSelect      = $('#admin-bank-select') || $('[name="bank_id"]');
+        this._ui.productSelect   = $('#admin-product-select') || $('[name="product_type"]');
+        this._ui.titleInput      = $('#admin-title') || $('[name="title"]');
+        this._ui.detailInput     = $('#admin-detail') || $('[name="detail"]');
+        this._ui.bpsInput        = $('#admin-bps') || $('[name="bps_discount"]');
+        this._ui.fixedRateInput  = $('#admin-fixed') || $('[name="fixed_rate"]');
+        this._ui.firstMonthInput = $('#admin-first-month') || $('[name="first_month"]');
+        this._ui.yearRateInput   = $('#admin-year-rate') || $('[name="year_rate"]');
+        this._ui.gridTbody       = document.querySelector('#admin-promotions-table tbody');
+        this._ui.form            = document.querySelector('#admin-promo-form') || document.querySelector('form#admin-form');
+        this._ui.saveBtn         = document.getElementById('btn-admin-save');
+        this._ui.deleteBtn       = document.getElementById('btn-admin-delete');
+        this._ui.filterInput     = document.getElementById('admin-filter');
+      },
+
+      _bindUI(){
+        const self=this;
+        const ui=this._ui;
+
+        if(ui.form){
+          ui.form.addEventListener('submit', (e)=>{
+            e.preventDefault();
+            self.saveCurrent().then((ok)=>{
+              if(ok){ self.resetForm(); self.loadPromotions().then(()=> self.renderGrid()); }
+            });
+          });
         }
-      }
 
-      if (!AdminManager) {
-        console.error('ไม่พบไฟล์ admin-manager-supabase.module.js ในตำแหน่งที่คาดไว้', lastError);
-        alert('โหลดสคริปต์ผู้ดูแลไม่สำเร็จ: โปรดตรวจตำแหน่งไฟล์ admin-manager-supabase.module.js บนโฮสต์');
+        if(ui.deleteBtn){
+          ui.deleteBtn.addEventListener('click', (e)=>{
+            e.preventDefault();
+            const id = ui.form ? ui.form.getAttribute('data-id') : '';
+            if(!id){ alert('ยังไม่ได้เลือกโปรโมชันที่จะลบ'); return; }
+            if(!confirm('ลบโปรโมชันนี้?')) return;
+            self.deletePromotion(id).then((ok)=>{
+              if(ok){ self.resetForm(); self.loadPromotions().then(()=> self.renderGrid()); }
+            });
+          });
+        }
+
+        if(ui.filterInput){
+          ui.filterInput.addEventListener('input', ()=> self.renderGrid());
+        }
+
+        if(ui.gridTbody){
+          ui.gridTbody.addEventListener('click', (e)=>{
+            const t = e.target || e.srcElement;
+            if(!t) return;
+            const isEdit = (t.matches && t.matches('.btn-edit')) || ((t.className||'').indexOf('btn-edit')!==-1);
+            if(isEdit){
+              const tr = t.closest ? t.closest('tr') : null;
+              if(!tr) return;
+              const id = tr.getAttribute('data-id');
+              self.fillFormById(id);
+            }
+          });
+        }
+      },
+
+      resetForm(){
+        const ui=this._ui;
+        if(ui.form) ui.form.removeAttribute('data-id');
+        if(ui.bankSelect) ui.bankSelect.value='';
+        if(ui.productSelect) ui.productSelect.value='MORTGAGE';
+        if(ui.titleInput) ui.titleInput.value='';
+        if(ui.detailInput) ui.detailInput.value='';
+        if(ui.bpsInput) ui.bpsInput.value='';
+        if(ui.fixedRateInput) ui.fixedRateInput.value='';
+        if(ui.firstMonthInput) ui.firstMonthInput.value='';
+        if(ui.yearRateInput) ui.yearRateInput.value='';
+      },
+
+      // -------- DATA --------
+      loadBanks(){
+        const self=this, sb=sbClient();
+        return sb.from(BANKS_TABLE)
+          .select('id,name,short_name')
+          .order('short_name', { ascending:true })
+          .then((res)=>{
+            if(res.error) throw res.error;
+            const list = Array.isArray(res.data)?res.data:[];
+            self._cache.banks = list.map((b)=>{
+              if(typeof b.name==='undefined' && typeof b.bank_name!=='undefined') b.name=b.bank_name;
+              if(typeof b.short_name==='undefined' && typeof b.code!=='undefined') b.short_name=b.code;
+              return b;
+            });
+            self._renderBankOptions();
+            return self._cache.banks;
+          })
+          .catch((e)=>{ err('[Admin] loadBanks error:', e); self._cache.banks=[]; self._renderBankOptions(); return []; });
+      },
+
+      _renderBankOptions(){
+        const sel=this._ui.bankSelect; if(!sel) return;
+        const list=this._cache.banks||[];
+        let html='<option value="">เลือกธนาคาร</option>';
+        for(let i=0;i<list.length;i++){
+          const b=list[i];
+          html+='<option value="'+(b.id||'')+'">'+(b.short_name||b.name||'-')+'</option>';
+        }
+        sel.innerHTML=html;
+      },
+
+      loadPromotions(){
+        const self=this, sb=sbClient();
+        return sb.from(PROMO_TABLE)
+          .select('*')
+          .order('updated_at', { ascending:false })
+          .then((res)=>{
+            if(res.error) throw res.error;
+            self._cache.promos = Array.isArray(res.data)?res.data:[];
+            return self._cache.promos;
+          })
+          .catch((e)=>{ err('[Admin] loadPromotions error:', e); self._cache.promos=[]; return []; });
+      },
+
+      saveCurrent(){
+        const ui=this._ui;
+        const id = ui.form ? ui.form.getAttribute('data-id') : null;
+
+        const payload = {
+          id: id || undefined,
+          bank_id: val(ui.bankSelect),
+          product_type: val(ui.productSelect) || 'MORTGAGE',
+          title: val(ui.titleInput),
+          detail: val(ui.detailInput),
+          bps_discount: toNumber(val(ui.bpsInput),0),
+          fixed_rate: toNumber(val(ui.fixedRateInput),0),
+          first_month: toNumber(val(ui.firstMonthInput),0),
+          year_rate: toNumber(val(ui.yearRateInput),0),
+          updated_at: new Date().toISOString()
+        };
+
+        if(!payload.bank_id || !payload.title){
+          alert('กรุณาเลือกธนาคารและกรอกชื่อโปรโมชัน'); return Promise.resolve(false);
+        }
+
+        const sb=sbClient();
+        return sb.from(PROMO_TABLE)
+          .upsert(payload, { onConflict:'id' })
+          .select('*').limit(1).maybeSingle()
+          .then((res)=>{ if(res.error) throw res.error; alert('บันทึกสำเร็จ'); return true; })
+          .catch((e)=>{ err('[Admin] saveCurrent error:', e); alert('บันทึกไม่สำเร็จ: '+(e&&e.message?e.message:'ไม่ทราบสาเหตุ')); return false; });
+      },
+
+      deletePromotion(id){
+        if(!id) return Promise.resolve(false);
+        const sb=sbClient();
+        return sb.from(PROMO_TABLE)
+          .delete().eq('id', id)
+          .then((res)=>{ if(res.error) throw res.error; alert('ลบแล้ว'); return true; })
+          .catch((e)=>{ err('[Admin] deletePromotion error:', e); alert('ลบไม่สำเร็จ: '+(e&&e.message?e.message:'ไม่ทราบสาเหตุ')); return false; });
+      },
+
+      // -------- UI --------
+      fillFormById(id){
+        if(!id) return;
+        const list=this._cache.promos||[];
+        let p=null;
+        for(let i=0;i<list.length;i++){ if(String(list[i].id)===String(id)){ p=list[i]; break; } }
+        if(!p) return;
+        const ui=this._ui;
+        if(ui.form) ui.form.setAttribute('data-id', p.id);
+        if(ui.bankSelect) ui.bankSelect.value = p.bank_id || '';
+        if(ui.productSelect) ui.productSelect.value = p.product_type || 'MORTGAGE';
+        if(ui.titleInput) ui.titleInput.value = p.title || '';
+        if(ui.detailInput) ui.detailInput.value = p.detail || '';
+        if(ui.bpsInput) ui.bpsInput.value = (p.bps_discount!=null?p.bps_discount:'');
+        if(ui.fixedRateInput) ui.fixedRateInput.value = (p.fixed_rate!=null?p.fixed_rate:'');
+        if(ui.firstMonthInput) ui.firstMonthInput.value = (p.first_month!=null?p.first_month:'');
+        if(ui.yearRateInput) ui.yearRateInput.value = (p.year_rate!=null?p.year_rate:'');
+      },
+
+      renderGrid(){
+        const tbody=this._ui.gridTbody; if(!tbody) return;
+        const q = this._ui.filterInput ? String(this._ui.filterInput.value||'').toLowerCase() : '';
+        const banks=this._cache.banks||[], promos=this._cache.promos||[];
+
+        function bankShortName(id){
+          for(let i=0;i<banks.length;i++){ const b=banks[i]; if(String(b.id)===String(id)) return b.short_name||b.name||'-'; }
+          return '-';
+        }
+
+        const rows=[];
+        for(let i=0;i<promos.length;i++){
+          const p=promos[i];
+          const text=(p.title||'')+' '+(p.detail||'')+' '+bankShortName(p.bank_id);
+          if(q && text.toLowerCase().indexOf(q)===-1) continue;
+
+          rows.push(
+            '<tr data-id="'+(p.id||'')+'">'+
+              '<td>'+bankShortName(p.bank_id)+'</td>'+
+              '<td>'+(p.product_type||'')+'</td>'+
+              '<td>'+(p.title||'')+'</td>'+
+              '<td>'+(p.detail||'')+'</td>'+
+              '<td class="text-right">'+(p.bps_discount!=null?p.bps_discount:'')+'</td>'+
+              '<td class="text-right">'+(p.fixed_rate!=null?p.fixed_rate:'')+'</td>'+
+              '<td class="text-right">'+(p.first_month!=null?p.first_month:'')+'</td>'+
+              '<td class="text-right">'+(p.year_rate!=null?p.year_rate:'')+'</td>'+
+              '<td><button type="button" class="btn-edit">แก้ไข</button></td>'+
+            '</tr>'
+          );
+        }
+
+        tbody.innerHTML = rows.join('') || '<tr><td colspan="9" class="text-center text-gray-500">ไม่มีข้อมูล</td></tr>';
       }
-    })();
+    };
+
+    // ให้ใช้ผ่าน window ได้ด้วย (ถ้าจำเป็น)
+    window.AdminManager = AdminManager;
+    // เริ่มทำงาน
+    AdminManager.init();
   </script>
 </body>
 </html>
