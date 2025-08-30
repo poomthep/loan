@@ -24,7 +24,7 @@ import LoanCalculator from './loan-calculator-supabase.js';
 /**
  * จัดการแอปพลิเคชันหลักสำหรับการคำนวณสินเชื่อ
  */
-export default class LoanAppManager {
+class LoanAppManager {
   constructor() {
     this.calculator = new LoanCalculator();
     this.currentResults = [];
@@ -815,20 +815,12 @@ export default class LoanAppManager {
 // UTILITY FUNCTIONS FOR BACKWARD COMPATIBILITY
 // ========================================
 
-export function runLoanPage() {
-  console.warn('runLoanPage() is deprecated. Use LoanAppManager instead.');
+// ========================================
+// EXPORT
+// ========================================
+export { LoanAppManager };        // named export
+export default LoanAppManager;    // default export
 
-  const app = new LoanAppManager();
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => app.initialize());
-  } else {
-    app.initialize();
-  }
-
-  window.loanApp = app;
-  return app;
-}
 
 // ========================================
 // AUTO CLEANUP ON PAGE UNLOAD
