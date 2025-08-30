@@ -9,8 +9,7 @@ import * as __LoanCalcNS   from './loan-calculator-supabase.js';
 
 // /js/data-manager.js
 export * from './data-manager.fix.js';
-import * as NS from './data-manager.fix.js';
-export default (NS.default ?? NS);
+export { default } from './data-manager.fix.js'; // ถ้าไฟล์ต้นทางมี default; ถ้าไม่มี จะไม่เป็นไร
 
 
 function resolveModule(ns) {
