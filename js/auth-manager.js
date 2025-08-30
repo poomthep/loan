@@ -1,577 +1,476 @@
-// js/auth-manager.js
-// ========================================
-// AUTHENTICATION MANAGER - FIXED VERSION
-// ========================================
-
-import supabase, { handleSupabaseError } from './supabase-client.js';
-
-/**
- * จัดการระบบ Authentication ทั้งหมด
+/*! auth-manager.js (Global build, no-async)
+ * Loan App – Authentication Manager
+ * - ใช้กับ <script defer src="/auth-manager.js"></script>
+ * - ต้องมี window.supabase (จาก supabase-init.js) ก่อนหน้านี้
  */
-export class AuthManager {
-  static currentUser = null;
-  static userProfile = null;
-  static authListeners = [];
+(function (global) {
+  'use strict';
 
-  // ========================================
-  // AUTHENTICATION METHODS
-  // ========================================
+  // ---------------------------------
+  // Helpers
+  // ---------------------------------
+  function getClient() {
+    var sb = global && global.supabase;
+    if (!sb || typeof sb.from !== 'function') {
+      throw new Error('Supabase client not initialized');
+    }
+    return sb;
+  }
 
-  /**
-   * เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน
-   */
-  static async signInWithEmail(email, password) {
+  function mapSupabaseError(err) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password
-      });
-
-      if (error) throw error;
-
-      this.currentUser = data.user;
-      await this.loadUserProfile();
-      this.notifyAuthListeners('SIGNED_IN', data.user);
-
-      console.log('✅ Sign in successful:', data.user.email);
-      return { success: true, user: data.user };
-
-    } catch (error) {
-      console.error('❌ Sign in error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
+      if (!err) return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+      if (typeof err === 'string') return err;
+      if (err.message) return err.message;
+      if (err.error_description) return err.error_description;
+      if (err.error) return err.error;
+      return JSON.stringify(err);
+    } catch (e) {
+      return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
     }
   }
 
-  /**
-   * สมัครสมาชิกใหม่
-   */
-  static async signUp(email, password, userData = {}) {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: {
-          data: {
-            full_name: userData.fullName || email.split('@')[0],
-            ...userData
-          }
-        }
-      });
+  // ---------------------------------
+  // AuthManager (Global object)
+  // ---------------------------------
+  var AuthManager = {
+    _inited: false,
+    _listenerUnsub: null,
+    currentUser: null,
+    userProfile: null,
+    authListeners: [],
 
-      if (error) throw error;
-
-      console.log('✅ Sign up successful:', data.user?.email);
-      return { 
-        success: true, 
-        user: data.user,
-        needConfirmation: !data.session
-      };
-
-    } catch (error) {
-      console.error('❌ Sign up error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
-    }
-  }
-
-  /**
-   * ออกจากระบบ
-   */
-  static async signOut() {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      this.currentUser = null;
-      this.userProfile = null;
-      this.notifyAuthListeners('SIGNED_OUT', null);
-
-      console.log('✅ Sign out successful');
-      return { success: true };
-
-    } catch (error) {
-      console.error('❌ Sign out error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
-    }
-  }
-
-  /**
-   * รีเซ็ตรหัสผ่าน
-   */
-  static async resetPassword(email) {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: window.location.origin + '/reset-password'
-      });
-
-      if (error) throw error;
-
-      console.log('✅ Password reset email sent');
-      return { success: true };
-
-    } catch (error) {
-      console.error('❌ Password reset error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
-    }
-  }
-
-  /**
-   * อัพเดตรหัสผ่าน
-   */
-  static async updatePassword(newPassword) {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
-
-      console.log('✅ Password updated successfully');
-      return { success: true };
-
-    } catch (error) {
-      console.error('❌ Password update error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
-    }
-  }
-
-  // ========================================
-  // USER PROFILE METHODS
-  // ========================================
-
-  /**
-   * โหลดข้อมูลโปรไฟล์ผู้ใช้
-   */
-  static async loadUserProfile() {
-    if (!this.currentUser) return null;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', this.currentUser.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 = row not found
-        throw error;
-      }
-
-      this.userProfile = data;
-      return data;
-
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      return null;
-    }
-  }
-
-  /**
-   * อัพเดตข้อมูลโปรไฟล์ผู้ใช้
-   */
-  static async updateUserProfile(updates) {
-    if (!this.currentUser) {
-      throw new Error('ต้องเข้าสู่ระบบก่อน');
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: this.currentUser.id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      this.userProfile = data;
-      this.notifyAuthListeners('PROFILE_UPDATED', data);
-
-      console.log('✅ Profile updated successfully');
-      return { success: true, profile: data };
-
-    } catch (error) {
-      console.error('❌ Profile update error:', error);
-      return { 
-        success: false, 
-        error: handleSupabaseError(error)
-      };
-    }
-  }
-
-  // ========================================
-  // SESSION & STATE MANAGEMENT
-  // ========================================
-
-  /**
-   * ตรวจสอบ session ปัจจุบัน
-   */
-  static async checkSession() {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) throw error;
-
-      if (session?.user) {
-        this.currentUser = session.user;
-        await this.loadUserProfile();
-        this.notifyAuthListeners('SESSION_RESTORED', session.user);
-        return session.user;
-      }
-
-      return null;
-
-    } catch (error) {
-      console.error('Error checking session:', error);
-      return null;
-    }
-  }
-
-  /**
-   * ฟังการเปลี่ยนแปลง auth state
-   */
-  static setupAuthListener() {
-    const authListener = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event);
-
-      switch (event) {
-        case 'SIGNED_IN':
-          this.currentUser = session?.user || null;
-          if (this.currentUser) {
-            await this.loadUserProfile();
-          }
-          this.notifyAuthListeners(event, session?.user);
-          break;
-
-        case 'SIGNED_OUT':
-        case 'TOKEN_REFRESHED':
-          this.currentUser = session?.user || null;
-          this.userProfile = session?.user ? this.userProfile : null;
-          this.notifyAuthListeners(event, session?.user);
-          break;
-
-        case 'PASSWORD_RECOVERY':
-          this.notifyAuthListeners(event, session?.user);
-          break;
-      }
-    });
-
-    return authListener;
-  }
-
-  /**
-   * เพิ่ม listener สำหรับการเปลี่ยนแปลง auth state
-   */
-  static addAuthListener(listener) {
-    if (typeof listener === 'function') {
-      this.authListeners.push(listener);
-    }
-  }
-
-  /**
-   * ลบ auth listener
-   */
-  static removeAuthListener(listener) {
-    const index = this.authListeners.indexOf(listener);
-    if (index > -1) {
-      this.authListeners.splice(index, 1);
-    }
-  }
-
-  /**
-   * แจ้งเตือน listeners ทั้งหมด
-   */
-  static notifyAuthListeners(event, user) {
-    this.authListeners.forEach(listener => {
+    // ========== AUTH METHODS ==========
+    signInWithEmail: function (email, password) {
       try {
-        listener(event, user, this.userProfile);
-      } catch (error) {
-        console.error('Error in auth listener:', error);
-      }
-    });
-  }
-
-  // ========================================
-  // UTILITY METHODS
-  // ========================================
-
-  /**
-   * ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่
-   */
-  static isAuthenticated() {
-    return !!this.currentUser;
-  }
-
-  /**
-   * ตรวจสอบว่าผู้ใช้เป็น admin หรือไม่
-   */
-  static isAdmin() {
-    return this.userProfile?.role === 'admin';
-  }
-
-  /**
-   * ดึงข้อมูลผู้ใช้ปัจจุบัน
-   */
-  static getCurrentUser() {
-    return this.currentUser;
-  }
-
-  /**
-   * ดึงข้อมูลโปรไฟล์ปัจจุบัน
-   */
-  static getUserProfile() {
-    return this.userProfile;
-  }
-
-  /**
-   * ดึงข้อมูลผู้ใช้พร้อมโปรไฟล์
-   */
-  static getFullUserData() {
-    return {
-      user: this.currentUser,
-      profile: this.userProfile,
-      isAuthenticated: this.isAuthenticated(),
-      isAdmin: this.isAdmin()
-    };
-  }
-
-  // ========================================
-  // INITIALIZATION
-  // ========================================
-
-  /**
-   * เริ่มต้นระบบ Auth Manager - FIXED VERSION
-   */
-  static initialize() {
-    return new Promise((resolve) => {
-      try {
-        console.log('🚀 Initializing Auth Manager...');
-
-        // ตรวจสอบ session ที่มีอยู่
-        this.checkSession().then(() => {
-          // ตั้งค่า auth listener
-          this.setupAuthListener();
-          
-          console.log('✅ Auth Manager initialized successfully');
-          resolve(true);
-        }).catch((error) => {
-          console.error('❌ Auth Manager initialization failed:', error);
-          resolve(false);
+        var sb = getClient();
+        return sb.auth.signInWithPassword({
+          email: (email || '').trim(),
+          password: password
+        }).then(function (res) {
+          if (res.error) throw res.error;
+          AuthManager.currentUser = res.data && res.data.user || null;
+          return AuthManager.loadUserProfile().then(function () {
+            AuthManager._notify('SIGNED_IN', AuthManager.currentUser);
+            console.log('✅ Sign in successful:', AuthManager.currentUser && AuthManager.currentUser.email);
+            return { success: true, user: AuthManager.currentUser };
+          });
+        }).catch(function (err) {
+          console.error('❌ Sign in error:', err);
+          return { success: false, error: mapSupabaseError(err) };
         });
-
-      } catch (error) {
-        console.error('❌ Auth Manager initialization failed:', error);
-        resolve(false);
+      } catch (e) {
+        return Promise.resolve({ success: false, error: mapSupabaseError(e) });
       }
-    });
-  }
+    },
 
-  /**
-   * ล้างข้อมูลทั้งหมด
-   */
-  static cleanup() {
-    this.currentUser = null;
-    this.userProfile = null;
-    this.authListeners = [];
-  }
-}
+    signUp: function (email, password, userData) {
+      userData = userData || {};
+      try {
+        var sb = getClient();
+        return sb.auth.signUp({
+          email: (email || '').trim(),
+          password: password,
+          options: {
+            data: Object.assign({ full_name: (email || '').split('@')[0] }, userData)
+          }
+        }).then(function (res) {
+          if (res.error) throw res.error;
+          console.log('✅ Sign up successful:', res.data && res.data.user && res.data.user.email);
+          return {
+            success: true,
+            user: res.data && res.data.user || null,
+            needConfirmation: !(res.data && res.data.session)
+          };
+        }).catch(function (err) {
+          console.error('❌ Sign up error:', err);
+          return { success: false, error: mapSupabaseError(err) };
+        });
+      } catch (e) {
+        return Promise.resolve({ success: false, error: mapSupabaseError(e) });
+      }
+    },
 
-// ========================================
-// UI HELPER FUNCTIONS
-// ========================================
+    signOut: function () {
+      try {
+        var sb = getClient();
+        return sb.auth.signOut().then(function (res) {
+          if (res.error) throw res.error;
+          AuthManager.currentUser = null;
+          AuthManager.userProfile = null;
+          AuthManager._notify('SIGNED_OUT', null);
+          console.log('✅ Sign out successful');
+          return { success: true };
+        }).catch(function (err) {
+          console.error('❌ Sign out error:', err);
+          return { success: false, error: mapSupabaseError(err) };
+        });
+      } catch (e) {
+        return Promise.resolve({ success: false, error: mapSupabaseError(e) });
+      }
+    },
 
-/**
- * อัพเดต UI ตาม auth state
- */
-export function updateAuthUI() {
-  const userData = AuthManager.getFullUserData();
-  
-  // อัพเดตข้อมูลผู้ใช้
-  const userEmailEl = document.getElementById('user-email');
-  if (userEmailEl) {
-    userEmailEl.textContent = userData.user?.email || '—';
-  }
+    resetPassword: function (email) {
+      try {
+        var sb = getClient();
+        return sb.auth.resetPasswordForEmail((email || '').trim(), {
+          redirectTo: global.location.origin + '/reset-password'
+        }).then(function (res) {
+          if (res.error) throw res.error;
+          console.log('✅ Password reset email sent');
+          return { success: true };
+        }).catch(function (err) {
+          console.error('❌ Password reset error:', err);
+          return { success: false, error: mapSupabaseError(err) };
+        });
+      } catch (e) {
+        return Promise.resolve({ success: false, error: mapSupabaseError(e) });
+      }
+    },
 
-  // อัพเดต role badge
-  const roleBadgeEl = document.getElementById('role-badge');
-  if (roleBadgeEl) {
-    if (userData.isAdmin) {
-      roleBadgeEl.textContent = 'ADMIN';
-      roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-red-200 text-red-800';
-    } else if (userData.isAuthenticated) {
-      roleBadgeEl.textContent = 'USER';
-      roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800';
-    } else {
-      roleBadgeEl.textContent = 'GUEST';
-      roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-gray-200';
-    }
-  }
+    updatePassword: function (newPassword) {
+      try {
+        var sb = getClient();
+        return sb.auth.updateUser({ password: newPassword }).then(function (res) {
+          if (res.error) throw res.error;
+          console.log('✅ Password updated successfully');
+          return { success: true };
+        }).catch(function (err) {
+          console.error('❌ Password update error:', err);
+          return { success: false, error: mapSupabaseError(err) };
+        });
+      } catch (e) {
+        return Promise.resolve({ success: false, error: mapSupabaseError(e) });
+      }
+    },
 
-  // แสดง/ซ่อน login form
-  const loginForm = document.getElementById('login-form');
-  if (loginForm) {
-    loginForm.style.display = userData.isAuthenticated ? 'none' : 'block';
-  }
+    // ======= USER PROFILE METHODS =======
+    loadUserProfile: function () {
+      if (!AuthManager.currentUser) return Promise.resolve(null);
 
-  // แสดง/ซ่อนปุ่ม logout
-  const logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn) {
-    logoutBtn.style.display = userData.isAuthenticated ? 'block' : 'none';
-  }
+      var sb = getClient();
+      // ลองดึงจาก profiles ก่อน (มีคอลัมน์ is_admin)
+      return sb.from('profiles').select('*')
+        .eq('user_id', AuthManager.currentUser.id).single()
+        .then(function (res1) {
+          if (res1.error && res1.error.code !== 'PGRST116') throw res1.error;
+          if (res1.data) {
+            AuthManager.userProfile = res1.data;
+            return res1.data;
+          }
+          // ถ้าไม่เจอ ลองจาก user_profiles (มีคอลัมน์ role)
+          return sb.from('user_profiles').select('*')
+            .eq('id', AuthManager.currentUser.id).single()
+            .then(function (res2) {
+              if (res2.error && res2.error.code !== 'PGRST116') throw res2.error;
+              AuthManager.userProfile = res2.data || null;
+              return AuthManager.userProfile;
+            });
+        }).catch(function (err) {
+          console.error('Error loading user profile:', err);
+          AuthManager.userProfile = null;
+          return null;
+        });
+    },
 
-  // แสดง/ซ่อนลิงก์ admin (เฉพาะ admin)
-  const adminLinks = document.querySelectorAll('[href="/admin.html"], [href="./admin.html"]');
-  adminLinks.forEach(link => {
-    link.style.display = userData.isAdmin ? 'inline-block' : 'none';
-  });
-}
+    updateUserProfile: function (updates) {
+      if (!AuthManager.currentUser) {
+        return Promise.reject(new Error('ต้องเข้าสู่ระบบก่อน'));
+      }
+      var sb = getClient();
+      // พยายามอัปเดตที่ profiles ก่อน ถ้าไม่มีค่อยไป user_profiles
+      return sb.from('profiles').upsert(
+        Object.assign({ user_id: AuthManager.currentUser.id }, updates, { updated_at: new Date().toISOString() })
+      ).select('*').single().then(function (res1) {
+        if (res1.error && res1.error.code !== 'PGRST116') throw res1.error;
+        if (res1.data) {
+          AuthManager.userProfile = res1.data;
+          AuthManager._notify('PROFILE_UPDATED', res1.data);
+          console.log('✅ Profile updated (profiles)');
+          return { success: true, profile: res1.data };
+        }
+        // ถ้าไม่มีตาราง/ไม่สำเร็จ ลอง user_profiles
+        return sb.from('user_profiles').upsert(
+          Object.assign({ id: AuthManager.currentUser.id }, updates, { updated_at: new Date().toISOString() })
+        ).select('*').single().then(function (res2) {
+          if (res2.error) throw res2.error;
+          AuthManager.userProfile = res2.data;
+          AuthManager._notify('PROFILE_UPDATED', res2.data);
+          console.log('✅ Profile updated (user_profiles)');
+          return { success: true, profile: res2.data };
+        });
+      }).catch(function (err) {
+        console.error('❌ Profile update error:', err);
+        return { success: false, error: mapSupabaseError(err) };
+      });
+    },
 
-/**
- * จัดการ login form
- */
-export function setupLoginForm() {
-  const loginForm = document.querySelector('#login-form form');
-  if (!loginForm) return;
+    // ===== SESSION & STATE MANAGEMENT ====
+    checkSession: function () {
+      try {
+        var sb = getClient();
+        return sb.auth.getSession().then(function (res) {
+          if (res.error) throw res.error;
+          return (res.data && res.data.session) || null;
+        }).catch(function (err) {
+          console.error('Error checking session:', err);
+          return null;
+        });
+      } catch (e) {
+        console.error('Error checking session:', e);
+        return Promise.resolve(null);
+      }
+    },
 
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const email = document.getElementById('email')?.value;
-    const password = document.getElementById('password')?.value;
-    
-    if (!email || !password) {
-      alert('กรุณากรอกอีเมลและรหัสผ่าน');
-      return;
-    }
+    _setupAuthListener: function () {
+      try {
+        var sb = getClient();
+        var ret = sb.auth.onAuthStateChange(function (event, session) {
+          console.log('🔐 Auth state changed:', event);
+          var user = session && session.user || null;
 
-    // แสดง loading
-    const submitBtn = loginForm.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'กำลังเข้าสู่ระบบ...';
-    submitBtn.disabled = true;
+          if (event === 'SIGNED_IN') {
+            AuthManager.currentUser = user;
+            AuthManager.loadUserProfile().then(function () {
+              AuthManager._notify(event, user);
+              updateAuthUI();
+            });
+          } else if (event === 'SIGNED_OUT') {
+            AuthManager.currentUser = null;
+            AuthManager.userProfile = null;
+            AuthManager._notify(event, null);
+            updateAuthUI();
+          } else {
+            // TOKEN_REFRESHED, PASSWORD_RECOVERY, USER_UPDATED ฯลฯ
+            AuthManager.currentUser = user;
+            AuthManager._notify(event, user);
+            updateAuthUI();
+          }
+        });
+        // v2 จะคืน { data: { subscription } }
+        AuthManager._listenerUnsub = ret && ret.data && ret.data.subscription
+          ? function () { try { ret.data.subscription.unsubscribe(); } catch (e) {} }
+          : null;
+      } catch (e) {
+        console.error('Auth listener setup failed:', e);
+      }
+    },
 
-    try {
-      const result = await AuthManager.signInWithEmail(email, password);
-      
-      if (result.success) {
-        // ล้างฟอร์ม
-        loginForm.reset();
+    addAuthListener: function (fn) {
+      if (typeof fn === 'function') AuthManager.authListeners.push(fn);
+    },
+
+    removeAuthListener: function (fn) {
+      var i = AuthManager.authListeners.indexOf(fn);
+      if (i > -1) AuthManager.authListeners.splice(i, 1);
+    },
+
+    _notify: function (event, user) {
+      for (var i = 0; i < AuthManager.authListeners.length; i++) {
+        try { AuthManager.authListeners[i](event, user, AuthManager.userProfile); } catch (e) {
+          console.error('Error in auth listener:', e);
+        }
+      }
+    },
+
+    isAuthenticated: function () { return !!AuthManager.currentUser; },
+
+    isAdmin: function () {
+      var p = AuthManager.userProfile || {};
+      // รองรับทั้ง profiles.is_admin (boolean) และ user_profiles.role === 'admin'
+      return !!(p.is_admin || p.isAdmin || (p.role && String(p.role).toLowerCase() === 'admin'));
+    },
+
+    getCurrentUser: function () { return AuthManager.currentUser; },
+    getUserProfile: function () { return AuthManager.userProfile; },
+    getFullUserData: function () {
+      return {
+        user: AuthManager.currentUser,
+        profile: AuthManager.userProfile,
+        isAuthenticated: AuthManager.isAuthenticated(),
+        isAdmin: AuthManager.isAdmin()
+      };
+    },
+
+    cleanup: function () {
+      if (AuthManager._listenerUnsub) { try { AuthManager._listenerUnsub(); } catch (e) {} }
+      AuthManager._inited = false;
+      AuthManager.currentUser = null;
+      AuthManager.userProfile = null;
+      AuthManager.authListeners = [];
+    },
+
+    // ============ INITIALIZE ============
+    initialize: function () {
+      if (AuthManager._inited) return Promise.resolve(AuthManager.currentUser);
+      try {
+        var sb = getClient();
+        AuthManager._setupAuthListener();
+        return sb.auth.getSession().then(function (res) {
+          if (res.error) throw res.error;
+          var session = res.data && res.data.session || null;
+          AuthManager.currentUser = session ? session.user : null;
+          return AuthManager.loadUserProfile().then(function () {
+            AuthManager._inited = true;
+            updateAuthUI();
+            return session;
+          });
+        }).catch(function (err) {
+          console.error('Auth Manager initialization failed:', err);
+          updateAuthUI();
+          return null;
+        });
+      } catch (e) {
+        console.error('Auth Manager initialization failed:', e);
         updateAuthUI();
-        
-        // แสดงข้อความสำเร็จ
-        showNotification('เข้าสู่ระบบสำเร็จ!', 'success');
-        
-      } else {
-        showNotification(result.error, 'error');
+        return Promise.resolve(null);
       }
-    } catch (error) {
-      showNotification('เกิดข้อผิดพลาดในการเข้าสู่ระบบ', 'error');
-    } finally {
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
     }
-  });
-}
-
-/**
- * จัดการปุ่ม logout
- */
-export function setupLogoutButton() {
-  const logoutBtn = document.getElementById('btn-logout');
-  if (!logoutBtn) return;
-
-  logoutBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    
-    const originalText = logoutBtn.textContent;
-    logoutBtn.textContent = 'กำลังออกจากระบบ...';
-    logoutBtn.disabled = true;
-
-    try {
-      const result = await AuthManager.signOut();
-      
-      if (result.success) {
-        updateAuthUI();
-        showNotification('ออกจากระบบแล้ว', 'info');
-      } else {
-        showNotification(result.error, 'error');
-      }
-    } catch (error) {
-      showNotification('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
-    } finally {
-      logoutBtn.textContent = originalText;
-      logoutBtn.disabled = false;
-    }
-  });
-}
-
-/**
- * แสดงการแจ้งเตือน
- */
-export function showNotification(message, type = 'info', duration = 3000) {
-  // สร้าง notification element
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  
-  const colors = {
-    success: 'bg-green-100 text-green-800 border-green-300',
-    error: 'bg-red-100 text-red-800 border-red-300',
-    info: 'bg-blue-100 text-blue-800 border-blue-300',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
   };
-  
-  notification.className += ` ${colors[type] || colors.info} fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm`;
-  notification.innerHTML = message;
-  
-  // เพิ่มใน DOM
-  document.body.appendChild(notification);
-  
-  // ลบหลังจากเวลาที่กำหนด
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.remove();
+
+  // ---------------------------------
+  // UI helpers (global functions)
+  // ---------------------------------
+  function updateAuthUI() {
+    var data = AuthManager.getFullUserData();
+
+    // อีเมลผู้ใช้
+    var userEmailEl = document.getElementById('user-email');
+    if (userEmailEl) userEmailEl.textContent = (data.user && data.user.email) || '—';
+
+    // role badge
+    var roleBadgeEl = document.getElementById('role-badge');
+    if (roleBadgeEl) {
+      if (data.isAdmin) {
+        roleBadgeEl.textContent = 'ADMIN';
+        roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-red-200 text-red-800';
+      } else if (data.isAuthenticated) {
+        roleBadgeEl.textContent = 'USER';
+        roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800';
+      } else {
+        roleBadgeEl.textContent = 'GUEST';
+        roleBadgeEl.className = 'badge px-2 py-1 rounded-full text-xs font-semibold bg-gray-200';
+      }
     }
-  }, duration);
-}
 
-// ========================================
-// AUTO INITIALIZATION - FIXED
-// ========================================
+    // แสดง/ซ่อน login form
+    var loginFormWrap = document.getElementById('login-form');
+    if (loginFormWrap) loginFormWrap.style.display = data.isAuthenticated ? 'none' : 'block';
 
-// เริ่มต้น Auth Manager เมื่อโหลดหน้าเสร็จ
-function initializeAuth() {
-  AuthManager.initialize().then(() => {
-    updateAuthUI();
-    setupLoginForm();
-    setupLogoutButton();
-    
-    // เพิ่ม auth listener สำหรับอัพเดต UI อัตโนมัติ
-    AuthManager.addAuthListener(() => {
-      updateAuthUI();
-    });
-  });
-}
+    // ปุ่ม logout
+    var logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) logoutBtn.style.display = data.isAuthenticated ? 'block' : 'none';
 
-if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAuth);
-  } else {
-    initializeAuth();
+    // ลิงก์ admin
+    var adminLinks = document.querySelectorAll('[href="/admin.html"], [href="./admin.html"]');
+    for (var i = 0; i < adminLinks.length; i++) {
+      adminLinks[i].style.display = data.isAdmin ? 'inline-block' : 'none';
+    }
+
+    // เติม autocomplete ให้ช่องรหัสผ่านตามคำเตือน DOM
+    try {
+      var emailEl = document.getElementById('email');
+      var passEl = document.getElementById('password');
+      if (emailEl && !emailEl.getAttribute('autocomplete')) emailEl.setAttribute('autocomplete', 'username');
+      if (passEl && !passEl.getAttribute('autocomplete')) passEl.setAttribute('autocomplete', 'current-password');
+    } catch (e) {}
   }
-}
+
+  function setupLoginForm() {
+    var form = document.querySelector('#login-form form') || document.getElementById('login-form');
+    if (!form || form.tagName.toLowerCase() !== 'form') return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('email') && document.getElementById('email').value;
+      var password = document.getElementById('password') && document.getElementById('password').value;
+      if (!email || !password) { showNotification('กรุณากรอกอีเมลและรหัสผ่าน', 'warning'); return; }
+
+      var btn = form.querySelector('button[type="submit"]');
+      var original = btn ? btn.textContent : '';
+      if (btn) { btn.textContent = 'กำลังเข้าสู่ระบบ...'; btn.disabled = true; }
+
+      AuthManager.signInWithEmail(email, password).then(function (res) {
+        if (res && res.success) {
+          try { form.reset(); } catch (e) {}
+          updateAuthUI();
+          showNotification('เข้าสู่ระบบสำเร็จ!', 'success');
+        } else {
+          showNotification(res && res.error || 'เข้าสู่ระบบไม่สำเร็จ', 'error');
+        }
+      }).finally(function () {
+        if (btn) { btn.textContent = original; btn.disabled = false; }
+      });
+    });
+  }
+
+  function setupLogoutButton() {
+    var btn = document.getElementById('btn-logout');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var original = btn.textContent;
+      btn.textContent = 'กำลังออกจากระบบ...';
+      btn.disabled = true;
+
+      AuthManager.signOut().then(function (res) {
+        if (res && res.success) {
+          updateAuthUI();
+          showNotification('ออกจากระบบแล้ว', 'info');
+        } else {
+          showNotification(res && res.error || 'ออกจากระบบไม่สำเร็จ', 'error');
+        }
+      }).finally(function () {
+        btn.textContent = original;
+        btn.disabled = false;
+      });
+    });
+  }
+
+  function showNotification(message, type, duration) {
+    type = type || 'info';
+    duration = typeof duration === 'number' ? duration : 3000;
+
+    var colors = {
+      success: 'bg-green-100 text-green-800 border-green-300',
+      error:   'bg-red-100 text-red-800 border-red-300',
+      info:    'bg-blue-100 text-blue-800 border-blue-300',
+      warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+    };
+
+    var n = document.createElement('div');
+    n.className = 'notification fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm ' + (colors[type] || colors.info);
+    n.textContent = message;
+    document.body.appendChild(n);
+    setTimeout(function () { try { n.remove(); } catch (e) {} }, duration);
+  }
+
+  // ---------------------------------
+  // Expose globals
+  // ---------------------------------
+  global.AuthManager = AuthManager;
+  global.updateAuthUI = updateAuthUI;
+  global.setupLoginForm = setupLoginForm;
+  global.setupLogoutButton = setupLogoutButton;
+  global.showNotification = showNotification;
+
+  console.info('[AuthManager] ready:', !!global.AuthManager);
+
+  // (ทางเลือก) Auto-init เมื่อหน้าโหลด ถ้าไม่ได้เรียกจาก app.js
+  if (!global.__AUTH_INIT_MANUAL__) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        AuthManager.initialize().then(function () {
+          updateAuthUI(); setupLoginForm(); setupLogoutButton();
+          AuthManager.addAuthListener(function () { updateAuthUI(); });
+        });
+      });
+    } else {
+      AuthManager.initialize().then(function () {
+        updateAuthUI(); setupLoginForm(); setupLogoutButton();
+        AuthManager.addAuthListener(function () { updateAuthUI(); });
+      });
+    }
+  }
+
+})(typeof window !== 'undefined' ? window : this);

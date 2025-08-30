@@ -50,10 +50,12 @@
     /**
      * เรียกตอนเริ่มแอป – preload ข้อมูลที่จำเป็น
      */
-    init: function () {
-      var self = this;
-      return self.preloadBanks().then(function () { return true; });
-    },
+// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
+init: function () {
+  // อ้างตรง ๆ เพื่อกัน this เพี้ยน
+  return DataManager.preloadBanks().then(function () { return true; });
+},
+
 
     /**
      * โหลดรายชื่อธนาคารและแคช

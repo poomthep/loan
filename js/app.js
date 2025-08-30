@@ -12,25 +12,30 @@ import { testSupabaseConnection } from './supabase-client.js';
 const DataManager = window.DataManager;
 
 // ✅ วางทับฟังก์ชันเริ่มต้นของเดิม
+// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
 function bootstrapApp() {
-  if (!window.supabase) {
-    console.error('Supabase client ยังไม่พร้อม');
-    return;
+  try {
+    if (!window.supabase || typeof window.supabase.from !== 'function') {
+      throw new Error('Supabase client not initialized');
+    }
+    const DM = window.DataManager;
+    if (!DM || typeof DM.init !== 'function') {
+      throw new Error('DataManager not ready');
+    }
+    // ถ้ามี AuthManager ให้เริ่มก่อน (ไม่บังคับ)
+    if (window.AuthManager && typeof window.AuthManager.initialize === 'function') {
+      window.AuthManager.initialize().finally(() => {
+        DM.init().then(() => console.log('App ready')).catch(console.error);
+      });
+    } else {
+      DM.init().then(() => console.log('App ready')).catch(console.error);
+    }
+  } catch (err) {
+    console.error('Bootstrap failed:', err);
   }
-  if (!DataManager || typeof DataManager.init !== 'function') {
-    console.error('DataManager ไม่พร้อม');
-    return;
-  }
-  DataManager.init()
-    .then(function () {
-      console.log('App ready');
-      // TODO: โค้ดเริ่มต้นอื่น ๆ ของกุ้ง เช่น เติม dropdown ธนาคาร
-      // DataManager.getBanks().then(populateBankSelect);
-    })
-    .catch(function (err) {
-      console.error('Bootstrap failed:', err);
-    });
 }
+document.addEventListener('DOMContentLoaded', bootstrapApp);
+
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
