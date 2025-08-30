@@ -1,12 +1,9 @@
 /* ============================================================================
- * loan-app-manager.js  (ESM, conservative syntax)
- * - ใช้ window.AuthManager (ไม่ import เป็นโมดูล)
- * - รองรับทั้งกรณี DataManager/LoanCalculator export เป็น default หรือ named
- * - หลีกเลี่ยง ?. และ ?? และการอ้าง .default โดยตรง เพื่อกัน build บางแบบที่พัง
+ * loan-app-manager.js  (ESM, conservative, no dot-access to .default)
  * ========================================================================== */
 'use strict';
 
-// --------- resolve ESM/Common style (หลีกเลี่ยงการอ้าง .default ตรงๆ) ----------
+// --------- Safe resolve for default/named exports (no dot-access) ----------
 import * as __DataManagerNS from './data-manager.js';
 import * as __LoanCalcNS   from './loan-calculator-supabase.js';
 
@@ -17,19 +14,28 @@ export default (NS.default ?? NS);
 
 
 function resolveModule(ns) {
-  // ถ้าเป็นอ็อบเจ็กต์และมี key 'default' ให้ใช้ตัวนั้น มิฉะนั้นใช้ทั้ง ns
   try {
-    if (ns && typeof ns === 'object' && Object.prototype.hasOwnProperty.call(ns, 'default') && ns.default) {
-      return ns.default;
+    if (ns && typeof ns === 'object') {
+      var hasDef = false;
+      try { hasDef = Object.prototype.hasOwnProperty.call(ns, 'default'); } catch (e) {}
+      if (hasDef) {
+        var d = null;
+        try { d = ns['default']; } catch (e) {}
+        if (d) return d;
+      }
+      // บางบันเดิลใส่ __esModule ไว้
+      try {
+        if (ns['__esModule'] && ns['default']) return ns['default'];
+      } catch (e) {}
     }
   } catch (e) {}
   return ns;
 }
 
-var DataManager = resolveModule(__DataManagerNS);
+var DataManager        = resolveModule(__DataManagerNS);
 var LoanCalculatorCtor = resolveModule(__LoanCalcNS);
 
-// --------- AuthManager helpers (อ่านจาก window) ----------
+// --------- AuthManager helpers (read from window) ----------
 function getAM() {
   if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
   throw new Error('AuthManager ยังไม่พร้อม');
@@ -41,14 +47,15 @@ function waitForAuthManager(timeoutMs) {
     var start = Date.now();
     (function loop() {
       if (typeof window !== 'undefined' && window.AuthManager) {
-        // เรียก initialize ถ้ามี (แต่ไม่ให้ throw หลุด)
         try {
-          if (typeof window.AuthManager.initialize === 'function') {
-            window.AuthManager.initialize().then(function(){ resolve(window.AuthManager); }).catch(function(){ resolve(window.AuthManager); });
-            return;
+          var am = window.AuthManager;
+          if (typeof am.initialize === 'function') {
+            am.initialize().then(function(){ resolve(am); }).catch(function(){ resolve(am); });
+          } else {
+            resolve(am);
           }
-        } catch (e) {}
-        return resolve(window.AuthManager);
+        } catch (e) { resolve(window.AuthManager); }
+        return;
       }
       if (Date.now() - start >= timeoutMs) return reject(new Error('AuthManager ยังไม่พร้อม'));
       setTimeout(loop, 60);
@@ -61,7 +68,6 @@ function waitForAuthManager(timeoutMs) {
 // ==========================================================================
 export class LoanAppManager {
   constructor() {
-    // ถ้า LoanCalculator เป็นคลาส ให้ new; ถ้าเป็นอ็อบเจ็กต์อยู่แล้ว ให้ใช้ตรงๆ
     try {
       this.calculator = (typeof LoanCalculatorCtor === 'function')
         ? new LoanCalculatorCtor()
@@ -97,11 +103,11 @@ export class LoanAppManager {
     await this.loadInitialData();
     await this.loadCalculationHistory();
 
-    // ฟัง auth change ถ้ามี
     try {
       var am = getAM();
       if (am && typeof am.addAuthListener === 'function') {
-        am.addAuthListener(this.updateAuthUI ? this.updateAuthUI.bind(this) : function(){});
+        var self = this;
+        am.addAuthListener(function(){ if (typeof self.updateAuthUI === 'function') self.updateAuthUI(); });
       }
     } catch (e) {}
 
@@ -181,6 +187,7 @@ export class LoanAppManager {
       el.addEventListener('blur', function(e){
         var v = parseInt(e.target.value,10)||0;
         if (v>0 && e.target.id !== 'age' && e.target.id !== 'years') {
+          if (!e.target.dataset) e.target.dataset = {};
           e.target.dataset.rawValue = v;
           e.target.value = v.toLocaleString();
         }
@@ -284,7 +291,7 @@ export class LoanAppManager {
       loanAmount:    this.getRaw(this.elements.loanAmount)
     };
   }
-  getRaw(el){ if(!el) return 0; var s = (el.dataset && el.dataset.rawValue) ? el.dataset.rawValue : String(el.value).replace(/,/g,''); var n = parseInt(s,10); return isNaN(n)?0:n; }
+  getRaw(el){ if(!el) return 0; var s = (el && el.dataset && el.dataset.rawValue) ? el.dataset.rawValue : String(el.value||'').replace(/,/g,''); var n = parseInt(s,10); return isNaN(n)?0:n; }
 
   validateParameters(p){
     var errs = [];
@@ -329,7 +336,6 @@ export class LoanAppManager {
       tbody.appendChild(tr);
     }
 
-    // summary
     var approved = results.filter(function(x){ return x.status==='APPROVED'; });
     var best = approved[0];
     if (this.elements.summary){
@@ -581,5 +587,4 @@ export function runLoanPage(){
   return app;
 }
 
-// default export + named export
 export default LoanAppManager;
