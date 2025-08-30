@@ -14,6 +14,28 @@
   <meta name="apple-mobile-web-app-title" content="Loan App">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏦</text></svg>">
   
+  <!-- โหลด Supabase และตั้ง window.supabase -->
+<script type="module" src="/supabase-init.js"></script>
+
+<!-- โหลด DataManager (ตัวที่ผมส่งให้กุ้งก่อนหน้านี้) -->
+<script defer src="/data-manager.js"></script>
+
+<!-- (ไม่จำเป็นแต่แนะนำ) เรียก init หลัง DOM พร้อม -->
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      if (!window.supabase) throw new Error('supabase ยังไม่ถูกติดตั้ง');
+      if (window.DataManager && typeof window.DataManager.init === 'function') {
+        await window.DataManager.init();
+      }
+      console.log('App ready');
+    } catch (err) {
+      console.error('Bootstrap failed:', err);
+    }
+  });
+</script>
+
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="stylesheet" href="./css/styles.css">
