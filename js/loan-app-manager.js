@@ -1,5 +1,5 @@
 /* ============================================================================
- * loan-app-manager.js  (ESM, conservative, no dot-access to .default)
+ * loan-app-manager.js  (ES Module, no default export, safe "default" handling)
  * ========================================================================== */
 'use strict';
 
@@ -19,14 +19,10 @@ function resolveModule(ns) {
       var hasDef = false;
       try { hasDef = Object.prototype.hasOwnProperty.call(ns, 'default'); } catch (e) {}
       if (hasDef) {
-        var d = null;
-        try { d = ns['default']; } catch (e) {}
+        var d = null; try { d = ns['default']; } catch (e) {}
         if (d) return d;
       }
-      // บางบันเดิลใส่ __esModule ไว้
-      try {
-        if (ns['__esModule'] && ns['default']) return ns['default'];
-      } catch (e) {}
+      try { if (ns['__esModule'] && ns['default']) return ns['default']; } catch (e) {}
     }
   } catch (e) {}
   return ns;
@@ -40,21 +36,18 @@ function getAM() {
   if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
   throw new Error('AuthManager ยังไม่พร้อม');
 }
-
 function waitForAuthManager(timeoutMs) {
   timeoutMs = typeof timeoutMs === 'number' ? timeoutMs : 4000;
   return new Promise(function (resolve, reject) {
     var start = Date.now();
     (function loop() {
       if (typeof window !== 'undefined' && window.AuthManager) {
+        var am = window.AuthManager;
         try {
-          var am = window.AuthManager;
           if (typeof am.initialize === 'function') {
             am.initialize().then(function(){ resolve(am); }).catch(function(){ resolve(am); });
-          } else {
-            resolve(am);
-          }
-        } catch (e) { resolve(window.AuthManager); }
+          } else { resolve(am); }
+        } catch (e) { resolve(am); }
         return;
       }
       if (Date.now() - start >= timeoutMs) return reject(new Error('AuthManager ยังไม่พร้อม'));
@@ -75,7 +68,6 @@ export class LoanAppManager {
     } catch (e) {
       this.calculator = LoanCalculatorCtor;
     }
-
     this.currentResults = [];
     this.currentParams  = {};
     this.isCalculating  = false;
@@ -167,7 +159,6 @@ export class LoanAppManager {
         r.addEventListener('change', function(){ self.handleModeChange(); });
       });
     }
-
     if (this.elements.product) {
       this.elements.product.addEventListener('change', function(){ self.loadInitialData(); });
     }
@@ -178,7 +169,7 @@ export class LoanAppManager {
     if (this.elements.btnExportJSON) this.elements.btnExportJSON.addEventListener('click', function(){ self.exportToJSON(); });
     if (this.elements.btnClearHistory) this.elements.btnClearHistory.addEventListener('click', function(){ self.clearCalculationHistory(); });
 
-    // numeric/format
+    // numeric + formatting
     var ids = ['income','debt','incomeExtra','age','years','property','loanAmount'];
     for (var i=0;i<ids.length;i++) {
       var el = this.elements[ids[i]];
@@ -412,9 +403,7 @@ export class LoanAppManager {
         div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">'+
           '<div><strong>'+ptext+'</strong> - '+mtext+'<div style="font-size:.8em;color:#666">รายได้: '+this.money(c.income)+(c.loan_amount?(' | วงเงิน: '+this.money(c.loan_amount)):'')+'</div></div>'+
           '<div style="font-size:.8em;color:#999">'+date+'</div></div>';
-        (function(cal, self){
-          div.addEventListener('click', function(){ self.loadCalculationFromHistory(cal); });
-        })(c, this);
+        (function(cal, self){ div.addEventListener('click', function(){ self.loadCalculationFromHistory(cal); }); })(c, this);
         container.appendChild(div);
       }
     }catch(e){ console.warn('loadCalculationHistory error:', e); }
@@ -568,11 +557,12 @@ export class LoanAppManager {
 
 // auto-clean
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', function () {
+  window.loanAppCleanup = function(){
     if (window.loanApp && typeof window.loanApp.cleanup === 'function') {
-      window.loanApp.cleanup();
+      try { window.loanApp.cleanup(); } catch (e) {}
     }
-  });
+  };
+  window.addEventListener('beforeunload', window.loanAppCleanup);
 }
 
 // สำหรับหน้าเก่าที่เรียกแบบฟังก์ชัน
@@ -583,8 +573,15 @@ export function runLoanPage(){
   } else {
     app.initialize();
   }
-  window.loanApp = app;
+  if (typeof window !== 'undefined') window.loanApp = app;
   return app;
 }
 
-export default LoanAppManager;
+// expose globals (เผื่อโค้ดเก่ายังอ้างผ่าน window)
+if (typeof window !== 'undefined') {
+  window.LoanAppManager = LoanAppManager;
+  window.runLoanPage     = runLoanPage;
+}
+
+// ไม่มี default export เพื่อกันปัญหา `.default`
+// ใช้แบบ ES Module:  import { LoanAppManager, runLoanPage } from './loan-app-manager.js';
