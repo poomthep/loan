@@ -292,3 +292,53 @@ preloadBanks: function () {
   console.info('[DataManager] ready:', !!global.DataManager);
 
 })(typeof window !== 'undefined' ? window : this);
+
+/* ============================
+ * DataManager HOTFIX (drop-in)
+ * วางบล็อกนี้ "ท้ายสุด" ของ data-manager.js
+ * หรือสร้างไฟล์ใหม่แล้วโหลดหลัง data-manager.js
+ * ============================ */
+(function(g){
+  'use strict';
+
+  // Ensure namespace
+  var DM = g.DataManager = g.DataManager || {};
+  DM._cache = DM._cache || { banks:null, promotionsActive:null, bankRules:null, mrrRates:null };
+
+  function ensureClient() {
+    var sb = g.supabase;
+    if (!sb || typeof sb.from !== 'function') {
+      throw new Error('Supabase client (window.supabase) is required');
+    }
+    return sb;
+  }
+
+  // ✅ แทนที่ทั้งฟังก์ชัน
+  DM.preloadBanks = function () {
+    var sb = ensureClient();
+    return sb
+      .from('banks')
+      .select('id, name, short_name, is_active')   // ใช้คอลัมน์ที่มีจริง
+      .order('short_name', { ascending: true })
+      .then(function (resp) {
+        if (resp.error) throw resp.error;
+        DM._cache.banks = Array.isArray(resp.data) ? resp.data : [];
+        return DM._cache.banks;
+      });
+  };
+
+  // ✅ แทนที่ทั้งฟังก์ชัน
+  DM.getBanks = function (force) {
+    if (!force && Array.isArray(DM._cache && DM._cache.banks)) {
+      return Promise.resolve(DM._cache.banks);
+    }
+    return DM.preloadBanks();
+  };
+
+  // ✅ แทนที่ทั้งฟังก์ชัน
+  DM.init = function () {
+    // อ้างตรง ๆ กัน this เพี้ยน และกันเคสฟังก์ชันไม่ถูก bind
+    return DM.preloadBanks().then(function(){ return true; });
+  };
+
+})(window);
