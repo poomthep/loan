@@ -6,7 +6,7 @@
 // - รองรับ DataManager ทั้ง default และ named export
 // ========================================
 
-import * as DataManagerNS from './data-manager.js';
+import * as DataManagerNS from './data-manager.fix.js';
 import LoanCalculator from './loan-calculator-supabase.js';
 
 // ---- helpers: isolate to avoid re-declare ----
