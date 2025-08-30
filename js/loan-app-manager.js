@@ -10,6 +10,12 @@
 import * as __DataManagerNS from './data-manager.js';
 import * as __LoanCalcNS   from './loan-calculator-supabase.js';
 
+// /js/data-manager.js
+export * from './data-manager.fix.js';
+import * as NS from './data-manager.fix.js';
+export default (NS.default ?? NS);
+
+
 function resolveModule(ns) {
   // ถ้าเป็นอ็อบเจ็กต์และมี key 'default' ให้ใช้ตัวนั้น มิฉะนั้นใช้ทั้ง ns
   try {
