@@ -55,6 +55,7 @@ export class DataManager {
     }
   }
 
+
   // ========================================
   // BANKS OPERATIONS
   // ========================================
@@ -74,6 +75,23 @@ export class DataManager {
       return data || [];
     });
   }
+  
+  /**
+ * ดึงข้อมูลธนาคารตาม ID
+ */
+static async getBankById(bankId) {
+  const banks = await this.getBanks();
+  return banks.find(bank => bank.id === bankId) || null;
+}
+
+/**
+ * ดึงข้อมูลธนาคารตาม short_name
+ */
+static async getBankByShortName(shortName) {
+  const banks = await this.getBanks();
+  return banks.find(bank => bank.short_name === shortName) || null;
+}
+
 
   /**
    * ดึงกฎเกณฑ์ของธนาคารเฉพาะ
@@ -547,41 +565,60 @@ export class DataManager {
   /**
    * ดึงข้อมูลสำหรับ Admin Panel
    */
-  static async getAllDataForAdmin() {
-    if (!AuthManager.isAdmin()) {
-      throw new Error('ต้องเป็น Admin เท่านั้น');
-    }
-
-    try {
-      // ดึงข้อมูลทั้งหมดรวมที่ไม่ active
-      const [banks, promotions, bankRules, mrrRates] = await Promise.all([
-        supabase.from('banks').select('*').order('short_name'),
-        supabase.from('promotions').select(`
-          *,
-          bank:banks(name, short_name)
-        `).order('created_at', { ascending: false }),
-        supabase.from('bank_rules').select(`
-          *,
-          bank:banks(name, short_name)
-        `).order('bank_id', 'product_type'),
-        supabase.from('mrr_rates').select(`
-          *,
-          bank:banks(name, short_name)
-        `).order('bank_id', 'product_type', 'effective_date')
-      ]);
-
-      return {
-        banks: banks.data || [],
-        promotions: promotions.data || [],
-        bankRules: bankRules.data || [],
-        mrrRates: mrrRates.data || []
-      };
-
-    } catch (error) {
-      console.error('Error loading admin data:', error);
-      throw error;
-    }
+   
+   /**
+ * ดึงข้อมูลสำหรับ Admin Panel
+ */
+static async getAllDataForAdmin() {
+  if (!AuthManager.isAdmin()) {
+    throw new Error('ต้องเป็น Admin เท่านั้น');
   }
+
+  try {
+    // ดึงข้อมูลทั้งหมดรวมที่ไม่ active
+    const [banksRes, promotionsRes, bankRulesRes, mrrRatesRes] = await Promise.all([
+      supabase.from('banks')
+        .select('*')
+        .order('short_name', { ascending: true }),
+
+      supabase.from('promotions')
+        .select(`
+          *,
+          bank:banks(name, short_name)
+        `)
+        .order('created_at', { ascending: false }),
+
+      supabase.from('bank_rules')
+        .select(`
+          *,
+          bank:banks(name, short_name)
+        `)
+        .order('bank_id', { ascending: true })
+        .order('product_type', { ascending: true }),
+
+      supabase.from('mrr_rates')
+        .select(`
+          *,
+          bank:banks(name, short_name)
+        `)
+        .order('bank_id', { ascending: true })
+        .order('product_type', { ascending: true })
+        .order('effective_date', { ascending: true })
+    ]);
+
+    return {
+      banks: banksRes.data || [],
+      promotions: promotionsRes.data || [],
+      bankRules: bankRulesRes.data || [],
+      mrrRates: mrrRatesRes.data || []
+    };
+
+  } catch (error) {
+    console.error('Error loading admin data:', error);
+    throw error;
+  }
+}
+
 
   // ========================================
   // UTILITY METHODS
@@ -653,7 +690,9 @@ export class DataManager {
 // EXPORT FOR LEGACY COMPATIBILITY
 // ========================================
 
-// Export individual methods for backward compatibility
+// ========================================
+// EXPORT FOR LEGACY COMPATIBILITY
+// ========================================
 export const {
   getBanks,
   getActivePromotions,
@@ -661,11 +700,13 @@ export const {
   getMRRRates,
   saveCalculation,
   getUserCalculations,
-  getAllDataForCalculation
+  getAllDataForCalculation,
+  getBankById,
+  getBankByShortName
 } = DataManager;
 
 export default DataManager;
-  }
+
 
   /**
    * ดึงข้อมูลธนาคารตาม ID
