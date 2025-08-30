@@ -60,32 +60,52 @@ init: function () {
 
     /**
      * โหลดรายชื่อธนาคารและแคช
-// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
+// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน (ลบ is_active ออกจาก select และใส่ค่าเริ่มต้นให้)
 preloadBanks: function () {
   var self = this;
-  var sb = (function () {
-    var s = window && window.supabase;
-    if (!s || typeof s.from !== 'function') throw new Error('Supabase client (window.supabase) is required');
-    return s;
-  })();
 
+  function ensureClient() {
+    var sb = window && window.supabase;
+    if (!sb || typeof sb.from !== 'function') {
+      throw new Error('Supabase client (window.supabase) is required');
+    }
+    return sb;
+  }
+
+  var sb = ensureClient();
   return sb
     .from('banks')
-    // เลือกเฉพาะคอลัมน์ที่มีจริงในตารางของกุ้ง
-    .select('id, name, short_name, is_active')
+    .select('id, name, short_name')     // ← ไม่มี is_active แล้ว
     .order('short_name', { ascending: true })
     .then(function (resp) {
       if (resp.error) throw resp.error;
-      self._cache.banks = Array.isArray(resp.data) ? resp.data : [];
-      return self._cache.banks;
+
+      // ใส่ค่าเริ่มต้นให้ is_active = true กันโค้ดส่วนอื่นที่คาดหวัง field นี้
+      var list = Array.isArray(resp.data) ? resp.data.map(function (row) {
+        if (typeof row.is_active === 'undefined') row.is_active = true;
+        return row;
+      }) : [];
+
+      self._cache = self._cache || {};
+      self._cache.banks = list;
+      return list;
     });
 },
 
+// ✅ ฟังก์ชันเสริม (วางเพิ่มในอ็อบเจ็กต์ DataManager)
+getActiveBanks: function (force) {
+  var p = (typeof this.getBanks === 'function') ? this.getBanks(force) : this.preloadBanks();
+  return p.then(function (list) {
+    // is_active ไม่มีในฐาน → เราตั้ง default=true ด้านบนแล้ว
+    return (list || []).filter(function (b) { return b.is_active !== false; });
+  });
+},
 
 
     /**
      * ดึงรายชื่อธนาคารจากแคช (หรือโหลดใหม่ถ้า force)
      */
+	 
     getBanks: function (force) {
       if (!force && Array.isArray(this._cache.banks)) {
         return Promise.resolve(this._cache.banks);
