@@ -35,6 +35,25 @@ async function waitForAuthManager(maxWaitMs = 8000, intervalMs = 100) {
 /**
  * จัดการแอปพลิเคชันหลักสำหรับการคำนวณสินเชื่อ
  */
+ 
+ // ==== helpers (top level) ====
+function getAM() {
+  return (typeof window !== 'undefined' && window.AuthManager)
+    ? window.AuthManager
+    : null; // อย่า throw
+}
+
+async function waitForAuthManager(maxWaitMs = 8000, intervalMs = 100) {
+  const start = Date.now();
+  while (Date.now() - start < maxWaitMs) {
+    const am = getAM();
+    if (am && typeof am.initialize === 'function') return am;
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  console.warn('[LoanApp] AuthManager not found within wait window. Continue as GUEST mode.');
+  return null;
+}
+
 export class LoanAppManager {
   constructor() {
     this.calculator = new LoanCalculator();
