@@ -57,20 +57,22 @@
 
     /**
      * โหลดรายชื่อธนาคารและแคช
-     */
-    preloadBanks: function () {
-      var self = this;
-      var sb = ensureClient();
-      return sb
-        .from('banks')
-        .select('id, name, bank_name, short_name, is_active')
-        .order('short_name', { ascending: true })
-        .then(function (resp) {
-          if (resp.error) throw resp.error;
-          self._cache.banks = Array.isArray(resp.data) ? resp.data : [];
-          return self._cache.banks;
-        });
-    },
+// ✅ วางทับในอ็อบเจ็กต์ DataManager ให้ตรงชื่อฟังก์ชันเดิม
+preloadBanks: function () {
+  var self = this;
+  var sb = ensureClient();
+  return sb
+    .from('banks')
+    // ❌ เอา bank_name ออก เพราะไม่มีคอลัมน์นี้ในตาราง
+    .select('id, name, short_name, is_active')
+    .order('short_name', { ascending: true })
+    .then(function (resp) {
+      if (resp.error) throw resp.error;
+      self._cache.banks = Array.isArray(resp.data) ? resp.data : [];
+      return self._cache.banks;
+    });
+},
+
 
     /**
      * ดึงรายชื่อธนาคารจากแคช (หรือโหลดใหม่ถ้า force)

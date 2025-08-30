@@ -4,9 +4,36 @@
 // ========================================
 
 import { AuthManager, updateAuthUI, setupLoginForm, setupLogoutButton, showNotification } from './auth-manager.js';
-import DataManager from './data-manager.js';
+
 import { registerServiceWorker } from '../sw-register.js';
 import { testSupabaseConnection } from './supabase-client.js';
+
+// ใช้ตัว global ที่มาจาก data-manager.js
+const DataManager = window.DataManager;
+
+// ✅ วางทับฟังก์ชันเริ่มต้นของเดิม
+function bootstrapApp() {
+  if (!window.supabase) {
+    console.error('Supabase client ยังไม่พร้อม');
+    return;
+  }
+  if (!DataManager || typeof DataManager.init !== 'function') {
+    console.error('DataManager ไม่พร้อม');
+    return;
+  }
+  DataManager.init()
+    .then(function () {
+      console.log('App ready');
+      // TODO: โค้ดเริ่มต้นอื่น ๆ ของกุ้ง เช่น เติม dropdown ธนาคาร
+      // DataManager.getBanks().then(populateBankSelect);
+    })
+    .catch(function (err) {
+      console.error('Bootstrap failed:', err);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', bootstrapApp);
+
 
 /**
  * Main application class to manage the index page.
