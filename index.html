@@ -18,18 +18,18 @@
 <script type="module" src="/supabase-init.js"></script>
 
 <!-- โหลด DataManager (ตัวที่ผมส่งให้กุ้งก่อนหน้านี้) -->
-<!-- Supabase client -->
-<script type="module" src="/supabase-init.js"></script>
+<!-- 1) Supabase -->
+<script type="module" src="/supabase-init.js?v=1"></script>
 
-<!-- Data layer (global) -->
-<script defer src="/data-manager.js"></script>
+<!-- 2) Data layer -->
+<script defer src="/data-manager.js?v=1"></script>
+<script defer src="/js/data-manager.fix.js?v=1"></script>  <!-- 👈 ใส่ไฟล์ override ตรงนี้ -->
 
-<!-- Auth manager (global – ไฟล์ที่ผมให้ล่าสุด) -->
-<script defer src="/auth-manager.js"></script>
+<!-- 3) Auth -->
+<script defer src="/auth-manager.js?v=1"></script>
 
-<!-- App bootstrap (global – ไฟล์ A ข้างบน) -->
-<script defer src="/js/app.js"></script>
-
+<!-- 4) App -->
+<script defer src="/js/app.js?v=1"></script>
 
 <!-- (ไม่จำเป็นแต่แนะนำ) เรียก init หลัง DOM พร้อม -->
 <script>

@@ -52,15 +52,15 @@
      */
 // ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
 init: function () {
-  // อ้างตรงเพื่อตัดปัญหา this เพี้ยน
   return DataManager.preloadBanks().then(function () { return true; });
 },
 
 
 
+
     /**
      * โหลดรายชื่อธนาคารและแคช
-// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน (ลบ is_active ออกจาก select และใส่ค่าเริ่มต้นให้)
+// ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
 preloadBanks: function () {
   var self = this;
 
@@ -75,13 +75,14 @@ preloadBanks: function () {
   var sb = ensureClient();
   return sb
     .from('banks')
-    .select('id, name, short_name')     // ← ไม่มี is_active แล้ว
+    .select('*') // <- ลบ is_active ออก ใช้ * ไปเลย
     .order('short_name', { ascending: true })
     .then(function (resp) {
       if (resp.error) throw resp.error;
 
-      // ใส่ค่าเริ่มต้นให้ is_active = true กันโค้ดส่วนอื่นที่คาดหวัง field นี้
       var list = Array.isArray(resp.data) ? resp.data.map(function (row) {
+        if (typeof row.name === 'undefined' && typeof row.bank_name !== 'undefined') row.name = row.bank_name;
+        if (typeof row.short_name === 'undefined' && typeof row.code !== 'undefined') row.short_name = row.code;
         if (typeof row.is_active === 'undefined') row.is_active = true;
         return row;
       }) : [];
@@ -91,6 +92,7 @@ preloadBanks: function () {
       return list;
     });
 },
+
 
 // ✅ ฟังก์ชันเสริม (วางเพิ่มในอ็อบเจ็กต์ DataManager)
 getActiveBanks: function (force) {
