@@ -3,7 +3,7 @@
 // LOAN APP MANAGER - MAIN CONTROLLER
 // ========================================
 
-import DataManager from './js/data-manager.fix.js';
+import DataManager from './data-manager.fix.js';
 import LoanCalculator from './loan-calculator-supabase.js';
 
 /* ------------------------------------------------
