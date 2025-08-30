@@ -7,11 +7,6 @@
 import * as __DataManagerNS from './data-manager.js';
 import * as __LoanCalcNS   from './loan-calculator-supabase.js';
 
-// /js/data-manager.js
-export * from './data-manager.fix.js';
-import * as NS from './data-manager.fix.js';
-export default (NS.default ?? NS);
-
 
 function resolveModule(ns) {
   try {
