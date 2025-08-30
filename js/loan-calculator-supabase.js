@@ -1,12 +1,10 @@
 /*! loan-calculator-supabase.js
  * Loan App – Core Calculator (ES Module)
  * - ใช้ AuthManager แบบ global (window.AuthManager)
- * - ใช้ DataManager จาก data-manager.fix.js
+ * - รองรับ data-manager.fix.js ทั้งแบบ default/named export
  */
 
-//
-// ===== Helpers: ใช้ AuthManager แบบ global โดยไม่ import =====
-//
+/* ===== Helpers: ใช้ AuthManager แบบ global โดยไม่ import ===== */
 const AM = (typeof window !== 'undefined' && window.AuthManager)
   ? window.AuthManager
   : null;
@@ -17,17 +15,13 @@ function getAM() {
   throw new Error('AuthManager ยังไม่พร้อม');
 }
 
-//
-// ===== Data Layer =====
-//  * เปลี่ยน path ให้ตรงกับไฟล์ที่มีจริง (เพื่อแก้ 404)
-//
-import DataManager from './data-manager.fix.js';
+/* ===== Data Layer =====
+   เปลี่ยนเป็น import แบบครอบคลุมทุกกรณี แล้วทำ fallback ให้เป็นอ็อบเจกต์เดียวชื่อ DataManager */
+import * as DM from './data-manager.fix.js';
+const DataManager = DM.default || DM.DataManager || DM;
 
-//
-// ===== Utilities (คำนวณทางการเงินพื้นฐาน) =====
-//
+/* ===== Utilities (คำนวณทางการเงินพื้นฐาน) ===== */
 function pmtRatePerMonth(annualRate) {
-  // รับเป็น % (เช่น 6.5) -> คืนค่าอัตราต่อเดือนแบบทศนิยม
   const r = Number(annualRate || 0) / 100;
   return r > 0 ? r / 12 : 0;
 }
@@ -44,29 +38,20 @@ function calcMonthlyPayment(annualRatePercent, years, principal) {
   return (P * i * factor) / (factor - 1);
 }
 
-function fmtNumber(n) {
-  return new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(n || 0);
-}
-
-//
-// ===== Core Calculator =====
-//
+/* ===== Core Calculator ===== */
 export default class LoanCalculator {
   constructor() {
     this._unsubRealtime = null;
-
-    // defaults / สมมติฐานทั่วไป (ปรับได้)
-    this.DEFAULT_RATE = 6.5;     // ดอกเบี้ยเฉลี่ยกรณีไม่มีข้อมูลจากโปรโมชัน (% ต่อปี)
-    this.DEFAULT_DSR_LIMIT = 70; // สัดส่วนหนี้ต่อรายได้สูงสุด (%)
-    this.DEFAULT_LTV_LIMIT = 90; // LTV สูงสุดเริ่มต้น (%)
+    this.DEFAULT_RATE = 6.5;     // (% ต่อปี)
+    this.DEFAULT_DSR_LIMIT = 70; // (%)
+    this.DEFAULT_LTV_LIMIT = 90; // (%)
   }
 
-  //
-  // ========= Realtime =========
-  //
+  /* ================= Realtime ================= */
+  // ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
   setupRealTimeUpdates(onChange) {
     try {
-      if (typeof DataManager.subscribeDataChanges === 'function') {
+      if (DataManager && typeof DataManager.subscribeDataChanges === 'function') {
         const unsub = DataManager.subscribeDataChanges((type) => {
           if (typeof onChange === 'function') onChange(type);
         });
@@ -78,18 +63,11 @@ export default class LoanCalculator {
   }
 
   cleanup() {
-    try {
-      if (this._unsubRealtime) this._unsubRealtime();
-    } catch (_) {}
+    try { if (this._unsubRealtime) this._unsubRealtime(); } catch (_) {}
     this._unsubRealtime = null;
   }
 
-  //
-  // ========= Main APIs =========
-  //
-  /**
-   * คำนวณ "วงเงินสูงสุด" ที่กู้ได้ต่อธนาคาร
-   */
+  /* ================ Main APIs ================ */
   async calculateMaxLoanAmount(params) {
     const productType = params?.productType || 'MORTGAGE';
     const [banks, promotions] = await Promise.all([
@@ -98,10 +76,9 @@ export default class LoanCalculator {
     ]);
 
     const offers = banks.map((bank) =>
-      this._buildOfferForBank(bank, params, promotions, /*mode*/ 'max')
+      this._buildOfferForBank(bank, params, promotions, 'max')
     );
 
-    // อนุมัติขึ้นก่อน แล้วเรียงตามวงเงินสูงสุดมาก→น้อย
     offers.sort((a, b) => {
       const ok = (x) => (x.status === 'APPROVED' ? 1 : 0);
       if (ok(a) !== ok(b)) return ok(b) - ok(a);
@@ -111,9 +88,6 @@ export default class LoanCalculator {
     return offers;
   }
 
-  /**
-   * ตรวจสอบ "วงเงินที่ต้องการกู้" ว่าผ่าน/ไม่ผ่าน
-   */
   async checkLoanAmount(params) {
     const productType = params?.productType || 'MORTGAGE';
     const [banks, promotions] = await Promise.all([
@@ -122,10 +96,9 @@ export default class LoanCalculator {
     ]);
 
     const offers = banks.map((bank) =>
-      this._buildOfferForBank(bank, params, promotions, /*mode*/ 'check')
+      this._buildOfferForBank(bank, params, promotions, 'check')
     );
 
-    // อนุมัติขึ้นก่อน แล้วเรียงตาม DSR ต่ำ→สูง
     offers.sort((a, b) => {
       const ok = (x) => (x.status === 'APPROVED' ? 1 : 0);
       if (ok(a) !== ok(b)) return ok(b) - ok(a);
@@ -135,9 +108,7 @@ export default class LoanCalculator {
     return offers;
   }
 
-  /**
-   * บันทึกผลการคำนวณ (ถ้าไม่ล็อกอินจะข้ามแบบนิ่มนวล)
-   */
+  // ✅ ใช้แทนของเดิมทั้งฟังก์ชัน
   async saveCalculation(params, results, mode) {
     try {
       const am = getAM();
@@ -151,32 +122,24 @@ export default class LoanCalculator {
         return { success: true, skipped: true };
       }
 
-      // ฝาก DataManager บันทึก (ให้มีฟังก์ชันนี้ใน data-manager)
-      return await DataManager.saveCalculation(params, results, mode);
+      if (DataManager && typeof DataManager.saveCalculation === 'function') {
+        return await DataManager.saveCalculation(params, results, mode);
+      }
+      return { success: false, error: 'DataManager.saveCalculation() ไม่พร้อม' };
     } catch (err) {
       console.error('[LoanCalculator] saveCalculation error:', err);
       return { success: false, error: err?.message || String(err) };
     }
   }
 
-  //
-  // ========= Export =========
-  //
+  /* ================ Export ================ */
   static exportToCSV(results) {
     if (!Array.isArray(results) || results.length === 0) {
       return 'bank_short,bank_name,promo,rate,monthly,amount,dsr,ltv,status\n';
     }
 
     const header = [
-      'bank_short',
-      'bank_name',
-      'promo',
-      'rate',
-      'monthly',
-      'amount',
-      'dsr',
-      'ltv',
-      'status'
+      'bank_short','bank_name','promo','rate','monthly','amount','dsr','ltv','status'
     ].join(',');
 
     const lines = results.map((r) => {
@@ -186,7 +149,7 @@ export default class LoanCalculator {
       const amount = r.maxLoanAmount || r.loanAmount || 0;
       const dsr = typeof r.dsr === 'number' ? r.dsr.toFixed(2) : '';
       const ltv = typeof r.ltv === 'number' ? r.ltv.toFixed(2) : '';
-      const row = [
+      return [
         safeCSV(r.bankShortName),
         safeCSV(r.bankName),
         safeCSV(promo),
@@ -196,8 +159,7 @@ export default class LoanCalculator {
         dsr,
         ltv,
         r.status || ''
-      ];
-      return row.join(',');
+      ].join(',');
     });
 
     return header + '\n' + lines.join('\n') + '\n';
@@ -218,32 +180,21 @@ export default class LoanCalculator {
     return JSON.stringify(payload, null, 2);
   }
 
-  //
-  // ========= Internals =========
-  //
+  /* ================ Internals ================ */
   _pickPromotionForBank(bank, promotions) {
     if (!promotions || promotions.length === 0) return null;
-    // เลือกโปรฯ ที่ bank_id ตรง (ถ้ามี) ไม่งั้นคืนโปรฯ แรก ๆ ไปก่อน
     const byBank = promotions.find((p) => p.bank_id === bank.id);
     return byBank || promotions[0] || null;
   }
 
   _getLimits(productType, promo) {
-    // กำหนดค่าเพดานเบื้องต้น แล้วใช้ค่าจากโปรฯ ถ้ามี
     let dsrLimit = this.DEFAULT_DSR_LIMIT;
     let ltvLimit = this.DEFAULT_LTV_LIMIT;
 
-    if (promo && typeof promo.max_dsr === 'number') {
-      dsrLimit = promo.max_dsr;
-    }
-    if (promo && typeof promo.max_ltv === 'number') {
-      ltvLimit = promo.max_ltv;
-    }
+    if (promo && typeof promo.max_dsr === 'number') dsrLimit = promo.max_dsr;
+    if (promo && typeof promo.max_ltv === 'number') ltvLimit = promo.max_ltv;
 
-    // อาจปรับเพิ่มตามประเภทผลิตภัณฑ์ (ถ้าต้องการ)
-    if (productType === 'PERSONAL') {
-      ltvLimit = 100; // ไม่มีหลักประกันชัดเจน ใช้ 100 ไว้ก่อน
-    }
+    if (productType === 'PERSONAL') ltvLimit = 100;
 
     return { dsrLimit, ltvLimit };
   }
@@ -252,7 +203,7 @@ export default class LoanCalculator {
     const {
       income = 0,
       incomeExtra = 0,
-      debt = 0, // monthly existing debt
+      debt = 0,
       years = 20,
       propertyValue = 0,
       loanAmount = 0
@@ -261,11 +212,9 @@ export default class LoanCalculator {
     const monthlyIncome = Number(income) + Number(incomeExtra);
     const monthlyPayment = calcMonthlyPayment(rate, years, loanAmount);
 
-    // DSR: (หนี้ต่อเดือนทั้งหมด / รายได้ต่อเดือนทั้งหมด) x 100
     const totalDebt = Number(debt || 0) + Number(monthlyPayment || 0);
     const dsr = monthlyIncome > 0 ? (totalDebt / monthlyIncome) * 100 : 999;
 
-    // LTV: (วงเงินกู้ / มูลค่าหลักประกัน) x 100
     const ltv = propertyValue > 0 ? (loanAmount / propertyValue) * 100 : 999;
 
     return { monthlyPayment, dsr, ltv };
@@ -281,20 +230,13 @@ export default class LoanCalculator {
     } = params || {};
 
     const monthlyIncome = Number(income) + Number(incomeExtra);
-    const dsrRoom = Math.max(limits.dsrLimit, 0); // %
-    const ltvRoom = Math.max(limits.ltvLimit, 0); // %
+    const dsrRoom = Math.max(limits.dsrLimit, 0);
+    const ltvRoom = Math.max(limits.ltvLimit, 0);
 
-    // 1) เพดานจาก DSR -> หา "ค่างวดที่จ่ายได้" แล้วย้อนกลับเป็นวงเงิน
-    //    totalDebt = debt + monthlyPayment <= (monthlyIncome * dsrRoom/100)
     const maxTotalDebt = monthlyIncome * (dsrRoom / 100);
     const maxNewInstallment = Math.max(maxTotalDebt - Number(debt || 0), 0);
 
-    // หา principal ที่ทำให้ PMT(rate, years, principal) = maxNewInstallment
-    // ใช้การค้นหาแบบ binary search แบบหยาบ ๆ พอใช้งานจริง
-    const n = (Number(years) || 0) * 12;
-    const i = pmtRatePerMonth(rate);
-    let lo = 0;
-    let hi = 100_000_000; // 100 ล้านบาท (เพดานค้นหา)
+    let lo = 0, hi = 100_000_000; // 100 ล้านบาท
     for (let k = 0; k < 40; k++) {
       const mid = (lo + hi) / 2;
       const pmt = calcMonthlyPayment(rate, years, mid);
@@ -303,10 +245,8 @@ export default class LoanCalculator {
     }
     const maxByDSR = lo;
 
-    // 2) เพดานจาก LTV
     const maxByLTV = (Number(propertyValue) || 0) * (ltvRoom / 100);
 
-    // วงเงินสูงสุดจริง = min(ตาม DSR, ตาม LTV)
     const maxLoanAmount = Math.max(Math.min(maxByDSR, maxByLTV), 0);
 
     const monthlyPayment = calcMonthlyPayment(rate, years, maxLoanAmount);
@@ -321,8 +261,6 @@ export default class LoanCalculator {
     const productType = params?.productType || 'MORTGAGE';
     const promo = this._pickPromotionForBank(bank, promotions);
 
-    // เลือกดอกเบี้ยจากโปรโมชัน ถ้าไม่มีใช้ default
-    // (สมมติใช้ year1Rate เป็นอัตราคร่าว ๆ ถ้าไม่มี field นี้)
     const interestRate =
       (promo && typeof promo.year1Rate === 'number' && promo.year1Rate > 0)
         ? promo.year1Rate
@@ -347,20 +285,16 @@ export default class LoanCalculator {
       dsr = res.dsr;
       ltv = res.ltv;
       maxLoanAmount = res.maxLoanAmount;
-      // ให้ loanAmount = maxLoanAmount เพื่อให้ตารางดูง่ายในโหมด max
       loanAmount = maxLoanAmount;
     }
 
-    // ตัดสินสถานะอนุมัติแบบคร่าว ๆ ตามเพดาน
     const pass = (dsr <= limits.dsrLimit + 1e-6) && (ltv <= limits.ltvLimit + 1e-6);
     const status = pass ? 'APPROVED' : 'REJECTED';
 
     return {
-      // bank
       bankId: bank.id,
       bankName: bank.name || bank.bank_name || '',
       bankShortName: bank.short_name || bank.name || '',
-      // promo
       promotion: promo
         ? {
             id: promo.id,
@@ -369,14 +303,12 @@ export default class LoanCalculator {
             year1Rate: promo.year1Rate ?? null
           }
         : null,
-      // numbers
-      interestRate,          // %
+      interestRate,
       monthlyPayment: Math.round(monthlyPayment),
       loanAmount: Math.round(loanAmount) || 0,
       maxLoanAmount: Math.round(maxLoanAmount) || 0,
-      dsr: Number.isFinite(dsr) ? dsr : null, // %
-      ltv: Number.isFinite(ltv) ? ltv : null, // %
-      // result
+      dsr: Number.isFinite(dsr) ? dsr : null,
+      ltv: Number.isFinite(ltv) ? ltv : null,
       status
     };
   }
