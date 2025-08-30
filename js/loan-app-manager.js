@@ -16,7 +16,7 @@ function getAM() {
 }
 
 // ====== โมดูลอื่น ๆ ของแอป ======
-import DataManager from './data-manager.js';
+import DataManager from './data-manager.fix.js';
 import LoanCalculator from './loan-calculator-supabase.js';
 
 /**
