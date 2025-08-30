@@ -18,17 +18,18 @@
 <script type="module" src="/supabase-init.js"></script>
 
 <!-- โหลด DataManager (ตัวที่ผมส่งให้กุ้งก่อนหน้านี้) -->
-<!-- 1) Supabase client (ESM) -->
+<!-- Supabase client -->
 <script type="module" src="/supabase-init.js"></script>
 
-<!-- 2) Data layer (global) -->
-<script defer src="/js/data-manager.js"></script>
+<!-- Data layer (global) -->
+<script defer src="/data-manager.js"></script>
 
-<!-- 3) Auth manager (global/ESM อะไรก็ได้ แต่ต้องอ้าง global.supabase) -->
-<script defer src="/js/auth-manager.js"></script>
+<!-- Auth manager (global – ไฟล์ที่ผมให้ล่าสุด) -->
+<script defer src="/auth-manager.js"></script>
 
-<!-- 4) App bootstrap (global) -->
-<script defer src="/js/app.js"></script>
+<!-- App bootstrap (global – ไฟล์ A ข้างบน) -->
+<script defer src="/app.js"></script>
+
 
 <!-- (ไม่จำเป็นแต่แนะนำ) เรียก init หลัง DOM พร้อม -->
 <script>
