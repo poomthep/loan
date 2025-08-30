@@ -25,6 +25,9 @@ export function registerServiceWorker() {
         });
       });
 
+export function initializeServiceWorker() {
+  console.log('🚀 Initializing Service Worker system...');
+
       navigator.serviceWorker.addEventListener('message', (evt) => {
         if (evt.data && evt.data.type === 'VERSION') {
           console.log('Loan App Service Worker', evt.data.version, 'loaded');
