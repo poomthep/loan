@@ -48,14 +48,12 @@
     </header>
 
     <div class="grid">
-      <!-- การจัดการโปรโมชัน -->
       <section class="card">
         <h1>จัดการโปรโมชัน (ข้อเสนอพิเศษและส่วนลด)</h1>
         <div class="muted">บันทึก/แก้ไขโปรโมชันของธนาคาร และค้นหาจากรายการด้านล่าง</div>
 
         <div class="spacer"></div>
 
-        <!-- ค้นหา/กรอง -->
         <div class="toolbar">
           <div class="note">ค้นหาหัวข้อ/รายละเอียด/ธนาคาร</div>
           <input id="admin-filter" type="text" placeholder="คำที่ต้องการค้นหา…" />
@@ -63,7 +61,6 @@
 
         <div class="spacer"></div>
 
-        <!-- ตารางรายการโปรโมชัน -->
         <div style="overflow:auto">
           <table id="admin-promotions-table">
             <thead>
@@ -87,7 +84,6 @@
 
         <div class="spacer"></div>
 
-        <!-- ฟอร์มบันทึก/แก้ไขโปรโมชัน -->
         <form id="admin-promo-form" class="grid">
           <div class="row">
             <div>
@@ -152,20 +148,46 @@
   </div>
 
   <!-- === Scripts Order สำคัญมาก === -->
-  <!-- 1) Supabase client (ต้องเป็น module เพื่อ import key จาก ENV) -->
+  <!-- 1) Supabase -->
   <script type="module" src="/supabase-init.js?v=1"></script>
-
-  <!-- 2) ส่วนที่แอปใช้ร่วม (ถ้ามี) -->
+  <!-- 2) ส่วนกลางของแอป -->
   <script defer src="/data-manager.js?v=1"></script>
-
   <!-- 3) จัดการล็อกอิน/สิทธิ์ -->
   <script defer src="/auth-manager.js?v=1"></script>
 
-  <!-- 4) สคริปต์เฉพาะหน้า Admin (ES Module) -->
+  <!-- 4) โหลดสคริปต์ Admin แบบลองหลายพาธอัตโนมัติ -->
   <script type="module">
-    import AdminManager from '/js/admin-manager-supabase.module.js?v=1';
-    window.AdminManager = AdminManager;   // เผื่อสคริปต์อื่นเรียกผ่าน global
-    AdminManager.init();
+    (async () => {
+      const candidates = [
+        '/admin-manager-supabase.module.js?v=1',
+        '/js/admin-manager-supabase.module.js?v=1',
+        './admin-manager-supabase.module.js?v=1',
+        './js/admin-manager-supabase.module.js?v=1'
+      ];
+      let AdminManager = null;
+      let lastError = null;
+
+      for (const url of candidates) {
+        try {
+          const mod = await import(url);
+          AdminManager = mod && (mod.default || mod.AdminManager);
+          if (AdminManager) {
+            window.AdminManager = AdminManager; // เผื่อโค้ดอื่นเรียกผ่าน global
+            AdminManager.init();
+            console.info('[Admin] Loaded from', url);
+            break;
+          }
+        } catch (e) {
+          lastError = e;
+          console.debug('[Admin] try', url, '=>', e && e.message ? e.message : e);
+        }
+      }
+
+      if (!AdminManager) {
+        console.error('ไม่พบไฟล์ admin-manager-supabase.module.js ในตำแหน่งที่คาดไว้', lastError);
+        alert('โหลดสคริปต์ผู้ดูแลไม่สำเร็จ: โปรดตรวจตำแหน่งไฟล์ admin-manager-supabase.module.js บนโฮสต์');
+      }
+    })();
   </script>
 </body>
 </html>
