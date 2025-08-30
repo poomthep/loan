@@ -63,18 +63,17 @@ export class DataManager {
   /**
    * ดึงรายการธนาคารทั้งหมด
    */
-  static async getBanks() {
-    return this.getWithCache('banks', async () => {
-      const { data, error } = await supabase
-        .from('banks')
-        .select('*')
-        .eq('active', true)
-        .order('short_name');
+// ✅ เวอร์ชันไม่ใช้ static สำหรับไฟล์แบบ module functions
+export async function getBanks() {
+  const { data, error } = await supabase
+    .from('banks')
+    .select('*')
+    .order('short_name', { ascending: true });
 
-      if (error) throw error;
-      return data || [];
-    });
-  }
+  if (error) throw error;
+  return data || [];
+}
+
   
   /**
  * ดึงข้อมูลธนาคารตาม ID
@@ -569,55 +568,41 @@ static async getBankByShortName(shortName) {
    /**
  * ดึงข้อมูลสำหรับ Admin Panel
  */
-static async getAllDataForAdmin() {
+// ✅ เวอร์ชันไม่ใช้ static
+export async function getAllDataForAdmin() {
   if (!AuthManager.isAdmin()) {
     throw new Error('ต้องเป็น Admin เท่านั้น');
   }
 
-  try {
-    // ดึงข้อมูลทั้งหมดรวมที่ไม่ active
-    const [banksRes, promotionsRes, bankRulesRes, mrrRatesRes] = await Promise.all([
-      supabase.from('banks')
-        .select('*')
-        .order('short_name', { ascending: true }),
+  const [banksRes, promotionsRes, bankRulesRes, mrrRatesRes] = await Promise.all([
+    supabase.from('banks')
+      .select('*')
+      .order('short_name', { ascending: true }),
 
-      supabase.from('promotions')
-        .select(`
-          *,
-          bank:banks(name, short_name)
-        `)
-        .order('created_at', { ascending: false }),
+    supabase.from('promotions')
+      .select(`*, bank:banks(name, short_name)`)
+      .order('created_at', { ascending: false }),
 
-      supabase.from('bank_rules')
-        .select(`
-          *,
-          bank:banks(name, short_name)
-        `)
-        .order('bank_id', { ascending: true })
-        .order('product_type', { ascending: true }),
+    supabase.from('bank_rules')
+      .select(`*, bank:banks(name, short_name)`)
+      .order('bank_id', { ascending: true })
+      .order('product_type', { ascending: true }),
 
-      supabase.from('mrr_rates')
-        .select(`
-          *,
-          bank:banks(name, short_name)
-        `)
-        .order('bank_id', { ascending: true })
-        .order('product_type', { ascending: true })
-        .order('effective_date', { ascending: true })
-    ]);
+    supabase.from('mrr_rates')
+      .select(`*, bank:banks(name, short_name)`)
+      .order('bank_id', { ascending: true })
+      .order('product_type', { ascending: true })
+      .order('effective_date', { ascending: true })
+  ]);
 
-    return {
-      banks: banksRes.data || [],
-      promotions: promotionsRes.data || [],
-      bankRules: bankRulesRes.data || [],
-      mrrRates: mrrRatesRes.data || []
-    };
-
-  } catch (error) {
-    console.error('Error loading admin data:', error);
-    throw error;
-  }
+  return {
+    banks: banksRes.data || [],
+    promotions: promotionsRes.data || [],
+    bankRules: bankRulesRes.data || [],
+    mrrRates: mrrRatesRes.data || []
+  };
 }
+
 
 
   // ========================================
@@ -711,10 +696,17 @@ export default DataManager;
   /**
    * ดึงข้อมูลธนาคารตาม ID
    */
-  static async getBankById(bankId) {
-    const banks = await this.getBanks();
-    return banks.find(bank => bank.id === bankId);
-  }
+// ✅ เวอร์ชันไม่ใช้ static
+export async function getBankById(bankId) {
+  const list = await getBanks();
+  return list.find(b => b.id === bankId) || null;
+}
+
+export async function getBankByShortName(shortName) {
+  const list = await getBanks();
+  return list.find(b => b.short_name === shortName) || null;
+}
+
 
   /**
    * ดึงข้อมูลธนาคารตาม short_name
@@ -731,38 +723,22 @@ export default DataManager;
   /**
    * ดึงอัตรา MRR ล่าสุด
    */
-  static async getMRRRates(productType = null) {
-    const cacheKey = `mrr_rates_${productType || 'all'}`;
-    
-    return this.getWithCache(cacheKey, async () => {
-      let query = supabase
-        .from('mrr_rates')
-        .select(`
-          *,
-          bank:banks(name, short_name)
-        `)
-        .eq('active', true)
-        .order('effective_date', { ascending: false });
+// ✅ เวอร์ชันไม่ใช้ static
+export async function getMRRRates() {
+  const { data, error } = await supabase
+    .from('mrr_rates')
+    .select(`
+      *,
+      bank:banks(name, short_name)
+    `)
+    .order('bank_id', { ascending: true })
+    .order('product_type', { ascending: true })
+    .order('effective_date', { ascending: true });
 
-      if (productType) {
-        query = query.eq('product_type', productType);
-      }
+  if (error) throw error;
+  return data || [];
+}
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // จัดกลุ่มตาม bank_id และ product_type เพื่อเอาล่าสุด
-      const latestRates = {};
-      data?.forEach(rate => {
-        const key = `${rate.bank_id}_${rate.product_type}`;
-        if (!latestRates[key] || rate.effective_date > latestRates[key].effective_date) {
-          latestRates[key] = rate;
-        }
-      });
-
-      return Object.values(latestRates);
-    });
-  }
 
   /**
    * ดึงอัตรา MRR ของธนาคารและผลิตภัณฑ์เฉพาะ
@@ -779,25 +755,21 @@ export default DataManager;
   /**
    * ดึงโปรโมชันที่ใช้งานได้
    */
-  static async getActivePromotions(productType = null) {
-    const cacheKey = `promotions_${productType || 'all'}`;
-    
-    return this.getWithCache(cacheKey, async () => {
-      let query = supabase
-        .from('active_promotions')
-        .select('*')
-        .order('bank_short_name');
+// ✅ เวอร์ชันไม่ใช้ static
+export async function getActivePromotions() {
+  const { data, error } = await supabase
+    .from('promotions')
+    .select(`
+      *,
+      bank:banks(name, short_name)
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
 
-      if (productType) {
-        query = query.eq('product_type', productType);
-      }
+  if (error) throw error;
+  return data || [];
+}
 
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      return data || [];
-    }, 2 * 60 * 1000); // cache เพียง 2 นาที สำหรับโปรโมชัน
-  }
 
   /**
    * ดึงโปรโมชันตาม bank และ product type
@@ -831,3 +803,13 @@ export default DataManager;
       
       return data || [];
     });
+	
+	// ✅ รวมฟังก์ชันที่หน้าอื่นจะเรียกใช้
+export {
+  getBanks,
+  getActivePromotions,
+  getMRRRates,
+  getAllDataForAdmin,
+  getBankById,
+  getBankByShortName
+};
