@@ -2,11 +2,7 @@
  * Override ฟังก์ชันหลักของ DataManager เพื่อกันคอลัมน์ไม่ตรงสกีมา
  * ต้องโหลดไฟล์นี้ "หลัง" data-manager.js เสมอ
  */
- // /js/data-manager.js   (alias ไปที่ data-manager.fix.js)
-export * from './data-manager.fix.js';
-import * as NS from './data-manager.fix.js';
-export default (NS.default ?? NS);
- 
+
  
 (function (g) {
   'use strict';
