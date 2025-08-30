@@ -24,6 +24,22 @@ import LoanCalculator from './loan-calculator-supabase.js';
 /**
  * จัดการแอปพลิเคชันหลักสำหรับการคำนวณสินเชื่อ
  */
+ 
+ // รอให้ window.AuthManager ถูกประกาศและพร้อมใช้งาน
+async function waitForAuthManager(timeoutMs = 10000) {
+  const start = Date.now();
+  // รอให้สคริปต์ auth-manager.js สร้าง window.AuthManager
+  while (Date.now() - start < timeoutMs) {
+    if (typeof window !== 'undefined' && window.AuthManager && typeof window.AuthManager.initialize === 'function') {
+      return window.AuthManager;
+    }
+    // หน่วงสั้น ๆ แล้วลองใหม่
+    await new Promise(res => setTimeout(res, 50));
+  }
+  throw new Error('AuthManager ยังไม่พร้อม');
+}
+
+ 
 class LoanAppManager {
   constructor() {
     this.calculator = new LoanCalculator();
@@ -43,37 +59,35 @@ class LoanAppManager {
   /**
    * เริ่มต้นแอปพลิเคชัน
    */
-  async initialize() {
-    try {
-      console.log('🚀 Initializing Loan App...');
+async initialize() {
+  try {
+    console.log('🚀 Initializing Loan App...');
 
-      // Initialize authentication (global)
-      await getAM().initialize();
+    // รอให้ AuthManager (จากไฟล์ auth-manager.js) พร้อมก่อน
+    this.auth = await waitForAuthManager(10000);
+    await this.auth.initialize();
 
-      // Setup UI event listeners
-      this.setupEventListeners();
+    // ตั้งค่า event listeners ของ UI
+    this.setupEventListeners();
 
-      // Check database connection
-      const connected = await (DataManager.checkDatabaseConnection
-        ? DataManager.checkDatabaseConnection()
-        : Promise.resolve(true));
-      this.updateConnectionStatus(connected);
+    // ตรวจการเชื่อมต่อฐานข้อมูล
+    const connected = await DataManager.checkDatabaseConnection();
+    this.updateConnectionStatus(connected);
 
-      // Setup real-time updates
-      this.setupRealTimeUpdates();
+    // ตั้งค่า real-time updates
+    this.setupRealTimeUpdates();
 
-      // Load initial data
-      await this.loadInitialData();
+    // โหลดข้อมูลเริ่มต้น + ประวัติการคำนวณ
+    await this.loadInitialData();
+    await this.loadCalculationHistory();
 
-      // Load calculation history
-      await this.loadCalculationHistory();
-
-      console.log('✅ Loan App initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize Loan App:', error);
-      this.showNotification('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง', 'error');
-    }
+    console.log('✅ Loan App initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Loan App:', error);
+    this.showNotification('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง', 'error');
   }
+}
+
 
   /**
    * ผูก DOM elements
@@ -794,22 +808,22 @@ class LoanAppManager {
   // CLEANUP
   // ========================================
 
-  cleanup() {
-    // Cleanup calculator subscriptions
-    this.calculator.cleanup();
+cleanup() {
+  // ยกเลิก subscription ที่ตั้งใน calculator
+  try { this.calculator?.cleanup?.(); } catch (e) {}
 
-    // Cleanup auth manager
-    getAM().cleanup?.();
+  // เรียก cleanup ของ AuthManager ถ้ามี
+  try { this.auth?.cleanup?.(); } catch (e) {}
 
-    // Clear cache
-    DataManager.clearAllCache?.();
+  // เคลียร์ cache ฝั่ง data-manager ถ้ามีเมธอดให้เคลียร์
+  try { DataManager?.clearAllCache?.(); } catch (e) {}
 
-    // Remove event listeners (ที่นี่เราล้างอ้างอิงไว้ก่อน)
-    this.elements = {};
+  // ลบ event listeners ที่เคยตั้ง
+  this.removeEventListeners();
 
-    console.log('🧹 Loan App cleaned up');
-  }
+  console.log('🧹 Loan App cleaned up');
 }
+
 
 // ========================================
 // UTILITY FUNCTIONS FOR BACKWARD COMPATIBILITY
