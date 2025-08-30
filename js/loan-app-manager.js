@@ -6,6 +6,10 @@
 import DataManager from './data-manager.js';
 import LoanCalculator from './loan-calculator-supabase.js';
 
+// js/data-manager.js
+export { default } from './data-manager.fix.js';
+export * from './data-manager.fix.js';
+
 /* รอให้ window.AuthManager จากไฟล์ auth-manager.js พร้อมใช้งาน */
 async function waitForAuthManager(timeoutMs = 10000) {
   const start = Date.now();
