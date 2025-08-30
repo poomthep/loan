@@ -1,0 +1,54 @@
+# netlify.toml
+# ========================================
+# NETLIFY CONFIGURATION FOR LOAN APP
+# ========================================
+
+[build]
+  publish = "/"
+  command = "echo 'Static site - no build needed'"
+
+# Redirects
+[[redirects]]
+  from = "/home"
+  to = "/index.html"
+  status = 301
+
+[[redirects]]
+  from = "/calculator"
+  to = "/loan.html"
+  status = 301
+
+[[redirects]]
+  from = "/admin-panel"
+  to = "/admin.html"
+  status = 301
+
+# Headers
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
