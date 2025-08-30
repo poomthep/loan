@@ -8,6 +8,12 @@
 import * as DataManagerNS from './data-manager.js';
 import * as LoanCalcNS from './loan-calculator-supabase.js';
 
+// /js/data-manager.js
+export * from './data-manager.fix.js';
+import * as NS from './data-manager.fix.js';
+export default (NS.default ?? NS);
+
+
 // รองรับได้ทั้งกรณีมี/ไม่มี default export
 const DataManager = DataManagerNS.default ?? DataManagerNS;
 const LoanCalculator = LoanCalcNS.default ?? LoanCalcNS;
