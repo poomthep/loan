@@ -6,9 +6,9 @@
 (function (global) {
   'use strict';
 
-  // ---------------------------------
+  // -----------------------------
   // Helpers
-  // ---------------------------------
+  // -----------------------------
   function getClient() {
     var sb = global && global.supabase;
     if (!sb || typeof sb.from !== 'function') {
@@ -31,16 +31,18 @@
   }
 
   function isTableMissing(err) {
-    // PGRST20x / 404 จาก PostgREST หรือข้อความ "Could not find the table ..."
-    return !!(err && (
-      (err.code && String(err.code).startsWith('PGRST2')) ||
-      (err.message && /Could not find the table/i.test(err.message))
-    ));
+    // ตรวจ 404 series จาก PostgREST (PGRST2xx) หรือข้อความบอกว่าไม่พบตาราง
+    if (!err) return false;
+    var code = err.code ? String(err.code) : '';
+    if (code.indexOf('PGRST2') === 0) return true;
+    var msg = err.message ? String(err.message) : '';
+    if (msg.toLowerCase().indexOf('could not find the table') !== -1) return true;
+    return false;
   }
 
-  // ---------------------------------
-  // AuthManager (Global object)
-  // ---------------------------------
+  // -----------------------------
+  // AuthManager (Global)
+  // -----------------------------
   var AuthManager = {
     _inited: false,
     _listenerUnsub: null,
@@ -49,7 +51,7 @@
     userProfile: null,
     authListeners: [],
 
-    // ========== AUTH METHODS ==========
+    // ========= AUTH =========
     signInWithEmail: function (email, password) {
       try {
         var sb = getClient();
@@ -58,10 +60,12 @@
           password: password
         }).then(function (res) {
           if (res.error) throw res.error;
-          AuthManager.currentUser = res.data && res.data.user || null;
+          AuthManager.currentUser = (res.data && res.data.user) ? res.data.user : null;
           return AuthManager.loadUserProfile().then(function () {
             AuthManager._notify('SIGNED_IN', AuthManager.currentUser);
-            console.log('✅ Sign in successful:', AuthManager.currentUser && AuthManager.currentUser.email);
+            try {
+              console.log('✅ Sign in successful:', AuthManager.currentUser ? AuthManager.currentUser.email : '');
+            } catch (e) {}
             return { success: true, user: AuthManager.currentUser };
           });
         }).catch(function (err) {
@@ -80,15 +84,12 @@
         return sb.auth.signUp({
           email: (email || '').trim(),
           password: password,
-          options: {
-            data: Object.assign({ full_name: (email || '').split('@')[0] }, userData)
-          }
+          options: { data: { full_name: (email || '').split('@')[0] } }
         }).then(function (res) {
           if (res.error) throw res.error;
-          console.log('✅ Sign up successful:', res.data && res.data.user && res.data.user.email);
           return {
             success: true,
-            user: res.data && res.data.user || null,
+            user: (res.data && res.data.user) ? res.data.user : null,
             needConfirmation: !(res.data && res.data.session)
           };
         }).catch(function (err) {
@@ -108,7 +109,7 @@
           AuthManager.currentUser = null;
           AuthManager.userProfile = null;
           AuthManager._notify('SIGNED_OUT', null);
-          console.log('✅ Sign out successful');
+          try { console.log('✅ Sign out successful'); } catch (e) {}
           return { success: true };
         }).catch(function (err) {
           console.error('❌ Sign out error:', err);
@@ -126,7 +127,7 @@
           redirectTo: global.location.origin + '/reset-password'
         }).then(function (res) {
           if (res.error) throw res.error;
-          console.log('✅ Password reset email sent');
+          try { console.log('✅ Password reset email sent'); } catch (e) {}
           return { success: true };
         }).catch(function (err) {
           console.error('❌ Password reset error:', err);
@@ -142,7 +143,7 @@
         var sb = getClient();
         return sb.auth.updateUser({ password: newPassword }).then(function (res) {
           if (res.error) throw res.error;
-          console.log('✅ Password updated successfully');
+          try { console.log('✅ Password updated successfully'); } catch (e) {}
           return { success: true };
         }).catch(function (err) {
           console.error('❌ Password update error:', err);
@@ -153,177 +154,151 @@
       }
     },
 
-    // ======= USER PROFILE METHODS =======
-    // โหลดโปรไฟล์แบบ "ทน 404" (ไม่มีตารางก็ไม่พัง/ไม่ยิงซ้ำ)
-// ✅ โหลดโปรไฟล์แบบทน 404/406 (ไม่มีตารางหรือไม่พบแถวก็ไม่พัง)
-AuthManager.loadUserProfile = function () {
-  if (!AuthManager.currentUser) return Promise.resolve(null);
+    // ===== PROFILE =====
+    loadUserProfile: function () {
+      if (!AuthManager.currentUser) return Promise.resolve(null);
+      var sb = getClient();
 
-  var sb = getClient();
-
-  AuthManager._profileTablesMissing = AuthManager._profileTablesMissing || {
-    profiles: false,
-    user_profiles: false
-  };
-
-  function isTableMissing(err) {
-    return !!(err && (
-      (err.code && String(err.code).startsWith('PGRST2')) || // 404 series from PostgREST
-      (err.message && /Could not find the table/i.test(err.message))
-    ));
-  }
-
-  function tryProfiles() {
-    if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
-    return sb.from('profiles')
-      .select('*')
-      .eq('user_id', AuthManager.currentUser.id)
-      .limit(1)
-      .maybeSingle()                // 👈 เปลี่ยนจาก .single()
-      .then(function (res) {
-        if (res.error) throw res.error;
-        return res.data || null;    // ไม่พบ -> null
-      })
-      .catch(function (err) {
-        if (isTableMissing(err)) {
-          AuthManager._profileTablesMissing.profiles = true;
-          return null;
-        }
-        // 406 จาก .single() จะไม่เกิดแล้ว แต่กันไว้อีกชั้น
-        if ((err && (err.status === 406 || err.code === '406')) || err && err.code === 'PGRST116') {
-          return null;
-        }
-        console.error('Error loading profiles:', err);
-        return null;
-      });
-  }
-
-  function tryUserProfiles() {
-    if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
-    return sb.from('user_profiles')
-      .select('*')
-      .eq('id', AuthManager.currentUser.id)
-      .limit(1)
-      .maybeSingle()                // 👈 เปลี่ยนจาก .single()
-      .then(function (res) {
-        if (res.error) throw res.error;
-        return res.data || null;
-      })
-      .catch(function (err) {
-        if (isTableMissing(err)) {
-          AuthManager._profileTablesMissing.user_profiles = true;
-          return null;
-        }
-        if ((err && (err.status === 406 || err.code === '406')) || err && err.code === 'PGRST116') {
-          return null;
-        }
-        console.error('Error loading user_profiles:', err);
-        return null;
-      });
-  }
-
-  return tryProfiles().then(function (p) {
-    if (p) { AuthManager.userProfile = p; return p; }
-    return tryUserProfiles().then(function (up) {
-      AuthManager.userProfile = up || null;
-      return AuthManager.userProfile;
-    });
-  });
-};
-
-
-// ✅ อัปเดตโปรไฟล์แบบทน 404/406 และ RLS (คืนข้อความอ่านง่าย)
-AuthManager.updateUserProfile = function (updates) {
-  if (!AuthManager.currentUser) {
-    return Promise.reject(new Error('ต้องเข้าสู่ระบบก่อน'));
-  }
-
-  var sb = getClient();
-  AuthManager._profileTablesMissing = AuthManager._profileTablesMissing || {
-    profiles: false,
-    user_profiles: false
-  };
-
-  function upsertProfiles() {
-    if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
-    return sb.from('profiles').upsert(
-      Object.assign({ user_id: AuthManager.currentUser.id }, updates, {
-        updated_at: new Date().toISOString()
-      })
-    ).select('*')
-     .maybeSingle()     // 👈 กันกรณีไม่ได้แถวกลับมา (เช่นโดน RLS บล็อก)
-     .then(function (res) {
-       if (res.error) throw res.error;
-       return res.data || null;
-     })
-     .catch(function (err) {
-       if (err && ((err.code && String(err.code).startsWith('PGRST2')) ||
-                   (err.message && /Could not find the table/i.test(err.message)))) {
-         AuthManager._profileTablesMissing.profiles = true;
-         return null;
-       }
-       // ถ้าโดน RLS แล้วไม่มีแถวกลับ -> ถือว่า null
-       if (err && (err.status === 406 || err.code === '406')) return null;
-       throw err;
-     });
-  }
-
-  function upsertUserProfiles() {
-    if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
-    return sb.from('user_profiles').upsert(
-      Object.assign({ id: AuthManager.currentUser.id }, updates, {
-        updated_at: new Date().toISOString()
-      })
-    ).select('*')
-     .maybeSingle()     // 👈
-     .then(function (res) {
-       if (res.error) throw res.error;
-       return res.data || null;
-     })
-     .catch(function (err) {
-       if (err && ((err.code && String(err.code).startsWith('PGRST2')) ||
-                   (err.message && /Could not find the table/i.test(err.message)))) {
-         AuthManager._profileTablesMissing.user_profiles = true;
-         return null;
-       }
-       if (err && (err.status === 406 || err.code === '406')) return null;
-       throw err;
-     });
-  }
-
-  return upsertProfiles().then(function (p) {
-    if (p) {
-      AuthManager.userProfile = p;
-      AuthManager._notify('PROFILE_UPDATED', p);
-      console.log('✅ Profile updated (profiles)');
-      return { success: true, profile: p };
-    }
-    return upsertUserProfiles().then(function (up) {
-      if (up) {
-        AuthManager.userProfile = up;
-        AuthManager._notify('PROFILE_UPDATED', up);
-        console.log('✅ Profile updated (user_profiles)');
-        return { success: true, profile: up };
+      function tryProfiles() {
+        if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
+        return sb.from('profiles')
+          .select('*')
+          .eq('user_id', AuthManager.currentUser.id)
+          .limit(1)
+          .maybeSingle()
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || null;
+          })
+          .catch(function (err) {
+            if (isTableMissing(err)) {
+              AuthManager._profileTablesMissing.profiles = true;
+              return null;
+            }
+            // row not found / 406 → ถือว่าไม่มี
+            if ((err && (err.status === 406 || String(err.code) === '406')) || (err && err.code === 'PGRST116')) {
+              return null;
+            }
+            console.error('Error loading profiles:', err);
+            return null;
+          });
       }
-      return {
-        success: false,
-        error: 'ยังไม่มีตารางโปรไฟล์ (profiles หรือ user_profiles) หรือ RLS ไม่อนุญาตให้เขียน'
-      };
-    });
-  }).catch(function (err) {
-    console.error('❌ Profile update error:', err);
-    return { success: false, error: mapSupabaseError(err) };
-  });
-};
 
+      function tryUserProfiles() {
+        if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
+        return sb.from('user_profiles')
+          .select('*')
+          .eq('id', AuthManager.currentUser.id)
+          .limit(1)
+          .maybeSingle()
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || null;
+          })
+          .catch(function (err) {
+            if (isTableMissing(err)) {
+              AuthManager._profileTablesMissing.user_profiles = true;
+              return null;
+            }
+            if ((err && (err.status === 406 || String(err.code) === '406')) || (err && err.code === 'PGRST116')) {
+              return null;
+            }
+            console.error('Error loading user_profiles:', err);
+            return null;
+          });
+      }
 
-    // ===== SESSION & STATE MANAGEMENT ====
+      return tryProfiles().then(function (p) {
+        if (p) { AuthManager.userProfile = p; return p; }
+        return tryUserProfiles().then(function (up) {
+          AuthManager.userProfile = up || null;
+          return AuthManager.userProfile;
+        });
+      });
+    },
+
+    updateUserProfile: function (updates) {
+      if (!AuthManager.currentUser) {
+        return Promise.reject(new Error('ต้องเข้าสู่ระบบก่อน'));
+      }
+      var sb = getClient();
+
+      function upsertProfiles() {
+        if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
+        return sb.from('profiles').upsert(
+          Object.assign({ user_id: AuthManager.currentUser.id }, updates, {
+            updated_at: new Date().toISOString()
+          })
+        ).select('*')
+         .maybeSingle()
+         .then(function (res) {
+           if (res.error) throw res.error;
+           return res.data || null;
+         })
+         .catch(function (err) {
+           if (isTableMissing(err)) {
+             AuthManager._profileTablesMissing.profiles = true;
+             return null;
+           }
+           if (err && (err.status === 406 || String(err.code) === '406')) return null;
+           throw err;
+         });
+      }
+
+      function upsertUserProfiles() {
+        if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
+        return sb.from('user_profiles').upsert(
+          Object.assign({ id: AuthManager.currentUser.id }, updates, {
+            updated_at: new Date().toISOString()
+          })
+        ).select('*')
+         .maybeSingle()
+         .then(function (res) {
+           if (res.error) throw res.error;
+           return res.data || null;
+         })
+         .catch(function (err) {
+           if (isTableMissing(err)) {
+             AuthManager._profileTablesMissing.user_profiles = true;
+             return null;
+           }
+           if (err && (err.status === 406 || String(err.code) === '406')) return null;
+           throw err;
+         });
+      }
+
+      return upsertProfiles().then(function (p) {
+        if (p) {
+          AuthManager.userProfile = p;
+          AuthManager._notify('PROFILE_UPDATED', p);
+          try { console.log('✅ Profile updated (profiles)'); } catch (e) {}
+          return { success: true, profile: p };
+        }
+        return upsertUserProfiles().then(function (up) {
+          if (up) {
+            AuthManager.userProfile = up;
+            AuthManager._notify('PROFILE_UPDATED', up);
+            try { console.log('✅ Profile updated (user_profiles)'); } catch (e) {}
+            return { success: true, profile: up };
+          }
+          return {
+            success: false,
+            error: 'ยังไม่มีตารางโปรไฟล์ (profiles หรือ user_profiles) หรือ RLS ไม่อนุญาตให้เขียน'
+          };
+        });
+      }).catch(function (err) {
+        console.error('❌ Profile update error:', err);
+        return { success: false, error: mapSupabaseError(err) };
+      });
+    },
+
+    // ===== SESSION =====
     checkSession: function () {
       try {
         var sb = getClient();
         return sb.auth.getSession().then(function (res) {
           if (res.error) throw res.error;
-          return (res.data && res.data.session) || null;
+          return (res.data && res.data.session) ? res.data.session : null;
         }).catch(function (err) {
           console.error('Error checking session:', err);
           return null;
@@ -338,8 +313,8 @@ AuthManager.updateUserProfile = function (updates) {
       try {
         var sb = getClient();
         var ret = sb.auth.onAuthStateChange(function (event, session) {
-          console.log('🔐 Auth state changed:', event);
-          var user = session && session.user || null;
+          try { console.log('🔐 Auth state changed:', event); } catch (e) {}
+          var user = (session && session.user) ? session.user : null;
 
           if (event === 'SIGNED_IN') {
             AuthManager.currentUser = user;
@@ -353,17 +328,16 @@ AuthManager.updateUserProfile = function (updates) {
             AuthManager._notify(event, null);
             updateAuthUI();
           } else {
-            // TOKEN_REFRESHED, USER_UPDATED, PASSWORD_RECOVERY ฯลฯ
             AuthManager.currentUser = user;
             AuthManager._notify(event, user);
             updateAuthUI();
           }
         });
 
-        // v2 -> { data: { subscription } }
-        AuthManager._listenerUnsub = ret && ret.data && ret.data.subscription
-          ? function () { try { ret.data.subscription.unsubscribe(); } catch (e) {} }
-          : null;
+        AuthManager._listenerUnsub =
+          (ret && ret.data && ret.data.subscription)
+            ? function () { try { ret.data.subscription.unsubscribe(); } catch (e) {} }
+            : null;
 
       } catch (e) {
         console.error('Auth listener setup failed:', e);
@@ -387,13 +361,10 @@ AuthManager.updateUserProfile = function (updates) {
     },
 
     isAuthenticated: function () { return !!AuthManager.currentUser; },
-
     isAdmin: function () {
       var p = AuthManager.userProfile || {};
-      // รองรับทั้ง profiles.is_admin (boolean) และ user_profiles.role === 'admin'
       return !!(p.is_admin || p.isAdmin || (p.role && String(p.role).toLowerCase() === 'admin'));
     },
-
     getCurrentUser: function () { return AuthManager.currentUser; },
     getUserProfile: function () { return AuthManager.userProfile; },
     getFullUserData: function () {
@@ -413,7 +384,7 @@ AuthManager.updateUserProfile = function (updates) {
       AuthManager.authListeners = [];
     },
 
-    // ============ INITIALIZE ============
+    // ===== INIT =====
     initialize: function () {
       if (AuthManager._inited) return Promise.resolve(AuthManager.currentUser);
       try {
@@ -421,7 +392,7 @@ AuthManager.updateUserProfile = function (updates) {
         AuthManager._setupAuthListener();
         return sb.auth.getSession().then(function (res) {
           if (res.error) throw res.error;
-          var session = res.data && res.data.session || null;
+          var session = (res.data && res.data.session) ? res.data.session : null;
           AuthManager.currentUser = session ? session.user : null;
           return AuthManager.loadUserProfile().then(function () {
             AuthManager._inited = true;
@@ -441,17 +412,15 @@ AuthManager.updateUserProfile = function (updates) {
     }
   };
 
-  // ---------------------------------
-  // UI helpers (global functions)
-  // ---------------------------------
+  // -----------------------------
+  // UI helpers
+  // -----------------------------
   function updateAuthUI() {
     var data = AuthManager.getFullUserData();
 
-    // อีเมลผู้ใช้
     var userEmailEl = document.getElementById('user-email');
-    if (userEmailEl) userEmailEl.textContent = (data.user && data.user.email) || '—';
+    if (userEmailEl) userEmailEl.textContent = (data.user && data.user.email) ? data.user.email : '—';
 
-    // role badge
     var roleBadgeEl = document.getElementById('role-badge');
     if (roleBadgeEl) {
       if (data.isAdmin) {
@@ -466,21 +435,17 @@ AuthManager.updateUserProfile = function (updates) {
       }
     }
 
-    // แสดง/ซ่อน login form
     var loginFormWrap = document.getElementById('login-form');
     if (loginFormWrap) loginFormWrap.style.display = data.isAuthenticated ? 'none' : 'block';
 
-    // ปุ่ม logout
     var logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) logoutBtn.style.display = data.isAuthenticated ? 'block' : 'none';
 
-    // ลิงก์ admin (เฉพาะ admin)
     var adminLinks = document.querySelectorAll('[href="/admin.html"], [href="./admin.html"]');
     for (var i = 0; i < adminLinks.length; i++) {
       adminLinks[i].style.display = data.isAdmin ? 'inline-block' : 'none';
     }
 
-    // เติม autocomplete ให้ช่องรหัสผ่านตามคำเตือน DOM
     try {
       var emailEl = document.getElementById('email');
       var passEl = document.getElementById('password');
@@ -495,8 +460,8 @@ AuthManager.updateUserProfile = function (updates) {
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var email = document.getElementById('email') && document.getElementById('email').value;
-      var password = document.getElementById('password') && document.getElementById('password').value;
+      var email = document.getElementById('email') ? document.getElementById('email').value : '';
+      var password = document.getElementById('password') ? document.getElementById('password').value : '';
       if (!email || !password) { showNotification('กรุณากรอกอีเมลและรหัสผ่าน', 'warning'); return; }
 
       var btn = form.querySelector('button[type="submit"]');
@@ -509,7 +474,7 @@ AuthManager.updateUserProfile = function (updates) {
           updateAuthUI();
           showNotification('เข้าสู่ระบบสำเร็จ!', 'success');
         } else {
-          showNotification(res && res.error || 'เข้าสู่ระบบไม่สำเร็จ', 'error');
+          showNotification((res && res.error) ? res.error : 'เข้าสู่ระบบไม่สำเร็จ', 'error');
         }
       }).finally(function () {
         if (btn) { btn.textContent = original; btn.disabled = false; }
@@ -531,7 +496,7 @@ AuthManager.updateUserProfile = function (updates) {
           updateAuthUI();
           showNotification('ออกจากระบบแล้ว', 'info');
         } else {
-          showNotification(res && res.error || 'ออกจากระบบไม่สำเร็จ', 'error');
+          showNotification((res && res.error) ? res.error : 'ออกจากระบบไม่สำเร็จ', 'error');
         }
       }).finally(function () {
         btn.textContent = original;
@@ -542,9 +507,9 @@ AuthManager.updateUserProfile = function (updates) {
 
   function showNotification(message, type, duration) {
     type = type || 'info';
-    duration = typeof duration === 'number' ? duration : 3000;
+    duration = (typeof duration === 'number') ? duration : 3000;
 
-    var colors = {
+    var classes = {
       success: 'bg-green-100 text-green-800 border-green-300',
       error:   'bg-red-100 text-red-800 border-red-300',
       info:    'bg-blue-100 text-blue-800 border-blue-300',
@@ -552,37 +517,36 @@ AuthManager.updateUserProfile = function (updates) {
     };
 
     var n = document.createElement('div');
-    n.className = 'notification fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm ' + (colors[type] || colors.info);
+    n.className = 'notification fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm ' + (classes[type] || classes.info);
     n.textContent = message;
     document.body.appendChild(n);
     setTimeout(function () { try { n.remove(); } catch (e) {} }, duration);
   }
 
-  // ---------------------------------
-  // Expose globals
-  // ---------------------------------
+  // -----------------------------
+  // Expose & Auto-init
+  // -----------------------------
   global.AuthManager = AuthManager;
   global.updateAuthUI = updateAuthUI;
   global.setupLoginForm = setupLoginForm;
   global.setupLogoutButton = setupLogoutButton;
   global.showNotification = showNotification;
 
-  console.info('[AuthManager] ready:', !!global.AuthManager);
+  try { console.info('[AuthManager] ready:', !!global.AuthManager); } catch (e) {}
 
-  // Auto-init (ถ้าไม่ได้สั่งให้ manual)
   if (!global.__AUTH_INIT_MANUAL__) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function () {
-        AuthManager.initialize().then(function () {
-          updateAuthUI(); setupLoginForm(); setupLogoutButton();
-          AuthManager.addAuthListener(function () { updateAuthUI(); });
-        });
-      });
-    } else {
+    function runInit() {
       AuthManager.initialize().then(function () {
-        updateAuthUI(); setupLoginForm(); setupLogoutButton();
+        updateAuthUI();
+        setupLoginForm();
+        setupLogoutButton();
         AuthManager.addAuthListener(function () { updateAuthUI(); });
       });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', runInit);
+    } else {
+      runInit();
     }
   }
 
