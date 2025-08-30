@@ -3,26 +3,28 @@
 // LOAN APP MANAGER - MAIN CONTROLLER
 // ========================================
 
-// ===== FIX: ใช้ AuthManager จาก window แทน ไม่ประกาศซ้ำ =====
+/** ===== ใช้ AuthManager แบบ global ไม่ import ===== */
 const AM = (typeof window !== 'undefined' && window.AuthManager)
   ? window.AuthManager
   : null;
 
-// helper ใช้เรียกแบบปลอดภัย
 function getAM() {
   if (AM) return AM;
   if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
   throw new Error('AuthManager ยังไม่พร้อม');
 }
 
-// ====== โมดูลอื่น ๆ ของแอป ======
-import DataManager from './data-manager.fix.js';
+/** ===== Data Layer: รองรับทุกแบบของ data-manager.fix.js ===== */
+import * as DM from './data-manager.fix.js';
+const DataManager = DM.default || DM.DataManager || DM;
+
+/** Calculator (เวอร์ชันใหม่ที่คุณใช้) */
 import LoanCalculator from './loan-calculator-supabase.js';
 
 /**
  * จัดการแอปพลิเคชันหลักสำหรับการคำนวณสินเชื่อ
  */
-export class LoanAppManager {
+export default class LoanAppManager {
   constructor() {
     this.calculator = new LoanCalculator();
     this.currentResults = [];
@@ -45,28 +47,25 @@ export class LoanAppManager {
     try {
       console.log('🚀 Initializing Loan App...');
 
-      // ✅ ใช้ getAM() แทนเรียก AuthManager ตรง ๆ
-      try {
-        await getAM().initialize();
-      } catch (e) {
-        console.warn('AuthManager.initialize() ยังไม่พร้อม จะบูตต่อเฉพาะส่วนที่ไม่พึ่งพา login:', e);
-      }
+      // Initialize authentication (global)
+      await getAM().initialize();
 
-      // ตั้งค่า event ของหน้า
+      // Setup UI event listeners
       this.setupEventListeners();
 
-      // ฟัง auth state (ถ้ามี)
-      this.setupAuthListeners();
-
-      // ตรวจการเชื่อมต่อฐานข้อมูล
-      const connected = await DataManager.checkDatabaseConnection();
+      // Check database connection
+      const connected = await (DataManager.checkDatabaseConnection
+        ? DataManager.checkDatabaseConnection()
+        : Promise.resolve(true));
       this.updateConnectionStatus(connected);
 
-      // ตั้งค่า real-time
+      // Setup real-time updates
       this.setupRealTimeUpdates();
 
-      // โหลดข้อมูลเบื้องต้น + ประวัติ
+      // Load initial data
       await this.loadInitialData();
+
+      // Load calculation history
       await this.loadCalculationHistory();
 
       console.log('✅ Loan App initialized successfully');
@@ -131,62 +130,29 @@ export class LoanAppManager {
   }
 
   /**
-   * ฟังการเปลี่ยนแปลงสถานะล็อกอิน เพื่ออัปเดต UI/ประวัติ
-   */
-  setupAuthListeners() {
-    try {
-      getAM().addAuthListener((event, user) => {
-        if (typeof updateAuthUI === 'function') {
-          try { updateAuthUI(); } catch (_) {}
-        }
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-          this.loadCalculationHistory().catch(() => {});
-        }
-      });
-    } catch (e) {
-      // ไม่มีผลอะไรถ้า AuthManager ยังไม่พร้อม
-      console.debug('setupAuthListeners() skipped:', e && e.message ? e.message : e);
-    }
-  }
-
-  /**
    * ตั้งค่า Event Listeners
    */
   setupEventListeners() {
     // Mode selection
-    if (this.elements.modeRadios && this.elements.modeRadios.forEach) {
-      this.elements.modeRadios.forEach((radio) => {
-        radio.addEventListener('change', () => this.handleModeChange());
-      });
-    }
+    this.elements.modeRadios.forEach(radio => {
+      radio.addEventListener('change', () => this.handleModeChange());
+    });
 
     // Product type change
-    if (this.elements.product) {
-      this.elements.product.addEventListener('change', () => {
-        this.loadInitialData();
-      });
-    }
+    this.elements.product?.addEventListener('change', () => {
+      this.loadInitialData();
+    });
 
     // Calculate button
-    if (this.elements.btnRun) {
-      this.elements.btnRun.addEventListener('click', () => this.runCalculation());
-    }
+    this.elements.btnRun?.addEventListener('click', () => this.runCalculation());
 
     // Export buttons
-    if (this.elements.btnSave) {
-      this.elements.btnSave.addEventListener('click', () => this.saveCalculation());
-    }
-    if (this.elements.btnExportCSV) {
-      this.elements.btnExportCSV.addEventListener('click', () => this.exportToCSV());
-    }
-    if (this.elements.btnExportJSON) {
-      this.elements.btnExportJSON.addEventListener('click', () => this.exportToJSON());
-    }
+    this.elements.btnSave?.addEventListener('click', () => this.saveCalculation());
+    this.elements.btnExportCSV?.addEventListener('click', () => this.exportToCSV());
+    this.elements.btnExportJSON?.addEventListener('click', () => this.exportToJSON());
 
     // History management
-    if (this.elements.btnClearHistory) {
-      this.elements.btnClearHistory.addEventListener('click', () => this.clearCalculationHistory());
-    }
+    this.elements.btnClearHistory?.addEventListener('click', () => this.clearCalculationHistory());
 
     // Form validation
     this.setupFormValidation();
@@ -200,16 +166,16 @@ export class LoanAppManager {
    */
   setupRealTimeUpdates() {
     this.calculator.setupRealTimeUpdates((changeType) => {
-      console.log('📡 Data updated:', changeType);
+      console.log(`📡 Data updated: ${changeType}`);
       this.showNotification(`ข้อมูล${this.getChangeTypeText(changeType)}มีการอัพเดต`, 'info');
 
       // Reload data counts
       this.loadInitialData();
 
       // Re-calculate if we have current results
-      if (this.currentResults && this.currentResults.length > 0) {
+      if (this.currentResults.length > 0) {
         this.showNotification('กำลังคำนวณใหม่ด้วยข้อมูลล่าสุด...', 'info');
-        setTimeout(() => this.runCalculation(), 800);
+        setTimeout(() => this.runCalculation(), 1000);
       }
     });
   }
@@ -219,7 +185,7 @@ export class LoanAppManager {
    */
   async loadInitialData() {
     try {
-      const productType = (this.elements.product && this.elements.product.value) || 'MORTGAGE';
+      const productType = this.elements.product?.value || 'MORTGAGE';
 
       // Load data counts for display
       const [banks, promotions] = await Promise.all([
@@ -227,7 +193,6 @@ export class LoanAppManager {
         DataManager.getActivePromotions(productType)
       ]);
 
-      // Update UI
       if (this.elements.banksCount) {
         this.elements.banksCount.textContent = banks.length;
       }
@@ -246,16 +211,13 @@ export class LoanAppManager {
   // FORM HANDLING
   // ========================================
 
-  /**
-   * จัดการการเปลี่ยน mode
-   */
   handleModeChange() {
-    const checked = document.querySelector('input[name="mode"]:checked');
-    const selectedMode = checked ? checked.value : null;
+    const selectedMode = document.querySelector('input[name="mode"]:checked')?.value;
 
     if (this.elements.blockLoan) {
       this.elements.blockLoan.style.display = selectedMode === 'check' ? 'block' : 'none';
     }
+
     if (this.elements.sortInfo) {
       this.elements.sortInfo.textContent = selectedMode === 'check'
         ? '(เรียงตาม DSR ต่ำสุด)'
@@ -266,9 +228,6 @@ export class LoanAppManager {
     this.clearResults();
   }
 
-  /**
-   * ตั้งค่า form validation
-   */
   setupFormValidation() {
     const numericInputs = [
       this.elements.income,
@@ -280,17 +239,17 @@ export class LoanAppManager {
       this.elements.loanAmount
     ];
 
-    numericInputs.forEach((input) => {
+    numericInputs.forEach(input => {
       if (!input) return;
 
       input.addEventListener('input', (e) => {
-        e.target.value = String(e.target.value).replace(/[^0-9]/g, '');
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
       });
 
       input.addEventListener('blur', (e) => {
-        const value = parseInt(e.target.value, 10) || 0;
+        const value = parseInt(e.target.value) || 0;
         if (value > 0 && input !== this.elements.age && input !== this.elements.years) {
-          e.target.dataset.rawValue = String(value);
+          e.target.dataset.rawValue = value;
           e.target.value = value.toLocaleString();
         }
       });
@@ -303,22 +262,22 @@ export class LoanAppManager {
     });
   }
 
-  /**
-   * ตั้งค่า keyboard shortcuts
-   */
   setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey) {
-        const k = String(e.key || '').toLowerCase();
-        if (k === 'enter') {
-          e.preventDefault();
-          this.runCalculation();
-        } else if (k === 's') {
-          e.preventDefault();
-          this.saveCalculation();
-        } else if (k === 'e') {
-          e.preventDefault();
-          this.exportToCSV();
+        switch (e.key) {
+          case 'Enter':
+            e.preventDefault();
+            this.runCalculation();
+            break;
+          case 's':
+            e.preventDefault();
+            this.saveCalculation();
+            break;
+          case 'e':
+            e.preventDefault();
+            this.exportToCSV();
+            break;
         }
       }
     });
@@ -328,9 +287,6 @@ export class LoanAppManager {
   // CALCULATION LOGIC
   // ========================================
 
-  /**
-   * รันการคำนวณหลัก
-   */
   async runCalculation() {
     if (this.isCalculating) {
       this.showNotification('กำลังคำนวณอยู่ กรุณารอสักครู่', 'warning');
@@ -338,39 +294,32 @@ export class LoanAppManager {
     }
 
     try {
-      // Validate form
       const params = this.getFormParameters();
       if (!this.validateParameters(params)) {
         return;
       }
 
-      // Show loading state
       this.setCalculatingState(true);
       this.clearResults();
 
       console.log('🔢 Starting calculation with params:', params);
 
-      // Run calculation
-      const modeChecked = document.querySelector('input[name="mode"]:checked');
-      const selectedMode = modeChecked ? modeChecked.value : 'max';
-
+      const selectedMode = document.querySelector('input[name="mode"]:checked')?.value;
       let results = [];
+
       if (selectedMode === 'max') {
         results = await this.calculator.calculateMaxLoanAmount(params);
       } else {
         results = await this.calculator.checkLoanAmount(params);
       }
 
-      // Store results
       this.currentResults = results;
       this.currentParams = { ...params, calculationMode: selectedMode };
 
-      // Display results
       this.displayResults(results, selectedMode);
       this.updateStatistics(results);
 
-      // Auto-save calculation
-      if (results && results.length > 0) {
+      if (results.length > 0) {
         await this.calculator.saveCalculation(params, results, selectedMode);
         this.loadCalculationHistory(); // Refresh history
       }
@@ -384,50 +333,44 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * ดึงพารามิเตอร์จากฟอร์ม
-   */
   getFormParameters() {
     return {
-      productType: (this.elements.product && this.elements.product.value) || 'MORTGAGE',
+      productType: this.elements.product?.value || 'MORTGAGE',
       income: this.getRawValue(this.elements.income) || 0,
       debt: this.getRawValue(this.elements.debt) || 0,
       incomeExtra: this.getRawValue(this.elements.incomeExtra) || 0,
-      age: parseInt(this.elements.age && this.elements.age.value, 10) || 30,
-      years: parseInt(this.elements.years && this.elements.years.value, 10) || 20,
+      age: parseInt(this.elements.age?.value) || 30,
+      years: parseInt(this.elements.years?.value) || 20,
       propertyValue: this.getRawValue(this.elements.property) || 0,
-      propertyType: (this.elements.propertyType && this.elements.propertyType.value) || null,
-      homeNumber: parseInt(this.elements.homeNumber && this.elements.homeNumber.value, 10) || null,
+      propertyType: this.elements.propertyType?.value || null,
+      homeNumber: parseInt(this.elements.homeNumber?.value) || null,
       loanAmount: this.getRawValue(this.elements.loanAmount) || 0
     };
   }
 
-  /**
-   * ดึงค่าดิบจาก formatted input
-   */
   getRawValue(element) {
     if (!element) return 0;
-    const raw = element.dataset ? element.dataset.rawValue : null;
-    const v = raw || String(element.value || '').replace(/,/g, '');
-    return parseInt(v, 10) || 0;
+    return parseInt(element.dataset.rawValue || element.value.replace(/,/g, '')) || 0;
   }
 
-  /**
-   * ตรวจสอบพารามิเตอร์
-   */
   validateParameters(params) {
     const errors = [];
 
-    if (params.income <= 0) errors.push('กรุณากรอกรายได้');
-    if (params.age < 18 || params.age > 80) errors.push('อายุต้องอยู่ระหว่าง 18-80 ปี');
-    if (params.years < 1 || params.years > 35) errors.push('ระยะเวลาผ่อนต้องอยู่ระหว่าง 1-35 ปี');
-
-    if (params.productType === 'MORTGAGE' || params.productType === 'REFINANCE') {
-      if (params.propertyValue <= 0) errors.push('กรุณากรอกมูลค่าหลักประกัน');
+    if (params.income <= 0) {
+      errors.push('กรุณากรอกรายได้');
     }
-
-    const modeChecked = document.querySelector('input[name="mode"]:checked');
-    const selectedMode = modeChecked ? modeChecked.value : 'max';
+    if (params.age < 18 || params.age > 80) {
+      errors.push('อายุต้องอยู่ระหว่าง 18-80 ปี');
+    }
+    if (params.years < 1 || params.years > 35) {
+      errors.push('ระยะเวลาผ่อนต้องอยู่ระหว่าง 1-35 ปี');
+    }
+    if (['MORTGAGE', 'REFINANCE'].includes(params.productType)) {
+      if (params.propertyValue <= 0) {
+        errors.push('กรุณากรอกมูลค่าหลักประกัน');
+      }
+    }
+    const selectedMode = document.querySelector('input[name="mode"]:checked')?.value;
     if (selectedMode === 'check' && params.loanAmount <= 0) {
       errors.push('กรุณากรอกวงเงินที่ต้องการกู้');
     }
@@ -443,9 +386,6 @@ export class LoanAppManager {
   // RESULTS DISPLAY
   // ========================================
 
-  /**
-   * แสดงผลการคำนวณ
-   */
   displayResults(results, mode) {
     if (!results || results.length === 0) {
       this.displayNoResults();
@@ -457,113 +397,127 @@ export class LoanAppManager {
     this.showExportOptions(true);
   }
 
-  /**
-   * แสดงตารางผลลัพธ์
-   */
   displayResultsTable(results, mode) {
     if (!this.elements.offers) return;
+
     const tbody = this.elements.offers;
     tbody.innerHTML = '';
 
-    results.forEach((result) => {
+    results.forEach(result => {
       const row = document.createElement('tr');
       row.className = result.status === 'APPROVED' ? 'status-approved' : 'status-rejected';
 
-      const bankShortName = result.bankShortName || '';
-      const bankName = result.bankName || '';
-      const promo = result.promotion || null;
-
-      const interestStr = (typeof result.interestRate === 'number')
-        ? result.interestRate.toFixed(2) + '%'
-        : '—';
-
-      const monthly = this.formatCurrency(result.monthlyPayment);
-      const amount = this.formatCurrency(result.maxLoanAmount || result.loanAmount);
-
-      row.innerHTML =
-        '<td><strong>' + bankShortName + '</strong><div style="font-size:.8em;color:#666;">' + bankName + '</div></td>' +
-        '<td>' + (promo
-            ? '<div class="promo-badge">' + (promo.title || '') + '</div>' +
-              '<div style="font-size:.8em;color:#666;margin-top:4px;">' + (promo.description || '') + '</div>'
-            : '<span style="color:#999;">ไม่มีโปรโมชัน</span>') +
-        '</td>' +
-        '<td><strong>' + interestStr + '</strong>' +
-          (promo && promo.year1Rate
-            ? '<div style="font-size:.8em;color:#666;">ปี 1: ' + promo.year1Rate + '%</div>'
-            : '') +
-        '</td>' +
-        '<td><strong>' + monthly + '</strong></td>' +
-        '<td><strong>' + amount + '</strong></td>' +
-        '<td><span class="' + ((result.dsr > 70) ? 'text-warning' : 'text-success') + '">' +
-          ((typeof result.dsr === 'number') ? result.dsr.toFixed(2) : '—') + '%</span></td>' +
-        '<td><span class="' + ((result.ltv > 90) ? 'text-warning' : 'text-success') + '">' +
-          ((typeof result.ltv === 'number') ? result.ltv.toFixed(2) : '—') + '%</span></td>' +
-        '<td><span class="status-' + String(result.status || '').toLowerCase() + '">' +
-          (result.status === 'APPROVED' ? '✅ อนุมัติ' : '❌ ไม่อนุมัติ') + '</span>' +
-          (result.reasons ? '<div style="font-size:.8em;color:#dc3545;margin-top:2px;">' + result.reasons + '</div>' : '') +
-        '</td>';
+      row.innerHTML = `
+        <td>
+          <strong>${result.bankShortName}</strong>
+          <div style="font-size: 0.8em; color: #666;">${result.bankName}</div>
+        </td>
+        <td>
+          ${result.promotion ? `
+            <div class="promo-badge">${result.promotion.title}</div>
+            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+              ${result.promotion.description || ''}
+            </div>
+          ` : '<span style="color: #999;">ไม่มีโปรโมชัน</span>'}
+        </td>
+        <td>
+          <strong>${result.interestRate?.toFixed(2) || '—'}%</strong>
+          ${result.promotion?.year1Rate ? `
+            <div style="font-size: 0.8em; color: #666;">
+              ปี 1: ${result.promotion.year1Rate}%
+            </div>
+          ` : ''}
+        </td>
+        <td>
+          <strong>${this.formatCurrency(result.monthlyPayment)}</strong>
+        </td>
+        <td>
+          <strong>${this.formatCurrency(result.maxLoanAmount || result.loanAmount)}</strong>
+        </td>
+        <td>
+          <span class="${result.dsr > 70 ? 'text-warning' : 'text-success'}">
+            ${result.dsr?.toFixed(2) || '—'}%
+          </span>
+        </td>
+        <td>
+          <span class="${result.ltv > 90 ? 'text-warning' : 'text-success'}">
+            ${result.ltv?.toFixed(2) || '—'}%
+          </span>
+        </td>
+        <td>
+          <span class="status-${result.status.toLowerCase()}">
+            ${result.status === 'APPROVED' ? '✅ อนุมัติ' : '❌ ไม่อนุมัติ'}
+          </span>
+          ${result.reasons ? `<div style="font-size: 0.8em; color: #dc3545; margin-top: 2px;">${result.reasons}</div>` : ''}
+        </td>
+      `;
 
       tbody.appendChild(row);
     });
   }
 
-  /**
-   * แสดงสรุปผล
-   */
   displaySummary(results, mode) {
     if (!this.elements.summary) return;
 
-    const approved = results.filter((r) => r.status === 'APPROVED');
+    const approved = results.filter(r => r.status === 'APPROVED');
     const best = approved.length > 0 ? approved[0] : null;
 
     if (best) {
-      const main =
-        '<div><strong>ค่างวด/เดือน:</strong> ' + this.formatCurrency(best.monthlyPayment) + '</div>' +
-        '<div><strong>อัตราดอกเบี้ย:</strong> ' + (typeof best.interestRate === 'number' ? best.interestRate.toFixed(2) : '—') + '%</div>' +
-        '<div><strong>DSR:</strong> ' + (typeof best.dsr === 'number' ? best.dsr.toFixed(2) : '—') + '%</div>' +
-        '<div><strong>LTV:</strong> ' + (typeof best.ltv === 'number' ? best.ltv.toFixed(2) : '—') + '%</div>' +
-        (best.promotion ? '<div><strong>โปรโมชัน:</strong> ' + (best.promotion.title || '') + '</div>' : '');
-
-      const extra = (mode === 'max')
-        ? '<div><strong>วงเงินสูงสุด:</strong> ' + this.formatCurrency(best.maxLoanAmount) + '</div>'
-        : '<div><strong>สถานะ:</strong> <span class="status-approved">อนุมัติ</span></div>';
-
-      this.elements.summary.innerHTML =
-        '<div class="summary-highlight">' +
-          '<h4>🎯 ข้อเสนอที่ดีที่สุด: ' + (best.bankShortName || '') + '</h4>' +
-          '<div class="summary-grid">' + extra + main + '</div>' +
-        '</div>';
+      const summaryHTML = mode === 'max' ? `
+        <div class="summary-highlight">
+          <h4>🎯 ข้อเสนอที่ดีที่สุด: ${best.bankShortName}</h4>
+          <div class="summary-grid">
+            <div><strong>วงเงินสูงสุด:</strong> ${this.formatCurrency(best.maxLoanAmount)}</div>
+            <div><strong>ค่างวด/เดือน:</strong> ${this.formatCurrency(best.monthlyPayment)}</div>
+            <div><strong>อัตราดอกเบี้ย:</strong> ${best.interestRate?.toFixed(2)}%</div>
+            <div><strong>DSR:</strong> ${best.dsr?.toFixed(2)}%</div>
+            <div><strong>LTV:</strong> ${best.ltv?.toFixed(2)}%</div>
+            ${best.promotion ? `<div><strong>โปรโมชัน:</strong> ${best.promotion.title}</div>` : ''}
+          </div>
+        </div>
+      ` : `
+        <div class="summary-highlight">
+          <h4>🎯 ข้อเสนอที่ดีที่สุด: ${best.bankShortName}</h4>
+          <div class="summary-grid">
+            <div><strong>สถานะ:</strong> <span class="status-approved">อนุมัติ</span></div>
+            <div><strong>ค่างวด/เดือน:</strong> ${this.formatCurrency(best.monthlyPayment)}</div>
+            <div><strong>อัตราดอกเบี้ย:</strong> ${best.interestRate?.toFixed(2)}%</div>
+            <div><strong>DSR:</strong> ${best.dsr?.toFixed(2)}%</div>
+            <div><strong>LTV:</strong> ${best.ltv?.toFixed(2)}%</div>
+            ${best.promotion ? `<div><strong>โปรโมชัน:</strong> ${best.promotion.title}</div>` : ''}
+          </div>
+        </div>
+      `;
+      this.elements.summary.innerHTML = summaryHTML;
     } else {
-      this.elements.summary.innerHTML =
-        '<div class="summary-highlight" style="border-color:#dc3545;background:#fff5f5;">' +
-          '<h4 style="color:#dc3545;">❌ ไม่มีธนาคารที่สามารถอนุมัติได้</h4>' +
-          '<p>ลองปรับเงื่อนไข เช่น เพิ่มรายได้ ลดภาระหนี้ หรือลดวงเงินที่ต้องการ</p>' +
-        '</div>';
+      this.elements.summary.innerHTML = `
+        <div class="summary-highlight" style="border-color: #dc3545; background: #fff5f5;">
+          <h4 style="color: #dc3545;">❌ ไม่มีธนาคารที่สามารถอนุมัติได้</h4>
+          <p>ลองปรับเงื่อนไข เช่น เพิ่มรายได้ ลดภาระหนี้ หรือลดวงเงินที่ต้องการ</p>
+        </div>
+      `;
     }
   }
 
-  /**
-   * แสดงเมื่อไม่มีผลลัพธ์
-   */
   displayNoResults() {
     if (this.elements.offers) {
-      this.elements.offers.innerHTML =
-        '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">' +
-        'ไม่พบข้อเสนอที่เหมาะสม กรุณาตรวจสอบข้อมูลและลองใหม่' +
-        '</td></tr>';
+      this.elements.offers.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 20px; color: #999;">
+            ไม่พบข้อเสนอที่เหมาะสม กรุณาตรวจสอบข้อมูลและลองใหม่
+          </td>
+        </tr>
+      `;
     }
     if (this.elements.summary) this.elements.summary.innerHTML = '';
     this.showExportOptions(false);
   }
 
-  /**
-   * อัพเดตสถิติ
-   */
   updateStatistics(results) {
-    const approved = results.filter((r) => r.status === 'APPROVED');
-    const rejected = results.filter((r) => r.status === 'REJECTED');
-    const rates = approved.map((r) => r.interestRate).filter((r) => typeof r === 'number');
-    const avgRate = rates.length > 0 ? (rates.reduce((sum, rate) => sum + rate, 0) / rates.length) : 0;
+    const approved = results.filter(r => r.status === 'APPROVED');
+    const rejected = results.filter(r => r.status === 'REJECTED');
+    const rates = approved.map(r => r.interestRate).filter(r => r > 0);
+    const avgRate = rates.length > 0 ? rates.reduce((s, v) => s + v, 0) / rates.length : 0;
 
     if (this.elements.totalOffers) this.elements.totalOffers.textContent = results.length;
     if (this.elements.approvedOffers) this.elements.approvedOffers.textContent = approved.length;
@@ -575,14 +529,15 @@ export class LoanAppManager {
   // CALCULATION HISTORY
   // ========================================
 
-  /**
-   * โหลดประวัติการคำนวณ
-   */
   async loadCalculationHistory() {
     try {
+      if (!DataManager.getUserCalculations) {
+        this.elements.calculationHistory?.style && (this.elements.calculationHistory.style.display = 'none');
+        return;
+      }
       const history = await DataManager.getUserCalculations(10);
 
-      if (history && history.length > 0) {
+      if (history.length > 0) {
         this.displayCalculationHistory(history);
         if (this.elements.calculationHistory) this.elements.calculationHistory.style.display = 'block';
       } else {
@@ -593,14 +548,11 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * แสดงประวัติการคำนวณ
-   */
   displayCalculationHistory(history) {
     if (!this.elements.historyList) return;
     this.elements.historyList.innerHTML = '';
 
-    history.forEach((calculation) => {
+    history.forEach(calculation => {
       const item = document.createElement('div');
       item.className = 'history-item';
 
@@ -608,26 +560,24 @@ export class LoanAppManager {
       const productTypeText = this.getProductTypeText(calculation.product_type);
       const modeText = calculation.calculation_mode === 'max' ? 'วงเงินสูงสุด' : 'ตรวจสอบวงเงิน';
 
-      item.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div>' +
-            '<strong>' + productTypeText + '</strong> - ' + modeText +
-            '<div style="font-size:.8em;color:#666;margin-top:2px;">' +
-              'รายได้: ' + this.formatCurrency(calculation.income) +
-              (calculation.loan_amount ? ' | วงเงิน: ' + this.formatCurrency(calculation.loan_amount) : '') +
-            '</div>' +
-          '</div>' +
-          '<div style="font-size:.8em;color:#999;">' + date + '</div>' +
-        '</div>';
+      item.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${productTypeText}</strong> - ${modeText}
+            <div style="font-size: 0.8em; color: #666; margin-top: 2px;">
+              รายได้: ${this.formatCurrency(calculation.income)}
+              ${calculation.loan_amount ? `| วงเงิน: ${this.formatCurrency(calculation.loan_amount)}` : ''}
+            </div>
+          </div>
+          <div style="font-size: 0.8em; color: #999;">${date}</div>
+        </div>
+      `;
 
       item.addEventListener('click', () => this.loadCalculationFromHistory(calculation));
       this.elements.historyList.appendChild(item);
     });
   }
 
-  /**
-   * โหลดการคำนวณจากประวัติ
-   */
   loadCalculationFromHistory(calculation) {
     if (this.elements.product) this.elements.product.value = calculation.product_type;
     if (this.elements.income) this.elements.income.value = calculation.income;
@@ -640,16 +590,13 @@ export class LoanAppManager {
     if (this.elements.homeNumber) this.elements.homeNumber.value = calculation.home_number || '';
     if (this.elements.loanAmount) this.elements.loanAmount.value = calculation.loan_amount;
 
-    // Set mode
-    const modeRadio = document.querySelector('input[name="mode"][value="' + calculation.calculation_mode + '"]');
+    const modeRadio = document.querySelector(`input[name="mode"][value="${calculation.calculation_mode}"]`);
     if (modeRadio) {
       modeRadio.checked = true;
       this.handleModeChange();
     }
 
-    // Show loaded results if available
-    const hasResults = calculation.results && calculation.results.calculationResults;
-    if (hasResults) {
+    if (calculation.results?.calculationResults) {
       this.currentResults = calculation.results.calculationResults;
       this.displayResults(this.currentResults, calculation.calculation_mode);
       this.updateStatistics(this.currentResults);
@@ -658,14 +605,11 @@ export class LoanAppManager {
     this.showNotification('โหลดข้อมูลจากประวัติเรียบร้อยแล้ว', 'success');
   }
 
-  /**
-   * ล้างประวัติการคำนวณ
-   */
   async clearCalculationHistory() {
     if (!confirm('คุณต้องการล้างประวัติการคำนวณทั้งหมดหรือไม่?')) return;
 
     try {
-      if (this.elements.calculationHistory) this.elements.calculationHistory.style.display = 'none';
+      this.elements.calculationHistory.style.display = 'none';
       this.showNotification('ล้างประวัติเรียบร้อยแล้ว', 'info');
     } catch (error) {
       this.showNotification('ไม่สามารถล้างประวัติได้', 'error');
@@ -676,11 +620,8 @@ export class LoanAppManager {
   // EXPORT FUNCTIONS
   // ========================================
 
-  /**
-   * บันทึกการคำนวณ
-   */
   async saveCalculation() {
-    if (!this.currentResults || this.currentResults.length === 0) {
+    if (!this.currentResults.length) {
       this.showNotification('ไม่มีผลการคำนวณให้บันทึก', 'warning');
       return;
     }
@@ -691,6 +632,7 @@ export class LoanAppManager {
         this.currentResults,
         this.currentParams.calculationMode
       );
+
       this.showNotification('บันทึกการคำนวณเรียบร้อยแล้ว', 'success');
       this.loadCalculationHistory();
     } catch (error) {
@@ -698,11 +640,8 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * Export เป็น CSV
-   */
   exportToCSV() {
-    if (!this.currentResults || this.currentResults.length === 0) {
+    if (!this.currentResults.length) {
       this.showNotification('ไม่มีข้อมูลให้ export', 'warning');
       return;
     }
@@ -715,11 +654,8 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * Export เป็น JSON
-   */
   exportToJSON() {
-    if (!this.currentResults || this.currentResults.length === 0) {
+    if (!this.currentResults.length) {
       this.showNotification('ไม่มีข้อมูลให้ export', 'warning');
       return;
     }
@@ -732,17 +668,16 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * ดาวน์โหลดไฟล์
-   */
   downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
+
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
@@ -751,11 +686,8 @@ export class LoanAppManager {
   // UTILITY METHODS
   // ========================================
 
-  /**
-   * แสดงสถานะการคำนวณ
-   */
   setCalculatingState(calculating) {
-    this.isCalculating = !!calculating;
+    this.isCalculating = calculating;
 
     if (this.elements.btnText) {
       this.elements.btnText.textContent = calculating ? 'กำลังคำนวณ...' : 'คำนวณ';
@@ -768,49 +700,41 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * ล้างผลลัพธ์
-   */
   clearResults() {
     this.currentResults = [];
 
     if (this.elements.offers) {
-      this.elements.offers.innerHTML =
-        '<tr><td colspan="8" style="text-align:center;padding:20px;color:#666;">' +
-        'กรุณาคำนวณเพื่อดูข้อเสนอ' +
-        '</td></tr>';
+      this.elements.offers.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 20px; color: #666;">
+            กรุณาคำนวณเพื่อดูข้อเสนอ
+          </td>
+        </tr>
+      `;
     }
     if (this.elements.summary) this.elements.summary.innerHTML = '';
 
-    // Reset statistics
-    const keys = ['totalOffers', 'approvedOffers', 'rejectedOffers', 'avgRate'];
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
+    ['totalOffers', 'approvedOffers', 'rejectedOffers', 'avgRate'].forEach(key => {
       if (this.elements[key]) this.elements[key].textContent = '—';
-    }
+    });
 
     this.showExportOptions(false);
   }
 
-  /**
-   * แสดง/ซ่อน export options
-   */
   showExportOptions(show) {
     const exportButtons = [
       this.elements.btnSave,
       this.elements.btnExportCSV,
       this.elements.btnExportJSON
     ];
-    exportButtons.forEach((btn) => {
+    exportButtons.forEach(btn => {
       if (btn) btn.style.display = show ? 'inline-block' : 'none';
     });
   }
 
-  /**
-   * อัพเดตสถานะการเชื่อมต่อ
-   */
   updateConnectionStatus(connected) {
     if (!this.elements.connectionStatus) return;
+
     if (connected) {
       this.elements.connectionStatus.innerHTML = '🟢 เชื่อมต่อแล้ว';
       this.elements.connectionStatus.style.color = '#28a745';
@@ -820,27 +744,23 @@ export class LoanAppManager {
     }
   }
 
-  /**
-   * แสดงการแจ้งเตือน
-   */
-  showNotification(message, type, duration) {
-    const kind = type || 'info';
-    const ms = typeof duration === 'number' ? duration : 4000;
+  showNotification(message, type = 'info', duration = 4000) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = message;
 
-    const n = document.createElement('div');
-    n.className = 'notification ' + kind;
-    n.innerHTML = message;
+    const notificationArea = document.getElementById('notification-area') || document.body;
+    notificationArea.appendChild(notification);
 
-    const area = document.getElementById('notification-area') || document.body;
-    area.appendChild(n);
+    setTimeout(() => {
+      if (notification.parentNode) notification.parentNode.removeChild(notification);
+    }, duration);
 
-    setTimeout(() => { if (n.parentNode) n.parentNode.removeChild(n); }, ms);
-    n.addEventListener('click', () => { if (n.parentNode) n.parentNode.removeChild(n); });
+    notification.addEventListener('click', () => {
+      if (notification.parentNode) notification.parentNode.removeChild(notification);
+    });
   }
 
-  /**
-   * จัดรูปแบบเงิน
-   */
   formatCurrency(amount) {
     if (!amount || amount === 0) return '—';
     return new Intl.NumberFormat('th-TH', {
@@ -851,27 +771,21 @@ export class LoanAppManager {
     }).format(amount);
   }
 
-  /**
-   * แปลง product type เป็นข้อความไทย
-   */
   getProductTypeText(productType) {
     const types = {
-      MORTGAGE: 'สินเชื่อบ้าน',
-      REFINANCE: 'รีไฟแนนซ์',
-      PERSONAL: 'สินเชื่อส่วนบุคคล',
-      SME: 'สินเชื่อ SME'
+      'MORTGAGE': 'สินเชื่อบ้าน',
+      'REFINANCE': 'รีไฟแนนซ์',
+      'PERSONAL': 'สินเชื่อส่วนบุคคล',
+      'SME': 'สินเชื่อ SME'
     };
     return types[productType] || productType;
   }
 
-  /**
-   * แปลง change type เป็นข้อความไทย
-   */
   getChangeTypeText(changeType) {
     const types = {
-      promotions: 'โปรโมชัน',
-      rules: 'กฎเกณฑ์',
-      rates: 'อัตราดอกเบี้ย'
+      'promotions': 'โปรโมชัน',
+      'rules': 'กฎเกณฑ์',
+      'rates': 'อัตราดอกเบี้ย'
     };
     return types[changeType] || changeType;
   }
@@ -880,33 +794,20 @@ export class LoanAppManager {
   // CLEANUP
   // ========================================
 
-  /**
-   * ทำความสะอาดก่อนปิดแอป
-   */
   cleanup() {
     // Cleanup calculator subscriptions
     this.calculator.cleanup();
 
-    // ✅ เรียกผ่าน getAM() และกันพังถ้าไม่พร้อม
-    try { getAM().cleanup(); } catch (e) {}
+    // Cleanup auth manager
+    getAM().cleanup?.();
 
     // Clear cache
-    if (typeof DataManager.clearAllCache === 'function') {
-      DataManager.clearAllCache();
-    }
+    DataManager.clearAllCache?.();
 
-    // Remove event listeners
-    this.removeEventListeners();
+    // Remove event listeners (ที่นี่เราล้างอ้างอิงไว้ก่อน)
+    this.elements = {};
 
     console.log('🧹 Loan App cleaned up');
-  }
-
-  /**
-   * ลบ event listeners
-   */
-  removeEventListeners() {
-    // ถ้าต้องถอด listener รายจุด ให้ทำในนี้
-    this.elements = {};
   }
 }
 
@@ -914,9 +815,6 @@ export class LoanAppManager {
 // UTILITY FUNCTIONS FOR BACKWARD COMPATIBILITY
 // ========================================
 
-/**
- * ฟังก์ชันเก่าสำหรับ backward compatibility
- */
 export function runLoanPage() {
   console.warn('runLoanPage() is deprecated. Use LoanAppManager instead.');
 
@@ -928,14 +826,13 @@ export function runLoanPage() {
     app.initialize();
   }
 
-  window.loanApp = app; // debug
+  window.loanApp = app;
   return app;
 }
 
 // ========================================
 // AUTO CLEANUP ON PAGE UNLOAD
 // ========================================
-
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
     if (window.loanApp && typeof window.loanApp.cleanup === 'function') {
@@ -943,9 +840,3 @@ if (typeof window !== 'undefined') {
     }
   });
 }
-
-// ========================================
-// EXPORT
-// ========================================
-
-export default LoanAppManager;
