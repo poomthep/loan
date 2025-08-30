@@ -3,8 +3,20 @@
 // ENHANCED LOAN CALCULATOR WITH SUPABASE
 // ========================================
 
-import DataManager from './data-manager.js';
-import { AuthManager } from './auth-manager.js';
+// ===== FIX: header ของ loan-calculator-supabase.js =====
+// ใช้ AuthManager จาก window (เวอร์ชัน global) ไม่ import แบบ module
+const AM = (typeof window !== 'undefined' && window.AuthManager)
+  ? window.AuthManager
+  : null;
+
+function getAM() {
+  if (AM) return AM;
+  if (typeof window !== 'undefined' && window.AuthManager) return window.AuthManager;
+  throw new Error('AuthManager ยังไม่พร้อม');
+}
+
+// เปลี่ยน path ให้ตรงกับไฟล์ที่มีจริงบน Netlify
+import DataManager from './data-manager.fix.js';
 
 /**
  * เครื่องมือคำนวณสินเชื่อที่เชื่อมต่อกับ Supabase
