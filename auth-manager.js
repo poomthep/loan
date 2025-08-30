@@ -1,7 +1,7 @@
 /*! auth-manager.js (Global build, no-async)
  * Loan App – Authentication Manager
- * - ใช้กับ <script defer src="/auth-manager.js"></script>
- * - ต้องมี window.supabase (จาก supabase-init.js) ก่อนหน้านี้
+ * ใช้กับ: <script defer src="/auth-manager.js"></script>
+ * ต้องมี window.supabase (จาก supabase-init.js) โหลดมาก่อน
  */
 (function (global) {
   'use strict';
@@ -30,12 +30,21 @@
     }
   }
 
+  function isTableMissing(err) {
+    // PGRST20x / 404 จาก PostgREST หรือข้อความ "Could not find the table ..."
+    return !!(err && (
+      (err.code && String(err.code).startsWith('PGRST2')) ||
+      (err.message && /Could not find the table/i.test(err.message))
+    ));
+  }
+
   // ---------------------------------
   // AuthManager (Global object)
   // ---------------------------------
   var AuthManager = {
     _inited: false,
     _listenerUnsub: null,
+    _profileTablesMissing: { profiles: false, user_profiles: false },
     currentUser: null,
     userProfile: null,
     authListeners: [],
@@ -145,59 +154,128 @@
     },
 
     // ======= USER PROFILE METHODS =======
+    // โหลดโปรไฟล์แบบ "ทน 404" (ไม่มีตารางก็ไม่พัง/ไม่ยิงซ้ำ)
     loadUserProfile: function () {
       if (!AuthManager.currentUser) return Promise.resolve(null);
 
       var sb = getClient();
-      // ลองดึงจาก profiles ก่อน (มีคอลัมน์ is_admin)
-      return sb.from('profiles').select('*')
-        .eq('user_id', AuthManager.currentUser.id).single()
-        .then(function (res1) {
-          if (res1.error && res1.error.code !== 'PGRST116') throw res1.error;
-          if (res1.data) {
-            AuthManager.userProfile = res1.data;
-            return res1.data;
-          }
-          // ถ้าไม่เจอ ลองจาก user_profiles (มีคอลัมน์ role)
-          return sb.from('user_profiles').select('*')
-            .eq('id', AuthManager.currentUser.id).single()
-            .then(function (res2) {
-              if (res2.error && res2.error.code !== 'PGRST116') throw res2.error;
-              AuthManager.userProfile = res2.data || null;
-              return AuthManager.userProfile;
-            });
-        }).catch(function (err) {
-          console.error('Error loading user profile:', err);
-          AuthManager.userProfile = null;
-          return null;
+
+      function tryProfiles() {
+        if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
+        return sb.from('profiles')
+          .select('*')
+          .eq('user_id', AuthManager.currentUser.id)
+          .single()
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || null;
+          })
+          .catch(function (err) {
+            if (isTableMissing(err)) {
+              AuthManager._profileTablesMissing.profiles = true;
+              return null;
+            }
+            if (err && err.code === 'PGRST116') return null; // row not found
+            console.error('Error loading profiles:', err);
+            return null;
+          });
+      }
+
+      function tryUserProfiles() {
+        if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
+        return sb.from('user_profiles')
+          .select('*')
+          .eq('id', AuthManager.currentUser.id)
+          .single()
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || null;
+          })
+          .catch(function (err) {
+            if (isTableMissing(err)) {
+              AuthManager._profileTablesMissing.user_profiles = true;
+              return null;
+            }
+            if (err && err.code === 'PGRST116') return null; // row not found
+            console.error('Error loading user_profiles:', err);
+            return null;
+          });
+      }
+
+      return tryProfiles().then(function (p) {
+        if (p) {
+          AuthManager.userProfile = p;
+          return p;
+        }
+        return tryUserProfiles().then(function (up) {
+          AuthManager.userProfile = up || null;
+          return AuthManager.userProfile;
         });
+      });
     },
 
+    // อัปเดตโปรไฟล์แบบ "ทน 404" (ถ้าไม่มีตารางจะไม่พัง)
     updateUserProfile: function (updates) {
       if (!AuthManager.currentUser) {
         return Promise.reject(new Error('ต้องเข้าสู่ระบบก่อน'));
       }
+
       var sb = getClient();
-      // พยายามอัปเดตที่ profiles ก่อน ถ้าไม่มีค่อยไป user_profiles
-      return sb.from('profiles').upsert(
-        Object.assign({ user_id: AuthManager.currentUser.id }, updates, { updated_at: new Date().toISOString() })
-      ).select('*').single().then(function (res1) {
-        if (res1.error && res1.error.code !== 'PGRST116') throw res1.error;
-        if (res1.data) {
-          AuthManager.userProfile = res1.data;
-          AuthManager._notify('PROFILE_UPDATED', res1.data);
-          console.log('✅ Profile updated (profiles)');
-          return { success: true, profile: res1.data };
-        }
-        // ถ้าไม่มีตาราง/ไม่สำเร็จ ลอง user_profiles
+
+      function upsertProfiles() {
+        if (AuthManager._profileTablesMissing.profiles) return Promise.resolve(null);
+        return sb.from('profiles').upsert(
+          Object.assign({ user_id: AuthManager.currentUser.id }, updates, {
+            updated_at: new Date().toISOString()
+          })
+        ).select('*').single().then(function (res) {
+          if (res.error) throw res.error;
+          return res.data || null;
+        }).catch(function (err) {
+          if (isTableMissing(err)) {
+            AuthManager._profileTablesMissing.profiles = true;
+            return null;
+          }
+          throw err;
+        });
+      }
+
+      function upsertUserProfiles() {
+        if (AuthManager._profileTablesMissing.user_profiles) return Promise.resolve(null);
         return sb.from('user_profiles').upsert(
-          Object.assign({ id: AuthManager.currentUser.id }, updates, { updated_at: new Date().toISOString() })
-        ).select('*').single().then(function (res2) {
-          if (res2.error) throw res2.error;
-          AuthManager.userProfile = res2.data;
-          AuthManager._notify('PROFILE_UPDATED', res2.data);
-          console.log('✅ Profile updated (user_profiles)');
-          return { success: true, profile: res2.data };
+          Object.assign({ id: AuthManager.currentUser.id }, updates, {
+            updated_at: new Date().toISOString()
+          })
+        ).select('*').single().then(function (res) {
+          if (res.error) throw res.error;
+          return res.data || null;
+        }).catch(function (err) {
+          if (isTableMissing(err)) {
+            AuthManager._profileTablesMissing.user_profiles = true;
+            return null;
+          }
+          throw err;
+        });
+      }
+
+      return upsertProfiles().then(function (p) {
+        if (p) {
+          AuthManager.userProfile = p;
+          AuthManager._notify('PROFILE_UPDATED', p);
+          console.log('✅ Profile updated (profiles)');
+          return { success: true, profile: p };
+        }
+        return upsertUserProfiles().then(function (up) {
+          if (up) {
+            AuthManager.userProfile = up;
+            AuthManager._notify('PROFILE_UPDATED', up);
+            console.log('✅ Profile updated (user_profiles)');
+            return { success: true, profile: up };
+          }
+          return {
+            success: false,
+            error: 'ยังไม่ได้สร้างตารางโปรไฟล์ (profiles หรือ user_profiles) ในฐานข้อมูล'
+          };
         });
       }).catch(function (err) {
         console.error('❌ Profile update error:', err);
@@ -241,16 +319,18 @@
             AuthManager._notify(event, null);
             updateAuthUI();
           } else {
-            // TOKEN_REFRESHED, PASSWORD_RECOVERY, USER_UPDATED ฯลฯ
+            // TOKEN_REFRESHED, USER_UPDATED, PASSWORD_RECOVERY ฯลฯ
             AuthManager.currentUser = user;
             AuthManager._notify(event, user);
             updateAuthUI();
           }
         });
-        // v2 จะคืน { data: { subscription } }
+
+        // v2 -> { data: { subscription } }
         AuthManager._listenerUnsub = ret && ret.data && ret.data.subscription
           ? function () { try { ret.data.subscription.unsubscribe(); } catch (e) {} }
           : null;
+
       } catch (e) {
         console.error('Auth listener setup failed:', e);
       }
@@ -267,9 +347,8 @@
 
     _notify: function (event, user) {
       for (var i = 0; i < AuthManager.authListeners.length; i++) {
-        try { AuthManager.authListeners[i](event, user, AuthManager.userProfile); } catch (e) {
-          console.error('Error in auth listener:', e);
-        }
+        try { AuthManager.authListeners[i](event, user, AuthManager.userProfile); }
+        catch (e) { console.error('Error in auth listener:', e); }
       }
     },
 
@@ -361,7 +440,7 @@
     var logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) logoutBtn.style.display = data.isAuthenticated ? 'block' : 'none';
 
-    // ลิงก์ admin
+    // ลิงก์ admin (เฉพาะ admin)
     var adminLinks = document.querySelectorAll('[href="/admin.html"], [href="./admin.html"]');
     for (var i = 0; i < adminLinks.length; i++) {
       adminLinks[i].style.display = data.isAdmin ? 'inline-block' : 'none';
@@ -456,7 +535,7 @@
 
   console.info('[AuthManager] ready:', !!global.AuthManager);
 
-  // (ทางเลือก) Auto-init เมื่อหน้าโหลด ถ้าไม่ได้เรียกจาก app.js
+  // Auto-init (ถ้าไม่ได้สั่งให้ manual)
   if (!global.__AUTH_INIT_MANUAL__) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () {
