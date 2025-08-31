@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>เข้าสู่ระบบ | โปรแกรมวิเคราะห์สินเชื่อบ้าน</title>
   <link rel="stylesheet" href="./css/app.css">
+  
+    <!-- วางไว้ใน <head> หรือก่อนสคริปต์ type="module" ตัวอื่นๆ -->
+<script src="/js/supabase-config.js"></script>
+<script type="module" src="/js/supabase-init.js"></script>
+  
 </head>
 <body>
   <div class="container">
@@ -37,9 +42,7 @@
   </div>
 
   <!-- ตั้งค่า Supabase ของคุณตรงนี้ -->
-  <!-- วางไว้ใน <head> หรือก่อนสคริปต์ type="module" ตัวอื่นๆ -->
-<script src="/js/supabase-config.js"></script>
-<script type="module" src="/js/supabase-init.js"></script>
+
   
   <script type="module">
     import './js/supabase-init.js';
