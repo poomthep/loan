@@ -1,67 +1,84 @@
 /* ============================================================================
  * loan-app-manager.js  (ES Module; no default export)
- * - ไม่ export default เพื่อกัน error duplicate export
- * - ไม่ import data-manager แบบ hardcode; มี fallback
- * - ใช้ AuthManager/ DataManager จาก window หากมีอยู่ก่อน
+ * - โหลด LoanCalculator แบบ dynamic หลัง resolve DataManager แล้ว
+ * - มี Safe DataManager wrapper (ไม่ throw ถ้าไม่มี window.supabase)
  * ========================================================================== */
 
 'use strict';
 
-/* --------------------------- helpers: module resolve --------------------------- */
+/* --------------------------- small helpers --------------------------- */
 function pickDefault(ns) {
-  if (ns && typeof ns === 'object') {
-    if ('default' in ns && ns.default) return ns.default;
-    if ('LoanCalculator' in ns && ns.LoanCalculator) return ns.LoanCalculator;
-  }
+  if (ns && typeof ns === 'object' && 'default' in ns && ns.default) return ns.default;
   return ns;
 }
+const isFn = (f) => typeof f === 'function';
 
-// ดึง DataManager ให้ได้แน่ ๆ (จาก window → ./data-manager.js → ./data-manager.fix.js)
-async function resolveDataManager() {
+/* --------------------------- DataManager resolver --------------------------- */
+/** สร้าง DataManager ให้พร้อมใช้งาน: window → ./data-manager.js → ./data-manager.fix.js */
+async function resolveRawDataManager() {
   if (typeof window !== 'undefined' && window.DataManager) return window.DataManager;
 
   try {
-    const mod = await import('./data-manager.js');
-    const DM = pickDefault(mod);
-    if (DM) { window.DataManager = DM; return DM; }
+    const m = await import('./data-manager.js');
+    return pickDefault(m) || m;
   } catch (_) {}
 
   try {
-    const mod = await import('./data-manager.fix.js');
-    const DM = pickDefault(mod);
-    if (DM) { window.DataManager = DM; return DM; }
+    const m = await import('./data-manager.fix.js');
+    return pickDefault(m) || m;
   } catch (_) {}
 
-  // ถ้าไม่มีจริง ๆ ก็โยน error ชัดเจน
-  throw new Error('ไม่พบ DataManager (ทั้ง data-manager.js และ data-manager.fix.js)');
+  // ถ้าไม่มีจริง ๆ ส่ง object เปล่ากลับไป (จะถูก wrap ให้ปลอดภัยอีกที)
+  return {};
 }
 
-// ดึง LoanCalculator (ตัวนี้มีไฟล์อยู่แน่)
-import * as __LCNS from './loan-calculator-supabase.js';
-const LoanCalculatorCtor = pickDefault(__LCNS);
+/** ครอบ DataManager ให้ “ไม่โยน error” และมีค่า fallback */
+function buildSafeDataManager(raw) {
+  const dm = raw && typeof raw === 'object' ? raw : {};
 
-// AuthManager: รอจนกว่าจะพร้อม (อ่านจาก window เท่านั้น)
-function waitForAuthManager(timeoutMs = 4000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    (function loop() {
-      if (typeof window !== 'undefined' && window.AuthManager) {
-        const am = window.AuthManager;
-        try {
-          if (typeof am.initialize === 'function') {
-            am.initialize().then(() => resolve(am)).catch(() => resolve(am));
-          } else {
-            resolve(am);
-          }
-        } catch {
-          resolve(am);
-        }
-        return;
+  // ฟังก์ชันช่วย wrap ให้จับ error + คืนค่า default
+  const wrap = (fn, fallback) => async (...args) => {
+    try {
+      if (isFn(fn)) return await fn.apply(dm, args);
+    } catch (e) {
+      console.warn('[DM] function failed -> fallback:', e);
+    }
+    return typeof fallback === 'function' ? fallback(...args) : fallback;
+  };
+
+  // สร้าง safe surface
+  const safe = {
+    // ถ้าไม่มีจริง ๆ คืน [] ไปแทน
+    getBanks:            wrap(dm.getBanks, []),
+    getActivePromotions: wrap(dm.getActivePromotions, []),
+    getUserCalculations: wrap(dm.getUserCalculations, []),
+    clearAllCache:       wrap(dm.clearAllCache, undefined),
+    // ใช้ getBanks เป็นตัวชี้วัดการเชื่อมต่อแบบง่าย ๆ
+    async checkDatabaseConnection() {
+      try {
+        const b = await safe.getBanks();
+        return Array.isArray(b);
+      } catch {
+        return false;
       }
-      if (Date.now() - start >= timeoutMs) return reject(new Error('AuthManager ยังไม่พร้อม'));
-      setTimeout(loop, 60);
-    })();
-  });
+    },
+  };
+
+  // เก็บของเดิมที่ไม่ทับ (เผื่อต้องใช้ field อื่น)
+  for (const k of Object.keys(dm)) {
+    if (!(k in safe)) safe[k] = dm[k];
+  }
+
+  // โยนขึ้น window ให้โมดูลเก่า ๆ ใช้ได้
+  if (typeof window !== 'undefined') window.DataManager = safe;
+  return safe;
+}
+
+/* --------------------------- LoanCalculator (dynamic) --------------------------- */
+async function loadCalculatorAfterDMReady() {
+  // ตรงนี้ DataManager ถูกใส่บน window แล้ว
+  const mod = await import('./loan-calculator-supabase.js');
+  return pickDefault(mod) || mod;
 }
 
 /* ============================================================================
@@ -69,11 +86,9 @@ function waitForAuthManager(timeoutMs = 4000) {
  * ========================================================================== */
 export class LoanAppManager {
   constructor() {
-    this.calculator = (typeof LoanCalculatorCtor === 'function')
-      ? new LoanCalculatorCtor()
-      : LoanCalculatorCtor;
+    this.dm = null;
+    this.calculator = null;
 
-    this.dm = null;                 // ← เก็บ DataManager ที่ resolve มา
     this.currentResults = [];
     this.currentParams = {};
     this.isCalculating = false;
@@ -81,44 +96,65 @@ export class LoanAppManager {
     this.elements = {};
   }
 
-  /* --------------------------- lifecycle --------------------------- */
   async initialize() {
     console.log('🚀 Initializing Loan App...');
 
-    // 1) Auth ให้พร้อมก่อน
-    await waitForAuthManager().catch(() => { /* ปล่อยผ่าน แต่จะแจ้งบน UI ถ้าจำเป็น */ });
+    // 1) ให้ AuthManager พร้อม (อ่านจาก window อย่างเดียว)
+    await this.waitForAuthManager().catch(() => { /* ไม่บล็อกการใช้งาน */ });
 
-    // 2) DataManager พร้อม (มี fallback)
-    this.dm = await resolveDataManager();
+    // 2) เตรียม DataManager (safe) + ใส่บน window
+    const rawDM = await resolveRawDataManager();
+    this.dm = buildSafeDataManager(rawDM);
 
-    // 3) bind DOM และ events
+    // 3) โหลด LoanCalculator แบบ dynamic หลังจาก DM พร้อมแล้ว
+    const LoanCalculatorCtor = await loadCalculatorAfterDMReady();
+    this.calculator = isFn(LoanCalculatorCtor) ? new LoanCalculatorCtor() : LoanCalculatorCtor;
+
+    // 4) DOM + events
     this.bindElements();
     this.setupEventListeners();
 
-    // 4) เช็คการเชื่อมต่อฐานข้อมูล (optional แล้วแต่ DM)
+    // 5) ตรวจการเชื่อมต่อ (แบบไม่ throw)
     try {
-      let ok = true;
-      if (this.dm && typeof this.dm.getBanks === 'function') {
-        await this.dm.getBanks(); // ถ้าดึงได้ถือว่าโอเค
-      }
+      const ok = await (this.dm.checkDatabaseConnection?.() ?? Promise.resolve(true));
       this.updateConnectionStatus(!!ok);
     } catch (e) {
       console.warn('check DB connection failed:', e);
       this.updateConnectionStatus(false);
     }
 
-    // 5) โหลดข้อมูลเริ่มต้น + ประวัติ
+    // 6) ข้อมูลเริ่มต้น + ประวัติ
     await this.loadInitialData();
     await this.loadCalculationHistory();
 
     console.log('✅ Loan App ready');
   }
 
+  /* --------------------------- AuthManager --------------------------- */
+  waitForAuthManager(timeoutMs = 4000) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      (function loop() {
+        if (typeof window !== 'undefined' && window.AuthManager) {
+          const am = window.AuthManager;
+          try {
+            if (isFn(am.initialize)) am.initialize().finally(() => resolve(am));
+            else resolve(am);
+          } catch {
+            resolve(am);
+          }
+          return;
+        }
+        if (Date.now() - start >= timeoutMs) return reject(new Error('AuthManager ยังไม่พร้อม'));
+        setTimeout(loop, 60);
+      })();
+    });
+  }
+
   /* --------------------------- DOM binding --------------------------- */
   bindElements() {
     const $ = (id) => document.getElementById(id);
     this.elements = {
-      // form
       modeRadios: document.querySelectorAll('input[name="mode"]'),
       product:      $('product'),
       income:       $('income'),
@@ -131,34 +167,28 @@ export class LoanAppManager {
       homeNumber:   $('home-number'),
       loanAmount:   $('loan-amount'),
 
-      // btn
       btnRun:         $('btn-run'),
       btnSave:        $('btn-save-calculation'),
       btnExportCSV:   $('btn-export-csv'),
       btnExportJSON:  $('btn-export-json'),
       btnClearHistory:$('btn-clear-history'),
 
-      // display
       offers:  $('offers'),
       summary: $('caps'),
 
-      // stats
       totalOffers:    $('total-offers'),
       approvedOffers: $('approved-offers'),
       rejectedOffers: $('rejected-offers'),
       avgRate:        $('avg-rate'),
 
-      // status
       connectionStatus: $('connection-status'),
       banksCount:       $('banks-count'),
       promotionsCount:  $('promotions-count'),
       lastUpdated:      $('last-updated'),
 
-      // history
       calculationHistory: $('calculation-history'),
       historyList:        $('history-list'),
 
-      // ui
       blockLoan:  $('block-loan'),
       sortInfo:   $('sort-info'),
       btnText:    $('btn-text'),
@@ -167,24 +197,20 @@ export class LoanAppManager {
   }
 
   setupEventListeners() {
-    // mode
     this.elements.modeRadios?.forEach(r =>
       r.addEventListener('change', () => this.handleModeChange())
     );
-
-    // product
     this.elements.product?.addEventListener('change', () => this.loadInitialData());
 
-    // buttons
     this.elements.btnRun?.addEventListener('click', () => this.runCalculation());
     this.elements.btnSave?.addEventListener('click', () => this.saveCalculation());
     this.elements.btnExportCSV?.addEventListener('click', () => this.exportToCSV());
     this.elements.btnExportJSON?.addEventListener('click', () => this.exportToJSON());
     this.elements.btnClearHistory?.addEventListener('click', () => this.clearCalculationHistory());
 
-    // numeric formatters
-    const numericIds = ['income','debt','incomeExtra','age','years','property','loanAmount'];
-    numericIds.forEach(id => {
+    // numeric format
+    const ids = ['income','debt','incomeExtra','age','years','property','loanAmount'];
+    ids.forEach(id => {
       const el = this.elements[id];
       if (!el) return;
       el.addEventListener('input', e => { e.target.value = String(e.target.value).replace(/[^0-9]/g,''); });
@@ -215,13 +241,13 @@ export class LoanAppManager {
       const productType = this.elements.product?.value || 'MORTGAGE';
 
       const [banks, promotions] = await Promise.all([
-        this.dm?.getBanks?.() ?? Promise.resolve([]),
-        this.dm?.getActivePromotions?.(productType) ?? Promise.resolve([])
+        this.dm?.getBanks?.() ?? [],
+        this.dm?.getActivePromotions?.(productType) ?? []
       ]);
 
-      if (this.elements.banksCount)      this.elements.banksCount.textContent = banks.length;
-      if (this.elements.promotionsCount) this.elements.promotionsCount.textContent = promotions.length;
-      if (this.elements.lastUpdated)     this.elements.lastUpdated.textContent = new Date().toLocaleString('th-TH');
+      this.elements.banksCount      && (this.elements.banksCount.textContent = banks.length);
+      this.elements.promotionsCount && (this.elements.promotionsCount.textContent = promotions.length);
+      this.elements.lastUpdated     && (this.elements.lastUpdated.textContent = new Date().toLocaleString('th-TH'));
     } catch (e) {
       console.warn('loadInitialData:', e);
     }
@@ -241,6 +267,8 @@ export class LoanAppManager {
       const mode = document.querySelector('input[name="mode"]:checked')?.value || 'max';
       let results = [];
 
+      if (!this.calculator) throw new Error('Calculator not ready');
+
       if (mode === 'max') {
         results = await this.calculator.calculateMaxLoanAmount(params);
       } else {
@@ -253,13 +281,13 @@ export class LoanAppManager {
       this.displayResults(results, mode);
       this.updateStatistics(results);
 
-      if (results.length && typeof this.calculator.saveCalculation === 'function') {
+      if (results.length && isFn(this.calculator.saveCalculation)) {
         await this.calculator.saveCalculation(params, results, mode);
         await this.loadCalculationHistory();
       }
     } catch (e) {
       console.error('calc error:', e);
-      this.notify('เกิดข้อผิดพลาดในการคำนวณ กรุณาลองใหม่อีกครั้ง','error');
+      this.notify('เกิดข้อผิดพลาดในการคำนวณ (ตรวจ DataManager/ Supabase)', 'error');
     } finally {
       this.setCalculatingState(false);
     }
@@ -289,9 +317,9 @@ export class LoanAppManager {
     if (p.income <= 0) errs.push('กรุณากรอกรายได้');
     if (p.age < 18 || p.age > 80) errs.push('อายุต้องอยู่ระหว่าง 18-80 ปี');
     if (p.years < 1 || p.years > 35) errs.push('ระยะเวลาผ่อนต้องอยู่ระหว่าง 1-35 ปี');
-    if ((p.productType === 'MORTGAGE' || p.productType === 'REFINANCE') && p.propertyValue <= 0) {
+    if ((p.productType === 'MORTGAGE' || p.productType === 'REFINANCE') && p.propertyValue <= 0)
       errs.push('กรุณากรอกมูลค่าหลักประกัน');
-    }
+
     const mode = document.querySelector('input[name="mode"]:checked')?.value || 'max';
     if (mode === 'check' && p.loanAmount <= 0) errs.push('กรุณากรอกวงเงินที่ต้องการกู้');
 
@@ -311,29 +339,16 @@ export class LoanAppManager {
       const tr = document.createElement('tr');
       tr.className = (r.status === 'APPROVED') ? 'status-approved' : 'status-rejected';
       tr.innerHTML = `
-        <td>
-          <strong>${r.bankShortName || '-'}</strong>
-          <div style="font-size:.8em;color:#666">${r.bankName || ''}</div>
-        </td>
-        <td>
-          ${r.promotion
-            ? `<div class="promo-badge">${r.promotion.title}</div>
-               <div style="font-size:.8em;color:#666">${r.promotion.description || ''}</div>`
-            : '<span style="color:#999">ไม่มีโปรโมชัน</span>'}
-        </td>
-        <td>
-          <strong>${(r.interestRate || 0).toFixed(2)}%</strong>
-          ${r.promotion?.year1Rate
-            ? `<div style="font-size:.8em;color:#666">ปี 1: ${r.promotion.year1Rate}%</div>` : ''}
-        </td>
+        <td><strong>${r.bankShortName || '-'}</strong><div style="font-size:.8em;color:#666">${r.bankName || ''}</div></td>
+        <td>${r.promotion
+          ? `<div class="promo-badge">${r.promotion.title}</div><div style="font-size:.8em;color:#666">${r.promotion.description || ''}</div>`
+          : '<span style="color:#999">ไม่มีโปรโมชัน</span>'}</td>
+        <td><strong>${(r.interestRate || 0).toFixed(2)}%</strong>${r.promotion?.year1Rate ? `<div style="font-size:.8em;color:#666">ปี 1: ${r.promotion.year1Rate}%</div>` : ''}</td>
         <td><strong>${this.money(r.monthlyPayment)}</strong></td>
         <td><strong>${this.money(r.maxLoanAmount ?? r.loanAmount)}</strong></td>
         <td><span class="${(r.dsr || 0) > 70 ? 'text-warning' : 'text-success'}">${(r.dsr || 0).toFixed(2)}%</span></td>
         <td><span class="${(r.ltv || 0) > 90 ? 'text-warning' : 'text-success'}">${(r.ltv || 0).toFixed(2)}%</span></td>
-        <td>
-          <span class="status-${String(r.status || '').toLowerCase()}">${r.status === 'APPROVED' ? '✅ อนุมัติ' : '❌ ไม่อนุมัติ'}</span>
-          ${r.reasons ? `<div style="font-size:.8em;color:#dc3545">${r.reasons}</div>` : ''}
-        </td>`;
+        <td><span class="status-${String(r.status || '').toLowerCase()}">${r.status === 'APPROVED' ? '✅ อนุมัติ' : '❌ ไม่อนุมัติ'}</span>${r.reasons ? `<div style="font-size:.8em;color:#dc3545">${r.reasons}</div>` : ''}</td>`;
       tbody.appendChild(tr);
     });
 
@@ -378,9 +393,7 @@ export class LoanAppManager {
 
   displayNoResults() {
     this.elements.offers && (this.elements.offers.innerHTML =
-      `<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">
-         ไม่พบข้อเสนอที่เหมาะสม กรุณาคำนวณเพื่อดูผลลัพธ์
-       </td></tr>`);
+      `<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">ไม่พบข้อเสนอที่เหมาะสม กรุณาคำนวณเพื่อดูผลลัพธ์</td></tr>`);
     this.elements.summary && (this.elements.summary.innerHTML = '');
     this.showExportOptions(false);
   }
@@ -389,7 +402,7 @@ export class LoanAppManager {
     const approved = results.filter(r => r.status === 'APPROVED');
     const rejected = results.filter(r => r.status === 'REJECTED');
     const rates = approved.map(r => r.interestRate).filter(r => r > 0);
-    const avg = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : 0;
+    const avg = rates.length ? (rates.reduce((a,b)=>a+b,0)/rates.length) : 0;
 
     this.elements.totalOffers    && (this.elements.totalOffers.textContent = results.length);
     this.elements.approvedOffers && (this.elements.approvedOffers.textContent = approved.length);
@@ -400,38 +413,28 @@ export class LoanAppManager {
   /* --------------------------- history --------------------------- */
   async loadCalculationHistory() {
     try {
-      const history = await (this.dm?.getUserCalculations?.(10) ?? Promise.resolve([]));
+      const list = await (this.dm?.getUserCalculations?.(10) ?? []);
       if (!this.elements.calculationHistory || !this.elements.historyList) return;
 
-      if (!history.length) {
-        this.elements.calculationHistory.style.display = 'none';
-        return;
-      }
+      if (!list.length) { this.elements.calculationHistory.style.display = 'none'; return; }
 
       this.elements.calculationHistory.style.display = 'block';
       const box = this.elements.historyList;
       box.innerHTML = '';
 
-      history.forEach(c => {
+      list.forEach(c => {
         const div = document.createElement('div');
         div.className = 'history-item';
-
         const date = new Date(c.created_at).toLocaleString('th-TH');
-        const modeText = c.calculation_mode === 'max' ? 'วงเงินสูงสุด' : 'ตรวจสอบวงเงิน';
-        const productTypeText = this.productText(c.product_type);
-
+        const ptext = this.productText(c.product_type);
+        const mtext = c.calculation_mode === 'max' ? 'วงเงินสูงสุด' : 'ตรวจสอบวงเงิน';
         div.innerHTML =
           `<div style="display:flex;justify-content:space-between;align-items:center">
-             <div>
-               <strong>${productTypeText}</strong> - ${modeText}
-               <div style="font-size:.8em;color:#666;margin-top:2px">
-                 รายได้: ${this.money(c.income)}
-                 ${c.loan_amount ? ` | วงเงิน: ${this.money(c.loan_amount)}` : ''}
-               </div>
+             <div><strong>${ptext}</strong> - ${mtext}
+               <div style="font-size:.8em;color:#666">รายได้: ${this.money(c.income)}${c.loan_amount ? ' | วงเงิน: '+this.money(c.loan_amount) : ''}</div>
              </div>
              <div style="font-size:.8em;color:#999">${date}</div>
            </div>`;
-
         div.addEventListener('click', () => this.loadCalculationFromHistory(c));
         box.appendChild(div);
       });
@@ -478,7 +481,7 @@ export class LoanAppManager {
   async saveCalculation() {
     if (!this.currentResults.length) { this.notify('ไม่มีผลการคำนวณให้บันทึก','warning'); return; }
     try {
-      if (typeof this.calculator.saveCalculation === 'function') {
+      if (isFn(this.calculator?.saveCalculation)) {
         await this.calculator.saveCalculation(this.currentParams, this.currentResults, this.currentParams.calculationMode);
       }
       this.notify('บันทึกการคำนวณเรียบร้อยแล้ว','success');
@@ -487,27 +490,25 @@ export class LoanAppManager {
       this.notify('ไม่สามารถบันทึกได้','error');
     }
   }
-
   exportToCSV() {
     if (!this.currentResults.length) { this.notify('ไม่มีข้อมูลให้ export','warning'); return; }
     try {
-      const csv = (typeof LoanCalculatorCtor.exportToCSV === 'function')
-        ? LoanCalculatorCtor.exportToCSV(this.currentResults)
+      const csv = isFn(this.calculator?.exportToCSV)
+        ? this.calculator.exportToCSV(this.currentResults)
         : '';
-      this.download(csv, 'loan-calculation.csv', 'text/csv');
+      this.download(csv,'loan-calculation.csv','text/csv');
       this.notify('Export CSV เรียบร้อยแล้ว','success');
     } catch {
       this.notify('ไม่สามารถ export ได้','error');
     }
   }
-
   exportToJSON() {
     if (!this.currentResults.length) { this.notify('ไม่มีข้อมูลให้ export','warning'); return; }
     try {
-      const json = (typeof LoanCalculatorCtor.exportToJSON === 'function')
-        ? LoanCalculatorCtor.exportToJSON(this.currentResults, this.currentParams)
-        : JSON.stringify({ results: this.currentResults, params: this.currentParams }, null, 2);
-      this.download(json, 'loan-calculation.json', 'application/json');
+      const json = isFn(this.calculator?.exportToJSON)
+        ? this.calculator.exportToJSON(this.currentResults, this.currentParams)
+        : JSON.stringify({results:this.currentResults, params:this.currentParams}, null, 2);
+      this.download(json,'loan-calculation.json','application/json');
       this.notify('Export JSON เรียบร้อยแล้ว','success');
     } catch {
       this.notify('ไม่สามารถ export ได้','error');
@@ -521,62 +522,52 @@ export class LoanAppManager {
     if (this.elements.sortInfo)  this.elements.sortInfo.textContent  = (mode === 'check' ? '(เรียงตาม DSR ต่ำสุด)' : '(เรียงตามวงเงินสูงสุด)');
     this.clearResults();
   }
-
   setCalculatingState(b) {
     this.isCalculating = b;
-    if (this.elements.btnText)    this.elements.btnText.textContent = b ? 'กำลังคำนวณ...' : 'คำนวณ';
-    if (this.elements.btnSpinner) this.elements.btnSpinner.style.display = b ? 'inline-block' : 'none';
-    if (this.elements.btnRun)     this.elements.btnRun.disabled = b;
+    this.elements.btnText    && (this.elements.btnText.textContent = b ? 'กำลังคำนวณ...' : 'คำนวณ');
+    this.elements.btnSpinner && (this.elements.btnSpinner.style.display = b ? 'inline-block' : 'none');
+    this.elements.btnRun     && (this.elements.btnRun.disabled = b);
   }
-
   clearResults() {
     this.currentResults = [];
-    this.elements.offers  && (this.elements.offers.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:#666">กรุณาคำนวณเพื่อดูข้อเสนอ</td></tr>`);
+    this.elements.offers  && (this.elements.offers.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#666">กรุณาคำนวณเพื่อดูข้อเสนอ</td></tr>');
     this.elements.summary && (this.elements.summary.innerHTML = '');
     ['totalOffers','approvedOffers','rejectedOffers','avgRate'].forEach(k => {
       if (this.elements[k]) this.elements[k].textContent = '—';
     });
     this.showExportOptions(false);
   }
-
   showExportOptions(show) {
-    [this.elements.btnSave, this.elements.btnExportCSV, this.elements.btnExportJSON]
-      .forEach(btn => { if (btn) btn.style.display = show ? 'inline-block' : 'none'; });
+    [this.elements.btnSave, this.elements.btnExportCSV, this.elements.btnExportJSON].forEach(btn => {
+      if (btn) btn.style.display = show ? 'inline-block' : 'none';
+    });
   }
-
   updateConnectionStatus(ok) {
     if (!this.elements.connectionStatus) return;
     this.elements.connectionStatus.innerHTML = ok ? '🟢 เชื่อมต่อแล้ว' : '🔴 ไม่สามารถเชื่อมต่อได้';
     this.elements.connectionStatus.style.color = ok ? '#28a745' : '#dc3545';
   }
-
   notify(message, type = 'info', duration = 4000) {
     const map = {
-      success: 'bg-green-100 text-green-800 border-green-300',
-      error:   'bg-red-100 text-red-800 border-red-300',
-      info:    'bg-blue-100 text-blue-800 border-blue-300',
-      warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      success:'bg-green-100 text-green-800 border-green-300',
+      error:'bg-red-100 text-red-800 border-red-300',
+      info:'bg-blue-100 text-blue-800 border-blue-300',
+      warning:'bg-yellow-100 text-yellow-800 border-yellow-300'
     };
-    const el = document.createElement('div');
-    el.className = `notification fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm ${map[type] || map.info}`;
-    el.innerHTML = message;
-    document.body.appendChild(el);
-    setTimeout(() => { try { el.remove(); } catch {} }, duration);
-    el.addEventListener('click', () => { try { el.remove(); } catch {} });
+    const n = document.createElement('div');
+    n.className = `notification fixed top-4 right-4 px-4 py-2 rounded border z-50 max-w-sm ${map[type] || map.info}`;
+    n.innerHTML = message;
+    document.body.appendChild(n);
+    setTimeout(() => { try { n.remove(); } catch {} }, duration);
+    n.addEventListener('click', () => { try { n.remove(); } catch {} });
   }
-
-  money(n) {
-    if (!n) return '—';
+  money(amount) {
+    if (!amount) return '—';
     try {
-      return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
-    } catch { return String(n); }
+      return new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',minimumFractionDigits:0,maximumFractionDigits:0}).format(amount);
+    } catch { return String(amount); }
   }
-
-  productText(t) {
-    const map = { MORTGAGE:'สินเชื่อบ้าน', REFINANCE:'รีไฟแนนซ์', PERSONAL:'สินเชื่อส่วนบุคคล', SME:'สินเชื่อ SME' };
-    return map[t] || t;
-  }
-
+  productText(t) { return ({ MORTGAGE:'สินเชื่อบ้าน', REFINANCE:'รีไฟแนนซ์', PERSONAL:'สินเชื่อส่วนบุคคล', SME:'สินเชื่อ SME' })[t] || t; }
   download(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
     const url  = URL.createObjectURL(blob);
@@ -585,7 +576,6 @@ export class LoanAppManager {
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
-
   cleanup() {
     try { this.calculator?.cleanup?.(); } catch {}
     try { this.dm?.clearAllCache?.(); } catch {}
@@ -604,7 +594,7 @@ export function runLoanPage() {
   return app;
 }
 
-// expose for old code
+// expose for legacy
 if (typeof window !== 'undefined') {
   window.LoanAppManager = LoanAppManager;
   window.runLoanPage = runLoanPage;
@@ -613,8 +603,6 @@ if (typeof window !== 'undefined') {
 // auto-clean
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
-    if (window.loanApp && typeof window.loanApp.cleanup === 'function') {
-      try { window.loanApp.cleanup(); } catch {}
-    }
+    try { window.loanApp?.cleanup?.(); } catch {}
   });
 }
