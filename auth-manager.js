@@ -3,6 +3,28 @@
  * ใช้กับ: <script defer src="/auth-manager.js"></script>
  * ต้องมี window.supabase (จาก supabase-init.js) โหลดก่อน
  */
+ 
+ // /js/auth-manager.js
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const supabaseUrl = "https://kpsferwaplnkzrbqoghv.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y";
+
+export const AuthManager = {
+  async initialize() {
+    if (!window.supabase) {
+      window.supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: true, autoRefreshToken: true },
+      });
+    }
+    return true;
+  },
+  // ใส่เมธอดเกี่ยวกับ auth เพิ่มได้ เช่น getUser(), signInWithOtp(), signOut() ฯลฯ
+};
+
+window.AuthManager = AuthManager; // เผื่อโค้ดเดิมอ้างผ่าน window
+
+ 
 (function (global) {
   'use strict';
 
