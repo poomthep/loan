@@ -1,182 +1,125 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Loan App – คำนวณวงเงินกู้</title>
-  <link rel="stylesheet" href="/css/app.css"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>วิเคราะห์สินเชื่อบ้าน</title>
+  <link rel="stylesheet" href="../css/app.css">
 </head>
-<body class="container">
-  <header class="page-header row between">
-    <div>
-      <h1>Loan App</h1>
-      <div class="muted">วิเคราะห์ DSR / LTV และค้นหาข้อเสนอที่ดีที่สุด</div>
-    </div>
-    <div class="right">
-      <div id="connection-status" class="badge">กำลังตรวจสอบการเชื่อมต่อ…</div>
-    </div>
-  </header>
-
-  <main class="grid-2">
-    <!-- ฟอร์มซ้าย -->
-    <section class="card">
-      <h2>ข้อมูลสำหรับคำนวณ</h2>
-
-      <div class="field">
-        <label>โหมดการคำนวณ</label>
-        <div class="row gap">
-          <label><input type="radio" name="mode" value="max" checked/> วงเงินสูงสุด</label>
-          <label><input type="radio" name="mode" value="check"/> ตรวจสอบวงเงินที่ต้องการ</label>
-          <span id="sort-info" class="muted">(เรียงตามวงเงินสูงสุด)</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="product">ประเภทสินเชื่อ</label>
-        <select id="product">
-          <option value="MORTGAGE" selected>สินเชื่อบ้าน (Mortgage)</option>
-          <option value="REFINANCE">รีไฟแนนซ์</option>
-          <option value="PERSONAL">สินเชื่อส่วนบุคคล</option>
-          <option value="SME">สินเชื่อ SME</option>
-        </select>
-      </div>
-
-      <div class="row grid-2">
-        <div class="field">
-          <label for="income">รายได้สุทธิ/เดือน (บาท)</label>
-          <input id="income" type="text" inputmode="numeric" placeholder="เช่น 40000"/>
-        </div>
-        <div class="field">
-          <label for="debt">ภาระหนี้/เดือน (บาท)</label>
-          <input id="debt" type="text" inputmode="numeric" placeholder="เช่น 0"/>
-        </div>
-      </div>
-
-      <div class="row grid-2">
-        <div class="field">
-          <label for="income-extra">รายได้เสริม/เดือน (บาท)</label>
-          <input id="income-extra" type="text" inputmode="numeric" placeholder="เช่น 0"/>
-        </div>
-        <div class="field">
-          <label for="age">อายุผู้กู้ (ปี)</label>
-          <input id="age" type="text" inputmode="numeric" placeholder="เช่น 30"/>
-        </div>
-      </div>
-
-      <div class="row grid-2">
-        <div class="field">
-          <label for="years">ระยะเวลาผ่อน (ปี)</label>
-          <input id="years" type="text" inputmode="numeric" placeholder="เช่น 20"/>
-        </div>
-        <div class="field">
-          <label for="property">มูลค่าหลักประกัน (บาท)</label>
-          <input id="property" type="text" inputmode="numeric" placeholder="เช่น 2000000"/>
-        </div>
-      </div>
-
-      <div class="row grid-2">
-        <div class="field">
-          <label for="property-type">ประเภททรัพย์</label>
-          <select id="property-type">
-            <option value="">– ไม่ระบุ –</option>
-            <option value="HOUSE">บ้านเดี่ยว</option>
-            <option value="TOWNHOME">ทาวน์โฮม</option>
-            <option value="CONDO">คอนโด</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="home-number">บ้านหลังที่เท่าไร</label>
-          <select id="home-number">
-            <option value="">– ไม่ระบุ –</option>
-            <option value="1">หลังแรก</option>
-            <option value="2">หลังที่ 2</option>
-            <option value="3">หลังที่ 3+</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="block-loan" class="field" style="display:none">
-        <label for="loan-amount">วงเงินที่ต้องการกู้ (บาท)</label>
-        <input id="loan-amount" type="text" inputmode="numeric" placeholder="เช่น 1500000"/>
-      </div>
-
+<body>
+  <div class="container">
+    <div class="page-header between wrap">
+      <h1>วิเคราะห์สินเชื่อบ้าน</h1>
       <div class="row gap">
-        <button id="btn-run" class="btn primary">
-          <span id="btn-spinner" class="spinner" style="display:none"></span>
-          <span id="btn-text">คำนวณ</span>
-        </button>
-        <button id="btn-save-calculation" class="btn" style="display:none">บันทึก</button>
-        <button id="btn-export-csv" class="btn" style="display:none">Export CSV</button>
-        <button id="btn-export-json" class="btn" style="display:none">Export JSON</button>
+        <span class="badge" id="connection-status">กำลังตรวจสอบการเชื่อมต่อ...</span>
+        <button id="btn-logout" class="btn">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <div class="card grid-2">
+      <div>
+        <div class="field">
+          <label>โหมดการคำนวณ</label>
+          <div class="row gap">
+            <label><input type="radio" name="mode" value="max" checked> วงเงินสูงสุด</label>
+            <label><input type="radio" name="mode" value="check"> ตรวจสอบวงเงิน</label>
+            <span id="sort-info" class="muted">(เรียงตามวงเงินสูงสุด)</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="product">ประเภทผลิตภัณฑ์</label>
+          <select id="product">
+            <option value="MORTGAGE">สินเชื่อบ้าน</option>
+            <option value="REFINANCE">รีไฟแนนซ์</option>
+            <option value="PERSONAL">สินเชื่อส่วนบุคคล</option>
+            <option value="SME">สินเชื่อ SME</option>
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="field"><label for="income">รายได้/เดือน</label><input id="income" type="text" inputmode="numeric"></div>
+          <div class="field"><label for="income-extra">รายได้เสริม/เดือน</label><input id="income-extra" type="text" inputmode="numeric"></div>
+          <div class="field"><label for="debt">ภาระหนี้/เดือน</label><input id="debt" type="text" inputmode="numeric"></div>
+          <div class="field"><label for="age">อายุ (ปี)</label><input id="age" type="text" inputmode="numeric" value="30"></div>
+          <div class="field"><label for="years">ผ่อน (ปี)</label><input id="years" type="text" inputmode="numeric" value="20"></div>
+          <div class="field"><label for="property">มูลค่าหลักประกัน</label><input id="property" type="text" inputmode="numeric"></div>
+          <div class="field"><label for="property-type">ประเภทหลักประกัน</label><input id="property-type" type="text"></div>
+          <div class="field"><label for="home-number">สัญญาหลังที่</label><input id="home-number" type="text" inputmode="numeric"></div>
+        </div>
+
+        <div id="block-loan" class="field" style="display:none">
+          <label for="loan-amount">วงเงินที่ต้องการกู้</label>
+          <input id="loan-amount" type="text" inputmode="numeric">
+        </div>
+
+        <div class="row gap">
+          <button id="btn-run" class="btn primary"><span id="btn-spinner" class="spinner" style="display:none"></span><span id="btn-text">คำนวณ</span></button>
+          <button id="btn-save-calculation" class="btn" style="display:none">บันทึก</button>
+          <button id="btn-export-csv" class="btn" style="display:none">Export CSV</button>
+          <button id="btn-export-json" class="btn" style="display:none">Export JSON</button>
+        </div>
       </div>
 
-      <hr/>
-      <div class="row wrap gap">
-        <div>ธนาคารที่รองรับ: <strong id="banks-count">—</strong></div>
-        <div>โปรโมชันที่ใช้งาน: <strong id="promotions-count">—</strong></div>
-        <div>อัปเดตล่าสุด: <strong id="last-updated">—</strong></div>
+      <div>
+        <div class="stats row gap">
+          <div class="stat-box"><div class="muted">ทั้งหมด</div><div id="total-offers">—</div></div>
+          <div class="stat-box success"><div class="muted">อนุมัติ</div><div id="approved-offers">—</div></div>
+          <div class="stat-box danger"><div class="muted">ไม่อนุมัติ</div><div id="rejected-offers">—</div></div>
+          <div class="stat-box"><div class="muted">อัตราเฉลี่ย</div><div id="avg-rate">—</div></div>
+        </div>
+        <div id="caps"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- ผลลัพธ์ขวา -->
-    <section class="card">
-      <h2>สรุปผลการวิเคราะห์</h2>
-      <div id="caps"></div>
-
-      <div class="stats row wrap gap">
-        <div class="stat-box">ทั้งหมด<br/><strong id="total-offers">—</strong></div>
-        <div class="stat-box success">อนุมัติ<br/><strong id="approved-offers">—</strong></div>
-        <div class="stat-box danger">ไม่อนุมัติ<br/><strong id="rejected-offers">—</strong></div>
-        <div class="stat-box">อัตราเฉลี่ย<br/><strong id="avg-rate">—</strong></div>
-      </div>
-
-      <div class="muted">ผลลัพธ์ <span id="sort-info-dup" class="muted"></span></div>
+    <div class="card">
+      <h3>ผลลัพธ์</h3>
       <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ธนาคาร</th>
-              <th>โปรโมชัน</th>
-              <th>ดอกเบี้ย</th>
-              <th>ค่างวด/เดือน</th>
-              <th>วงเงิน</th>
-              <th>DSR</th>
-              <th>LTV</th>
-              <th>สถานะ</th>
-            </tr>
-          </thead>
+        <table>
+          <thead><tr>
+            <th>ธนาคาร</th><th>โปรโมชัน</th><th>ดอกเบี้ย</th>
+            <th>ค่างวด/เดือน</th><th>วงเงิน</th><th>DSR</th><th>LTV</th><th>สถานะ</th>
+          </tr></thead>
           <tbody id="offers">
-            <tr><td colspan="8" style="text-align:center;color:#666;padding:20px">กรุณาคำนวณเพื่อดูข้อเสนอ</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:18px;color:#666">กรุณาคำนวณเพื่อดูข้อเสนอ</td></tr>
           </tbody>
         </table>
       </div>
+    </div>
 
-      <div id="calculation-history" style="display:none">
-        <h3>ประวัติการคำนวณล่าสุด</h3>
-        <div id="history-list" class="history-list"></div>
-      </div>
-    </section>
-  </main>
+    <div id="calculation-history" class="card" style="display:none">
+      <h3>ประวัติการคำนวณ</h3>
+      <div id="history-list" class="history-list"></div>
+    </div>
 
-  <footer class="page-footer">
-    <small>© Loan App</small>
-  </footer>
+    <div class="card row gap">
+      <span>ธนาคาร: <strong id="banks-count">—</strong></span>
+      <span>โปรโมชัน: <strong id="promotions-count">—</strong></span>
+      <span>อัพเดตล่าสุด: <span id="last-updated" class="muted">—</span></span>
+    </div>
 
-  <!-- ตั้งค่า Supabase ของโปรเจ็กต์คุณ -->
+    <div class="page-footer muted">© Loan App</div>
+  </div>
+
   <script>
     window.__SUPABASE = {
       url: "https://kpsferwaplnkzrbqoghv.supabase.co",
       anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y"
     };
   </script>
-
-  <!-- ลำดับโหลดสำคัญ -->
-  <script type="module" src="/js/supabase-init.js"></script>
-  <script type="module" src="/js/auth-manager.js"></script>
-  <script type="module" src="/js/data-manager.js"></script>
-  <script type="module" src="/js/loan-calculator-supabase.js"></script>
   <script type="module">
-    import { runLoanPage } from '/js/loan-app-manager.js';
+    import '../js/supabase-init.js';
+    import AM, { requireAuth } from '../js/auth-manager.js';
+    import { runLoanPage } from '../js/loan-app-manager.js';
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await AM.signOut();
+      window.location.href = '../index.html';
+    });
+
+    // บังคับให้ล็อกอินก่อน
+    await requireAuth({ redirectIfNoSession: '../index.html' });
+    // เริ่มหน้า loan
     runLoanPage();
   </script>
 </body>

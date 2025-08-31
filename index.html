@@ -1,27 +1,92 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Loan App</title>
-  <link rel="stylesheet" href="/css/app.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เข้าสู่ระบบ | โปรแกรมวิเคราะห์สินเชื่อบ้าน</title>
+  <link rel="stylesheet" href="./css/app.css">
 </head>
-<body class="container">
-  <header class="page-header">
-    <h1>Loan App</h1>
-    <p>เครื่องมือวิเคราะห์และคำนวณวงเงินกู้ (DSR/LTV)</p>
-  </header>
-
-  <main class="card">
-    <p>เลือกเมนูที่ต้องการ</p>
-    <div class="row gap">
-      <a class="btn primary" href="/loan/">ไปหน้าใช้งาน</a>
-      <a class="btn" href="/admin/">ไปหน้า Admin</a>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>เข้าสู่ระบบ</h1>
+      <span class="badge">Loan App</span>
     </div>
-  </main>
 
-  <footer class="page-footer">
-    <small>© Loan App</small>
-  </footer>
+    <div class="card">
+      <p class="muted">โปรดกรอกอีเมลและรหัสผ่านเพื่อเข้าใช้งาน</p>
+      <form id="login-form" class="form" autocomplete="on">
+        <div class="field">
+          <label for="email">อีเมล</label>
+          <input id="email" type="email" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">รหัสผ่าน</label>
+          <input id="password" type="password" required autocomplete="current-password">
+        </div>
+        <button class="btn primary" type="submit"><span id="spin" class="spinner" style="display:none"></span>เข้าสู่ระบบ</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>สถานะ</h3>
+      <div id="status" class="muted">ยังไม่เข้าสู่ระบบ</div>
+    </div>
+
+    <div class="page-footer muted">© Loan App</div>
+  </div>
+
+  <!-- ตั้งค่า Supabase ของคุณตรงนี้ -->
+  <script>
+    window.__SUPABASE = {
+      url: "https://kpsferwaplnkzrbqoghv.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y"
+    };
+  </script>
+  <script type="module">
+    import './js/supabase-init.js';
+    import AM, { hasAdminRole } from './js/auth-manager.js';
+
+    const form = document.getElementById('login-form');
+    const statusEl = document.getElementById('status');
+    const spin = document.getElementById('spin');
+
+    // ถ้ามี session อยู่แล้ว ให้เด้งไปหน้าที่ตรงตาม role
+    AM.initialize().then(async () => {
+      if (AM.user) {
+        if (!AM.profile) await AM.loadUserProfile();
+        routeByRole();
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      spin.style.display = 'inline-block';
+      statusEl.textContent = 'กำลังเข้าสู่ระบบ...';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      const { user, error } = await AM.signInWithPassword(email, password);
+      spin.style.display = 'none';
+
+      if (error) {
+        statusEl.textContent = 'เข้าสู่ระบบไม่สำเร็จ: ' + (error.message || String(error));
+        return;
+      }
+      statusEl.textContent = 'สำเร็จ กำลังเปลี่ยนหน้า...';
+      await AM.loadUserProfile();
+      routeByRole();
+    });
+
+    function routeByRole() {
+      const isAdmin = AM.isAdmin();
+      if (isAdmin) {
+        window.location.href = './admin/';
+      } else {
+        window.location.href = './loan/';
+      }
+    }
+  </script>
 </body>
 </html>
