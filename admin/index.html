@@ -42,12 +42,10 @@
     <div class="page-footer muted">© Loan App</div>
   </div>
 
-  <script>
-    window.__SUPABASE = {
-      url: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwc2ZlcndhcGxua3pyYnFvZ2h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTI1NjUsImV4cCI6MjA3MTA4ODU2NX0.FizC7Ia92dqvbtfuU5T3hymh-UX6OEqQRvQnB0oY96Y",
-      anonKey: "https://kpsferwaplnkzrbqoghv.supabase.co"
-    };
-  </script>
+<!-- วางไว้ใน <head> หรือก่อนสคริปต์ type="module" ตัวอื่นๆ -->
+<script src="/js/supabase-config.js"></script>
+<script type="module" src="/js/supabase-init.js"></script>
+
   <script type="module">
     import '../js/supabase-init.js';
     import AM, { requireAdmin } from '../js/auth-manager.js';
