@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Loan App – คำนวณวงเงินกู้</title>
+  <link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="container">
+  <header class="page-header row between">
+    <div>
+      <h1>Loan App</h1>
+      <div class="muted">วิเคราะห์ DSR / LTV และค้นหาข้อเสนอที่ดีที่สุด</div>
+    </div>
+    <div class="right">
+      <div id="connection-status" class="badge">กำลังตรวจสอบการเชื่อมต่อ…</div>
+    </div>
+  </header>
+
+  <main class="grid-2">
+    <!-- ฟอร์มซ้าย -->
+    <section class="card">
+      <h2>ข้อมูลสำหรับคำนวณ</h2>
+
+      <div class="field">
+        <label>โหมดการคำนวณ</label>
+        <div class="row gap">
+          <label><input type="radio" name="mode" value="max" checked/> วงเงินสูงสุด</label>
+          <label><input type="radio" name="mode" value="check"/> ตรวจสอบวงเงินที่ต้องการ</label>
+          <span id="sort-info" class="muted">(เรียงตามวงเงินสูงสุด)</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="product">ประเภทสินเชื่อ</label>
+        <select id="product">
+          <option value="MORTGAGE" selected>สินเชื่อบ้าน (Mortgage)</option>
+          <option value="REFINANCE">รีไฟแนนซ์</option>
+          <option value="PERSONAL">สินเชื่อส่วนบุคคล</option>
+          <option value="SME">สินเชื่อ SME</option>
+        </select>
+      </div>
+
+      <div class="row grid-2">
+        <div class="field">
+          <label for="income">รายได้สุทธิ/เดือน (บาท)</label>
+          <input id="income" type="text" inputmode="numeric" placeholder="เช่น 40000"/>
+        </div>
+        <div class="field">
+          <label for="debt">ภาระหนี้/เดือน (บาท)</label>
+          <input id="debt" type="text" inputmode="numeric" placeholder="เช่น 0"/>
+        </div>
+      </div>
+
+      <div class="row grid-2">
+        <div class="field">
+          <label for="income-extra">รายได้เสริม/เดือน (บาท)</label>
+          <input id="income-extra" type="text" inputmode="numeric" placeholder="เช่น 0"/>
+        </div>
+        <div class="field">
+          <label for="age">อายุผู้กู้ (ปี)</label>
+          <input id="age" type="text" inputmode="numeric" placeholder="เช่น 30"/>
+        </div>
+      </div>
+
+      <div class="row grid-2">
+        <div class="field">
+          <label for="years">ระยะเวลาผ่อน (ปี)</label>
+          <input id="years" type="text" inputmode="numeric" placeholder="เช่น 20"/>
+        </div>
+        <div class="field">
+          <label for="property">มูลค่าหลักประกัน (บาท)</label>
+          <input id="property" type="text" inputmode="numeric" placeholder="เช่น 2000000"/>
+        </div>
+      </div>
+
+      <div class="row grid-2">
+        <div class="field">
+          <label for="property-type">ประเภททรัพย์</label>
+          <select id="property-type">
+            <option value="">– ไม่ระบุ –</option>
+            <option value="HOUSE">บ้านเดี่ยว</option>
+            <option value="TOWNHOME">ทาวน์โฮม</option>
+            <option value="CONDO">คอนโด</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="home-number">บ้านหลังที่เท่าไร</label>
+          <select id="home-number">
+            <option value="">– ไม่ระบุ –</option>
+            <option value="1">หลังแรก</option>
+            <option value="2">หลังที่ 2</option>
+            <option value="3">หลังที่ 3+</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="block-loan" class="field" style="display:none">
+        <label for="loan-amount">วงเงินที่ต้องการกู้ (บาท)</label>
+        <input id="loan-amount" type="text" inputmode="numeric" placeholder="เช่น 1500000"/>
+      </div>
+
+      <div class="row gap">
+        <button id="btn-run" class="btn primary">
+          <span id="btn-spinner" class="spinner" style="display:none"></span>
+          <span id="btn-text">คำนวณ</span>
+        </button>
+        <button id="btn-save-calculation" class="btn" style="display:none">บันทึก</button>
+        <button id="btn-export-csv" class="btn" style="display:none">Export CSV</button>
+        <button id="btn-export-json" class="btn" style="display:none">Export JSON</button>
+      </div>
+
+      <hr/>
+      <div class="row wrap gap">
+        <div>ธนาคารที่รองรับ: <strong id="banks-count">—</strong></div>
+        <div>โปรโมชันที่ใช้งาน: <strong id="promotions-count">—</strong></div>
+        <div>อัปเดตล่าสุด: <strong id="last-updated">—</strong></div>
+      </div>
+    </section>
+
+    <!-- ผลลัพธ์ขวา -->
+    <section class="card">
+      <h2>สรุปผลการวิเคราะห์</h2>
+      <div id="caps"></div>
+
+      <div class="stats row wrap gap">
+        <div class="stat-box">ทั้งหมด<br/><strong id="total-offers">—</strong></div>
+        <div class="stat-box success">อนุมัติ<br/><strong id="approved-offers">—</strong></div>
+        <div class="stat-box danger">ไม่อนุมัติ<br/><strong id="rejected-offers">—</strong></div>
+        <div class="stat-box">อัตราเฉลี่ย<br/><strong id="avg-rate">—</strong></div>
+      </div>
+
+      <div class="muted">ผลลัพธ์ <span id="sort-info-dup" class="muted"></span></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ธนาคาร</th>
+              <th>โปรโมชัน</th>
+              <th>ดอกเบี้ย</th>
+              <th>ค่างวด/เดือน</th>
+              <th>วงเงิน</th>
+              <th>DSR</th>
+              <th>LTV</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="offers">
+            <tr><td colspan="8" style="text-align:center;color:#666;padding:20px">กรุณาคำนวณเพื่อดูข้อเสนอ</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="calculation-history" style="display:none">
+        <h3>ประวัติการคำนวณล่าสุด</h3>
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <small>© Loan App</small>
+  </footer>
+
+  <!-- ตั้งค่า Supabase ของโปรเจ็กต์คุณ -->
+  <script>
+    window.__SUPABASE = {
+      url: "https://YOUR-PROJECT.supabase.co",
+      anonKey: "YOUR-ANON-KEY"
+    };
+  </script>
+
+  <!-- ลำดับโหลดสำคัญ -->
+  <script type="module" src="/js/supabase-init.js"></script>
+  <script type="module" src="/js/auth-manager.js"></script>
+  <script type="module" src="/js/data-manager.js"></script>
+  <script type="module" src="/js/loan-calculator-supabase.js"></script>
+  <script type="module">
+    import { runLoanPage } from '/js/loan-app-manager.js';
+    runLoanPage();
+  </script>
+</body>
+</html>

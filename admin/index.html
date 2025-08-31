@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Console – Loan App</title>
+  <link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body class="container">
+  <header class="page-header row between">
+    <div>
+      <h1>Admin Console</h1>
+      <div class="muted">จัดการโปรโมชัน</div>
+    </div>
+    <nav><a class="btn" href="/loan/">← กลับหน้าใช้งาน</a></nav>
+  </header>
+
+  <main class="card">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Bank ID</th>
+            <th>Product</th>
+            <th>ชื่อโปรโมชัน</th>
+            <th>อัตรา (%)</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="admin-promotions">
+          <tr><td colspan="6" style="text-align:center;color:#666;padding:16px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <small>© Loan App</small>
+  </footer>
+
+  <!-- ตั้งค่า Supabase -->
+  <script>
+    window.__SUPABASE = {
+      url: "https://YOUR-PROJECT.supabase.co",
+      anonKey: "YOUR-ANON-KEY"
+    };
+  </script>
+
+  <!-- ลำดับโหลด -->
+  <script type="module" src="/js/supabase-init.js"></script>
+  <script type="module" src="/js/auth-manager.js"></script>
+  <script type="module" src="/js/data-manager.js"></script>
+  <script type="module" src="/js/admin-manager-supabase.js"></script>
+</body>
+</html>
