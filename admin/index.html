@@ -4,150 +4,149 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>แผงควบคุมแอดมิน | Loan App</title>
-  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    /* เสริมเล็กน้อยให้ตารางอ่านง่าย */
-    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
-    h1, h2 { margin: 0 0 12px; }
-    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-top:16px; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-bottom:1px solid #1f2937; padding:10px 8px; text-align:left; }
-    thead th { position: sticky; top:0; background:#0b1220; }
-    .toolbar { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
-    .btn {
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:8px 12px; border-radius:8px; border:1px solid #374151;
-      background:#111827; color:#e5e7eb; cursor:pointer;
+    :root{
+      --bg:#0b1220; --card:#121a2b; --muted:#8590a6; --text:#e6eefc; --accent:#2eaadc; --danger:#ef4444; --ok:#22c55e;
+      --border:#1e2a44;
     }
-    .btn-primary { background:#2563eb; border-color:#1d4ed8; color:#fff; }
-    .grid { display:grid; gap:12px; }
-    .grid-2 { grid-template-columns: 1fr 1fr; }
-    .grid-3 { grid-template-columns: repeat(3, 1fr); }
-    input[type="text"], input[type="number"], input[type="date"], select, textarea {
-      width:100%; background:#0b1220; color:#e5e7eb; border:1px solid #374151; border-radius:8px; padding:8px 10px;
+    *{box-sizing:border-box} html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg); color:var(--text);
     }
-    label { font-size: 0.9rem; color:#9ca3af; }
-    .muted { color:#9ca3af; font-size:0.9rem; }
-    .table-wrap { overflow:auto; max-height: 420px; }
-    .badge { padding:2px 8px; border-radius:999px; font-size:.8rem; border:1px solid #334155; }
-    .ok { background:#065f46; border-color:#064e3b; color:#ecfdf5; }
-    .no { background:#7f1d1d; border-color:#7f1d1d; color:#fee2e2; }
+    .wrap{max-width:1100px; margin:28px auto; padding:0 16px}
+    h1{font-size:28px; margin:0 0 18px}
+    .bar{display:flex; gap:12px; align-items:center; margin-bottom:18px}
+    .btn{background:#1c2437; color:#e6eefc; border:1px solid var(--border); padding:9px 14px; border-radius:10px; cursor:pointer}
+    .btn:hover{background:#222e49}
+    .btn-primary{background:var(--accent); border-color:#199bcf}
+    .btn-danger{background:#3a1217; border-color:#5c1b25; color:#fecaca}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:18px}
+    .card h2{font-size:18px; margin:0 0 10px}
+    table{width:100%; border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border); padding:10px 8px; vertical-align:middle}
+    th{font-weight:600; color:#c5d2ea; text-align:left}
+    input,select,textarea{
+      background:#0c1425; border:1px solid var(--border); color:var(--text); border-radius:10px;
+      padding:9px 10px; outline:none; width:100%;
+    }
+    input:focus,select:focus,textarea:focus{border-color:#2d9ed6}
+    .grid{display:grid; gap:12px}
+    .grid-2{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+    .muted{color:var(--muted); font-size:12px}
+    .badge{display:inline-block; font-size:12px; padding:2px 6px; border-radius:6px; border:1px solid var(--border); color:#c5d2ea}
+    .row-actions{display:flex; gap:8px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="toolbar" style="margin-bottom: 12px;">
+  <div class="wrap">
+    <div class="bar">
+      <h1 style="flex:1">แผงควบคุมแอดมิน</h1>
       <button id="btn-logout" class="btn">ออกจากระบบ</button>
     </div>
-    <h1>แผงควบคุมแอดมิน</h1>
 
-    <!-- ธนาคาร -->
+    <!-- Banks -->
     <div class="card">
       <h2>ธนาคาร</h2>
-      <p class="muted">ปรับ MRR เพื่อนำไปใช้อ้างอิงโปรที่เป็นฐาน MRR</p>
-      <div class="table-wrap">
-        <table id="banks-table">
+      <p class="muted">ปรับค่า <strong>MRR</strong> เพื่อใช้อ้างอิงกับโปรที่ตั้งฐานดอกเบี้ยเป็น MRR</p>
+      <div style="overflow:auto">
+        <table>
           <thead>
             <tr>
-              <th>ย่อ</th>
+              <th style="width:80px">ย่อ</th>
               <th>ชื่อ</th>
-              <th>MRR</th>
-              <th>มีผลตั้งแต่</th>
+              <th style="width:140px">MRR</th>
+              <th style="width:200px">มีผลตั้งแต่</th>
+              <th style="width:120px"></th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td colspan="4" class="muted">กำลังโหลด…</td></tr>
+          <tbody id="banks-tbody">
+            <tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>
           </tbody>
         </table>
       </div>
-      <div style="margin-top:12px; text-align:right;">
-        <button id="btn-save-mrr" class="btn btn-primary">บันทึก MRR</button>
-      </div>
     </div>
 
-    <!-- โปรโมชัน -->
+    <!-- Promotions -->
     <div class="card">
       <h2>โปรโมชัน (active)</h2>
-      <p class="muted">เพิ่ม/แก้ไข/ลบ โปร เพื่อใช้ในการคำนวณหน้าใช้งาน</p>
 
-      <!-- ฟอร์มเพิ่ม/แก้ไขโปร -->
-      <div class="grid grid-3" style="margin: 10px 0 16px;">
-        <input type="hidden" id="promo_id" />
+      <div class="grid grid-3" style="margin-bottom:10px">
         <div>
-          <label for="promo_bank_id">Bank ID</label>
-          <input type="number" id="promo_bank_id" placeholder="เช่น 1" />
+          <label class="muted">Bank</label>
+          <select id="promo-bank"></select>
         </div>
         <div>
-          <label for="promo_product_type">Product</label>
-          <select id="promo_product_type">
-            <option value="">— ไม่ระบุ —</option>
-            <option value="MORTGAGE">MORTGAGE</option>
-            <option value="REFINANCE">REFINANCE</option>
-            <option value="PERSONAL">PERSONAL</option>
+          <label class="muted">Product</label>
+          <select id="promo-product">
+            <option value="MORTGAGE">สินเชื่อบ้าน</option>
+            <option value="REFINANCE">รีไฟแนนซ์</option>
+            <option value="PERSONAL">ส่วนบุคคล</option>
             <option value="SME">SME</option>
           </select>
         </div>
         <div>
-          <label for="promo_title">ชื่อโปร</label>
-          <input type="text" id="promo_title" placeholder="เช่น โปรดอกพิเศษ 3.99%" />
-        </div>
-
-        <div class="grid-2" style="grid-column: 1 / -1; display:grid; gap:12px;">
-          <div>
-            <label for="promo_desc">รายละเอียด</label>
-            <textarea id="promo_desc" rows="2" placeholder="เงื่อนไขเพิ่มเติม"></textarea>
-          </div>
-          <div>
-            <label>ฐานอัตราดอกเบี้ย</label><br/>
-            <label><input type="radio" name="promo_base" value="fixed" checked /> fixed</label>
-            &nbsp;&nbsp;
-            <label><input type="radio" name="promo_base" value="mrr" /> MRR (ใช้ค่าด้านล่างเป็น spread)</label>
-
-            <div class="grid grid-3" style="margin-top:8px;">
-              <div>
-                <label for="promo_year1">ปี 1 (อัตรา/สเปรด)</label>
-                <input type="number" id="promo_year1" step="0.01" placeholder="เช่น 3.99 หรือ -1.00" />
-              </div>
-              <div>
-                <label for="promo_year2">ปี 2 (อัตรา/สเปรด)</label>
-                <input type="number" id="promo_year2" step="0.01" />
-              </div>
-              <div>
-                <label for="promo_year3">ปี 3 (อัตรา/สเปรด)</label>
-                <input type="number" id="promo_year3" step="0.01" />
-              </div>
-            </div>
-
-            <div style="margin-top:8px;">
-              <label><input type="checkbox" id="promo_active" checked /> เปิดใช้งาน (active)</label>
-            </div>
-          </div>
-        </div>
-
-        <div style="grid-column: 1 / -1; text-align:right;">
-          <button id="btn-add-promotion" class="btn">เพิ่มโปร</button>
-          <button id="btn-update-promotion" class="btn btn-primary">บันทึกการแก้ไข</button>
+          <label class="muted">ชื่อโปร</label>
+          <input id="promo-title" placeholder="เช่น โปรดอกพิเศษ 3.99" />
         </div>
       </div>
 
-      <!-- ตารางโปรทั้งหมดสำหรับแอดมิน -->
-      <div class="table-wrap">
-        <table id="promotions-table">
+      <div class="grid grid-3" style="margin-bottom:10px">
+        <div>
+          <label class="muted">ฐานดอกเบี้ย</label>
+          <select id="promo-base">
+            <option value="">—</option>
+            <option value="MRR">MRR</option>
+            <option value="MLR">MLR</option>
+            <option value="MOR">MOR</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted">ปี 1 (%)</label>
+          <input id="promo-y1" type="number" step="0.01" placeholder="3.99" />
+        </div>
+        <div>
+          <label class="muted">ปี 2 (%)</label>
+          <input id="promo-y2" type="number" step="0.01" />
+        </div>
+      </div>
+
+      <div class="grid grid-3" style="margin-bottom:10px">
+        <div>
+          <label class="muted">ปี 3 (%)</label>
+          <input id="promo-y3" type="number" step="0.01" />
+        </div>
+        <div style="display:flex; align-items:end; gap:10px">
+          <label class="muted" style="display:flex; gap:8px; align-items:center">
+            <input id="promo-active" type="checkbox" /> Active
+          </label>
+        </div>
+        <div style="display:flex; align-items:end; justify-content:end; gap:8px">
+          <button id="promo-save" class="btn btn-primary">บันทึกโปร</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto">
+        <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Bank</th>
-              <th>Product</th>
+              <th style="width:60px">ID</th>
+              <th style="width:90px">Bank</th>
+              <th style="width:130px">Product</th>
               <th>Title</th>
-              <th>Base</th>
-              <th>Year1</th>
-              <th>Year2</th>
-              <th>Year3</th>
-              <th>Active</th>
-              <th>Actions</th>
+              <th style="width:100px">Base</th>
+              <th style="width:80px">Y1</th>
+              <th style="width:80px">Y2</th>
+              <th style="width:80px">Y3</th>
+              <th style="width:90px">Active</th>
+              <th style="width:120px"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="promos-tbody">
             <tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>
           </tbody>
         </table>
@@ -155,39 +154,210 @@
     </div>
   </div>
 
-  <!-- โหลดสคริปต์แบบ ESM: ห้าม include ซ้ำ -->
+  <!-- โมดูลหลัก (กัน cache ด้วย ?v=) + fallback รองรับ named/default export -->
   <script type="module">
-    import '../js/supabase-init.js';              // สร้าง window.supabase
-    import '../js/auth-manager.js';               // จัดการ session/role
-    import { AdminManager } from '../js/admin-manager-supabase.js';
+    import AdminDefault, * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-3';
+    const AdminManager = AdminNS.AdminManager || AdminDefault;
+    const am = new AdminManager();
 
-    // ป้องกันโหลดไฟล์ซ้ำ ๆ จาก caching ของบาง host โดยเฉพาะ
-    if (!window.__ADMIN_BOOTSTRAPPED__) {
-      window.__ADMIN_BOOTSTRAPPED__ = true;
+    // --------- Utilities ---------
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const fmt = (n, d=2) => (n ?? n === 0) ? Number(n).toFixed(d) : '';
 
-      // บังคับสิทธิ์ admin (ถ้าไฟล์ auth-manager ของคุณมี helper อื่น ให้เรียกตามนั้น)
-      if (window.AuthManager?.requireRole) {
-        await window.AuthManager.requireRole('admin');
-      } else if (window.AuthManager?.waitUntilReady) {
-        await window.AuthManager.waitUntilReady();
-        const role = await window.AuthManager.getRole?.();
-        if (role !== 'admin') {
-          alert('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
-          location.href = '/';
+    // --------- Banks ---------
+    async function loadBanks() {
+      const tbody = $('#banks-tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
+      try {
+        const banks = await am.getBanks(); // [{id, short_name, name, mrr, mrr_effective_from}]
+        if (!banks.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>';
+          return;
         }
-      }
+        tbody.innerHTML = '';
+        for (const b of banks) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><span class="badge">${b.short_name || '-'}</span></td>
+            <td>${b.name || '-'}</td>
+            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr" /></td>
+            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date" /></td>
+            <td class="row-actions">
+              <button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
 
-      const app = new AdminManager();
-      await app.init();
-
-      // logout
-      const btnLogout = document.getElementById('btn-logout');
-      if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-          try { await window.AuthManager?.logout(); } finally { location.href = '/'; }
+        // bind save per-row
+        $$('.btn-save', tbody).forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const bankId = btn.dataset.bank;
+            const row = btn.closest('tr');
+            const mrr = parseFloat($('input[data-field="mrr"]', row).value || '0');
+            const eff = $('input[data-field="date"]', row).value || null;
+            btn.disabled = true;
+            try {
+              await am.updateBankMRR(bankId, mrr, eff);
+              btn.textContent = '✔︎ บันทึกแล้ว';
+              setTimeout(()=>btn.textContent='บันทึก', 1200);
+            } catch (err) {
+              console.error(err);
+              btn.textContent = 'ผิดพลาด';
+              btn.classList.add('btn-danger');
+              setTimeout(()=>{
+                btn.textContent='บันทึก';
+                btn.classList.remove('btn-danger');
+              }, 1500);
+            } finally {
+              btn.disabled = false;
+            }
+          });
         });
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
       }
     }
+
+    // --------- Promotions ---------
+    let bankOptionsCache = [];
+
+    function rebuildBankSelect() {
+      const sel = $('#promo-bank');
+      sel.innerHTML = '';
+      for (const b of bankOptionsCache) {
+        const opt = document.createElement('option');
+        opt.value = b.id; opt.textContent = `${b.short_name || b.name || 'Bank'} (#${b.id})`;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function loadPromotions() {
+      const tbody = $('#promos-tbody');
+      tbody.innerHTML = '<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
+      try {
+        const promos = await am.listPromotions();
+        if (!promos.length) {
+          tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>';
+          return;
+        }
+        const bankMap = Object.fromEntries(bankOptionsCache.map(b => [b.id, b.short_name || b.name]));
+        tbody.innerHTML = '';
+        for (const p of promos) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.id}</td>
+            <td>${bankMap[p.bank_id] || p.bank_id}</td>
+            <td>${p.product_type || '-'}</td>
+            <td>${p.title || '-'}</td>
+            <td>${p.base || '-'}</td>
+            <td>${fmt(p.year1 ?? null)}</td>
+            <td>${fmt(p.year2 ?? null)}</td>
+            <td>${fmt(p.year3 ?? null)}</td>
+            <td>${p.active ? '✅' : '—'}</td>
+            <td class="row-actions">
+              <button class="btn btn-primary btn-edit" data-id="${p.id}">แก้ไข</button>
+              <button class="btn btn-danger btn-del" data-id="${p.id}">ลบ</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        // bind edit / delete
+        $$('.btn-edit', tbody).forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const id = Number(btn.dataset.id);
+            const row = btn.closest('tr');
+            // preload form จากแถว
+            const bankShort = row.children[1].textContent.trim();
+            const bank = bankOptionsCache.find(b => (b.short_name||b.name) === bankShort) || {};
+            $('#promo-bank').value = bank.id || '';
+            $('#promo-product').value = row.children[2].textContent.trim();
+            $('#promo-title').value = row.children[3].textContent.trim();
+            $('#promo-base').value = row.children[4].textContent.trim() || '';
+            $('#promo-y1').value = row.children[5].textContent.trim();
+            $('#promo-y2').value = row.children[6].textContent.trim();
+            $('#promo-y3').value = row.children[7].textContent.trim();
+            $('#promo-active').checked = row.children[8].textContent.includes('✅');
+            $('#promo-save').dataset.editId = String(id);
+            $('#promo-save').textContent = 'อัปเดตโปร';
+          });
+        });
+        $$('.btn-del', tbody).forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            const id = Number(btn.dataset.id);
+            if (!confirm(`ลบโปรโมชัน #${id} ?`)) return;
+            btn.disabled = true;
+            try {
+              await am.deletePromotion(id);
+              await loadPromotions();
+            } catch (err) {
+              console.error(err);
+              alert('ลบไม่สำเร็จ');
+            } finally {
+              btn.disabled = false;
+            }
+          });
+        });
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="10" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
+      }
+    }
+
+    $('#promo-save').addEventListener('click', async ()=>{
+      const payload = {
+        id: $('#promo-save').dataset.editId ? Number($('#promo-save').dataset.editId) : undefined,
+        bank_id: Number($('#promo-bank').value),
+        product_type: $('#promo-product').value,
+        title: $('#promo-title').value.trim(),
+        base: $('#promo-base').value || null,
+        year1: $('#promo-y1').value ? Number($('#promo-y1').value) : null,
+        year2: $('#promo-y2').value ? Number($('#promo-y2').value) : null,
+        year3: $('#promo-y3').value ? Number($('#promo-y3').value) : null,
+        active: $('#promo-active').checked,
+      };
+      const btn = $('#promo-save');
+      btn.disabled = true;
+      try {
+        await am.upsertPromotion(payload);
+        // reset form
+        btn.removeAttribute('data-edit-id');
+        btn.textContent = 'บันทึกโปร';
+        $('#promo-title').value = '';
+        $('#promo-base').value = '';
+        $('#promo-y1').value = '';
+        $('#promo-y2').value = '';
+        $('#promo-y3').value = '';
+        $('#promo-active').checked = true;
+        await loadPromotions();
+      } catch (err) {
+        console.error(err);
+        alert('บันทึกโปรไม่สำเร็จ');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // --------- Logout (ถ้ามีระบบ auth) ---------
+    $('#btn-logout').addEventListener('click', ()=>{
+      // ถ้าใช้ supabase auth ให้เรียกผ่าน auth-manager.js ที่หน้า root
+      // location.href = '/'; // แล้วแต่ระบบที่คุณใช้
+      location.href = '/';
+    });
+
+    // --------- Bootstrap ---------
+    (async () => {
+      // โหลดธนาคารไว้ทำ options ของฟอร์มโปร
+      try {
+        bankOptionsCache = await am.getBanks();
+        rebuildBankSelect();
+      } catch(e){ console.error(e); }
+      await loadBanks();
+      await loadPromotions();
+    })();
   </script>
 </body>
 </html>
