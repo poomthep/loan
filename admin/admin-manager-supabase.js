@@ -80,3 +80,7 @@ export {
   updatePromotion,
   deletePromotion,
 };
+
+
+export { AdminManager, getBanks, updateBankMRR, listPromotions, upsertPromotion, deletePromotion };
++ export default AdminManager;
