@@ -1,51 +1,44 @@
-'use strict';
+// ใช้ named export เท่านั้น
+// ทำงานทับกับ data-manager.js ที่ export เป็น named อยู่แล้ว
 
-// ดึง helper จาก data-manager.js (ต้องมี export ตามชื่อเหล่านี้)
 import {
-  getBanks as dmGetBanks,
-  updateBankMRR as dmUpdateBankMRR,
-  listPromotions as dmListPromotions,
-  createPromotion as dmCreatePromotion,
-  updatePromotion as dmUpdatePromotion,
-  deletePromotion as dmDeletePromotion,
+  getBanks,
+  updateBankMRR,
+  listPromotions,
+  createPromotion,
+  updatePromotion,
+  deletePromotion,
 } from './data-manager.js';
 
-/** ชั้นบาง ๆ สำหรับหน้า /admin/ */
-class AdminManager {
+export class AdminManager {
   // ---------- Banks ----------
   async getBanks() {
-    return dmGetBanks();
+    return getBanks();
   }
   async updateBankMRR(bankId, mrr, effectiveDate = null) {
-    return dmUpdateBankMRR(bankId, mrr, effectiveDate);
+    return updateBankMRR(bankId, mrr, effectiveDate);
   }
 
   // ---------- Promotions ----------
   async listPromotions() {
-    return dmListPromotions();
+    return listPromotions();
   }
-  /** upsert: มี id = update, ไม่มีก็ create */
   async upsertPromotion(payload) {
-    if (payload?.id) return dmUpdatePromotion(payload.id, payload);
-    return dmCreatePromotion(payload);
+    return payload?.id
+      ? updatePromotion(payload.id, payload)
+      : createPromotion(payload);
   }
   async deletePromotion(id) {
-    return dmDeletePromotion(id);
+    return deletePromotion(id);
   }
 }
 
-// named export
-export { AdminManager };
-
-// เผื่อเรียก helper ตรง ๆ
+// เผื่ออยากเรียกฟังก์ชันตรง ๆ จากที่อื่น ก็ re-export ให้ด้วย (named ทั้งหมด)
 export {
-  dmGetBanks as getBanks,
-  dmUpdateBankMRR as updateBankMRR,
-  dmListPromotions as listPromotions,
-  dmCreatePromotion as createPromotion,
-  dmUpdatePromotion as updatePromotion,
-  dmDeletePromotion as deletePromotion,
+  getBanks,
+  updateBankMRR,
+  listPromotions,
+  createPromotion,
+  updatePromotion,
+  deletePromotion,
 };
-
-// ✅ default export (แก้ปัญหา "does not provide an export named 'default'")
-export default AdminManager;
