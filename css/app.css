@@ -1,45 +1,11 @@
-
-/* app.css - minimal dark theme */
-:root{
-  --bg:#0f172a;
-  --bg-2:#111827;
-  --card:#0b1220;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --accent:#22d3ee;
-  --danger:#ef4444;
-  --ok:#10b981;
-}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-.container{max-width:980px;margin:32px auto;padding:0 16px}
-.card{background:linear-gradient(180deg,#0b1220,#0b1220f0);border:1px solid #1f2937;border-radius:14px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-h1,h2,h3{margin:.2em 0 .6em}
-h1{font-size:2rem}
-h2{font-size:1.4rem;color:#cbd5e1}
-.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:10px;border:1px solid #263242;background:#111827;color:var(--text);cursor:pointer}
-.btn.primary{background:linear-gradient(180deg,#0ea5e9,#0284c7);border-color:#0369a1}
-.btn.danger{background:#1b0b0b;border-color:#7f1d1d;color:#fecaca}
-.btn:hover{filter:brightness(1.05)}
-.input{width:100%;padding:.65rem .8rem;border-radius:10px;border:1px solid #1f2937;background:var(--bg-2);color:var(--text)}
-.row{display:flex;gap:14px;flex-wrap:wrap}
-.col{flex:1 1 260px}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{border-bottom:1px solid #1f2937;padding:.6rem .5rem;text-align:left}
-.badge{display:inline-block;padding:.1rem .45rem;border-radius:6px;background:#0b3b3b;color:#a7f3d0;border:1px solid #064e3b;font-size:.85rem}
-.note{color:var(--muted);font-size:.95rem}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.alert{padding:.75rem .9rem;border-radius:10px;border:1px solid #374151;background:#0d1323}
-.alert.ok{border-color:#064e3b;color:#a7f3d0;background:#052e2e}
-.alert.err{border-color:#7f1d1d;color:#fecaca;background:#1b0b0b}
-.footer{margin:40px 0;color:var(--muted);font-size:.9rem}
-.hidden{display:none !important}
-/* form grid */
-.grid{display:grid;gap:12px}
-.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:720px){
-  .grid.two,.grid.three{grid-template-columns:1fr}
-}
+:root{--bg:#0b1220;--panel:#111a2b;--text:#e6efff;--muted:#8aa0c6;--primary:#4da3ff;--accent:#00d4a6;--danger:#ff6b6b;--warn:#ffb020;--border:#21324d}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+.container{max-width:980px;margin:32px auto;padding:0 16px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+h1,h2,h3{margin:8px 0 12px}h1{font-size:28px}h2{font-size:22px;color:var(--muted)}label{display:block;margin:8px 0 6px;color:var(--muted);font-size:14px}
+input,select,button{font-size:16px}input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0e1626;color:var(--text)}
+input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(77,163,255,.25)}.grid{display:grid;gap:12px}.grid.two{grid-template-columns:1fr 1fr}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f1a2e;color:var(--text);cursor:pointer}
+.btn.primary{background:var(--primary);border-color:transparent;color:#051024}.btn.ghost{background:transparent}.btn.danger{background:var(--danger);border-color:transparent;color:#220000}
+.row{display:flex;gap:10px;flex-wrap:wrap}.badge{display:inline-block;background:#0b1c33;border:1px solid var(--border);padding:4px 8px;border-radius:999px;color:var(--muted);font-size:12px}
+.table{width:100%;border-collapse:separate;border-spacing:0;margin-top:10px}.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
+.note{color:var(--muted);font-size:13px}.center{text-align:center}.footer{margin:32px auto;color:var(--muted);font-size:12px}

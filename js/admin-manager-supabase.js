@@ -1,26 +1,55 @@
+// หน้าจัดการโปรโมชัน — CRUD อย่างง่าย
+import { listPromotions, upsertPromotion, deletePromotion } from './data-manager.js';
 
-// admin-manager-supabase.js
-import './supabase-config.js';
-import './supabase-init.js';
-import Auth from './auth-manager.js';
-import Data from './data-manager.js';
+const $ = (sel) => document.querySelector(sel);
 
-async function init(){
-  const me = await Auth.requireRole('admin');
-  if(!me) return;
-  document.querySelector('#me').textContent = `${me.user.email} (admin)`;
-  // Load data
-  try{
-    const banks = await Data.getBanks();
-    const promos = await Data.getActivePromotions('MORTGAGE');
-    const tb1 = document.querySelector('#banks tbody');
-    const tb2 = document.querySelector('#promos tbody');
-    tb1.innerHTML = banks.map(b => `<tr><td>${b.short_name||''}</td><td>${b.name||''}</td></tr>`).join('') || '<tr><td colspan="2" class="note">ไม่มีข้อมูล</td></tr>';
-    tb2.innerHTML = promos.map(p => `<tr><td>${p.bank_short||''}</td><td>${p.title||''}</td></tr>`).join('') || '<tr><td colspan="2" class="note">ไม่มีข้อมูล</td></tr>';
-  }catch(e){
+async function renderList() {
+  const tbody = $('#admin-promotions');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:10px">Loading...</td></tr>';
+  try {
+    const rows = await listPromotions();
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:10px;color:#777">No data</td></tr>'; return; }
+    tbody.innerHTML = '';
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.bank_id}</td>
+        <td>${r.product_type}</td>
+        <td>${r.title || ''}</td>
+        <td>${r.yearly_rate ?? ''}</td>
+        <td>
+          <button data-edit="${r.id}">แก้ไข</button>
+          <button data-del="${r.id}" style="color:#c00">ลบ</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    tbody.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.dataset.del, 10);
+        if (!confirm('ลบโปรโมชัน #' + id + ' ?')) return;
+        await deletePromotion(id); renderList();
+      });
+    });
+    tbody.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.dataset.edit, 10);
+        const title = prompt('ชื่อโปรโมชันใหม่?');
+        if (title == null) return;
+        await upsertPromotion({ id, title });
+        renderList();
+      });
+    });
+  } catch (e) {
     console.error(e);
-    document.querySelector('#err').textContent = e.message || String(e);
-    document.querySelector('#err').classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:10px;color:#c00">โหลดข้อมูลไม่สำเร็จ</td></tr>';
   }
 }
-window.addEventListener('DOMContentLoaded', init);
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderList);
+} else {
+  renderList();
+}
