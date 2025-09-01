@@ -73,14 +73,13 @@ export default AdminManager;
 
 // re-export helper เผื่ออยากเรียกโดยตรง
 export {
-  getBanks,
-  updateBankMRR,
-  listPromotions,
-  createPromotion,
-  updatePromotion,
-  deletePromotion,
+	AdminManager,
+	getBanks,
+	updateBankMRR,
+	listPromotions,
+	createPromotion,
+	updatePromotion,
+	deletePromotion,
 };
-
-
 export { AdminManager, getBanks, updateBankMRR, listPromotions, upsertPromotion, deletePromotion };
-+ export default AdminManager;
+export default AdminManager;
