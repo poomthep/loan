@@ -1,1 +1,54 @@
-import supabase from './supabase-init.js'; const AM={_inited:false,_unsub:null,user:null,profile:null,async initialize(){if(this._inited)return this.user; const {data}=await supabase.auth.getSession(); this.user=data?.session?.user||null; await this.loadUserProfile(); const ret=supabase.auth.onAuthStateChange(async(_e,s)=>{this.user=s?.user||null; if(this.user) await this.loadUserProfile(); else this.profile=null;}); this._unsub=ret?.data?.subscription?()=>ret.data.subscription.unsubscribe():null; this._inited=true; return this.user;},async signInWithPassword(email,password){const {data,error}=await supabase.auth.signInWithPassword({email:String(email||'').trim(),password}); if(error) return {error}; this.user=data.user; await this.loadUserProfile(); return {user:data.user,error:null};},async signOut(){const {error}=await supabase.auth.signOut(); if(!error){this.user=null; this.profile=null;} return {error};},async loadUserProfile(){if(!this.user){this.profile=null; return null;} let p=null; const q1=await supabase.from('profiles').select('*').eq('user_id',this.user.id).maybeSingle(); if(!q1.error&&q1.data) p=q1.data; if(!p){const q2=await supabase.from('user_profiles').select('*').eq('id',this.user.id).maybeSingle(); if(!q2.error) p=q2.data||null;} this.profile=p; return p;}, isAdmin(){const p=this.profile||{}; const role=String(p.role||'').toLowerCase(); return !!(p.is_admin===true||p.isAdmin===true||role==='admin');}, cleanup(){try{this._unsub&&this._unsub();}catch(e){} this._inited=false;}}; export function hasAdminRole(profile){const p=profile||AM.profile||{}; const role=String(p.role||'').toLowerCase(); return !!(p.is_admin===true||p.isAdmin===true||role==='admin');} export async function requireAuth({redirectIfNoSession='/index.html',onReady=null}={}){await AM.initialize(); if(!AM.user){window.location.href=redirectIfNoSession; return null;} if(typeof onReady==='function') onReady(AM.user,AM.profile); return AM.user;} export async function requireAdmin({redirectIfNoSession='/index.html',redirectIfNotAdmin='/loan/',onReady=null}={}){await AM.initialize(); if(!AM.user){window.location.href=redirectIfNoSession; return null;} if(!AM.profile) await AM.loadUserProfile(); if(!AM.isAdmin()){window.location.href=redirectIfNotAdmin; return null;} if(typeof onReady==='function') onReady(AM.user,AM.profile); return {user:AM.user,profile:AM.profile};} window.AuthManager=AM; export default AM;
+
+// auth-manager.js
+// ตัวจัดการ auth + role (user_profiles.id -> uuid, role -> 'user'|'admin')
+import { getSupabase } from './supabase-init.js';
+
+const SB = () => getSupabase();
+
+async function getRole(userId){
+  try{
+    const { data, error } = await SB().from('user_profiles').select('role').eq('id', userId).single();
+    if(error){ console.warn('getRole error', error); return 'user'; }
+    return (data && data.role) || 'user';
+  }catch(e){ console.warn(e); return 'user'; }
+}
+
+export const AuthManager = {
+  async signInWithPassword(email, password){
+    const { data, error } = await SB().auth.signInWithPassword({ email, password });
+    if(error) throw error;
+    const user = data.user;
+    return { user, role: await getRole(user.id) };
+  },
+  async signUp(email, password){
+    const { data, error } = await SB().auth.signUp({ email, password });
+    if(error) throw error;
+    return data;
+  },
+  async signOut(){
+    await SB().auth.signOut();
+  },
+  async getUser(){
+    const { data } = await SB().auth.getUser();
+    if(!data?.user) return null;
+    const role = await getRole(data.user.id);
+    return { user: data.user, role };
+  },
+  async requireRole(allowed){
+    const info = await this.getUser();
+    if(!info){ window.location.href='/' ; return null; }
+    const roles = Array.isArray(allowed)? allowed : [allowed];
+    if(!roles.includes(info.role)){
+      // ผู้ใช้ทั่วไป → ส่งไปหน้า /loan/
+      window.location.href = '/loan/';
+      return null;
+    }
+    return info;
+  },
+  onAuthStateChange(cb){
+    return SB().auth.onAuthStateChange(cb);
+  }
+};
+
+if(typeof window!=='undefined') window.AuthManager = AuthManager;
+export default AuthManager;

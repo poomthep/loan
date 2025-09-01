@@ -1,78 +1,56 @@
+
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>แอดมิน | Loan App</title>
-  <link rel="stylesheet" href="../css/app.css">
-  
-  <!-- วางไว้ใน <head> หรือก่อนสคริปต์ type="module" ตัวอื่นๆ -->
-<script src="/js/supabase-config.js"></script>
-<script type="module" src="/js/supabase-init.js"></script>
-  
+  <link rel="stylesheet" href="../css/app.css" />
 </head>
 <body>
   <div class="container">
-    <div class="page-header between wrap">
+    <div class="topbar">
       <h1>แผงควบคุมแอดมิน</h1>
-      <div class="row gap">
-        <a class="btn" href="../loan/">ไปหน้าคำนวณ</a>
-        <button id="btn-logout" class="btn">ออกจากระบบ</button>
+      <div class="row">
+        <a class="btn" href="/">หน้าแรก</a>
+        <a class="btn" href="/loan/">คำนวณ</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>ผู้ใช้: <span id="me" class="badge">—</span></div>
+        <button class="btn danger" id="btn-logout">ออกจากระบบ</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="row gap">
-        <div class="stat-box"><div class="muted">ธนาคาร</div><div id="banks-total">—</div></div>
-        <div class="stat-box"><div class="muted">โปรโมชัน (active)</div><div id="promos-total">—</div></div>
-      </div>
+    <div id="err" class="alert err hidden" style="margin-top:12px"></div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>รายการธนาคาร</h2>
+      <table id="banks" class="table">
+        <thead><tr><th>ย่อ</th><th>ชื่อ</th></tr></thead>
+        <tbody><tr><td colspan="2" class="note">กำลังโหลด…</td></tr></tbody>
+      </table>
     </div>
 
-    <div class="card">
-      <h3>รายการธนาคาร</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>รหัส</th><th>ย่อ</th><th>ชื่อ</th></tr></thead>
-        <tbody id="banks-body"><tr><td colspan="3" class="muted" style="text-align:center;padding:12px">กำลังโหลด...</td></tr></tbody>
-      </table></div>
+    <div class="card" style="margin-top:16px">
+      <h2>โปรโมชัน (active)</h2>
+      <table id="promos" class="table">
+        <thead><tr><th>ธนาคาร</th><th>ชื่อโปร</th></tr></thead>
+        <tbody><tr><td colspan="2" class="note">กำลังโหลด…</td></tr></tbody>
+      </table>
     </div>
-
-    <div class="card">
-      <h3>โปรโมชันที่ใช้งาน</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>ID</th><th>Bank</th><th>Product</th><th>Title</th><th>Year1</th><th>Base+Spread</th></tr></thead>
-        <tbody id="promos-body"><tr><td colspan="6" class="muted" style="text-align:center;padding:12px">กำลังโหลด...</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <div class="page-footer muted">© Loan App</div>
   </div>
 
-
-
   <script type="module">
+    import '../js/supabase-config.js';
     import '../js/supabase-init.js';
-    import AM, { requireAdmin } from '../js/auth-manager.js';
-    import * as DM from '../js/data-manager.js';
-    import './admin-manager-supabase.js'; // (optional enhance, not required)
+    import Auth from '../js/auth-manager.js';
+    import '../js/admin-manager-supabase.js';
 
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-      await AM.signOut();
-      window.location.href = '../index.html';
+    document.querySelector('#btn-logout').addEventListener('click', async ()=>{
+      await Auth.signOut(); window.location.href='/';
     });
-
-    await requireAdmin({ redirectIfNoSession: '../index.html', redirectIfNotAdmin: '../loan/' });
-
-    // โหลดข้อมูล
-    const banks = await DM.getBanks();
-    document.getElementById('banks-total').textContent = banks.length;
-    const promos = await DM.getActivePromotions('MORTGAGE');
-    document.getElementById('promos-total').textContent = promos.length;
-
-    const banksBody = document.getElementById('banks-body');
-    banksBody.innerHTML = banks.map(b => `<tr><td>${b.id}</td><td>${b.short_name||''}</td><td>${b.name||''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted" style="text-align:center;padding:12px">—</td></tr>';
-
-    const promosBody = document.getElementById('promos-body');
-    promosBody.innerHTML = promos.map(p => `<tr><td>${p.id}</td><td>${p.bank_id}</td><td>${p.product_type}</td><td>${p.title||''}</td><td>${p.year1_rate ?? ''}</td><td>${(p.base_rate ?? '')}+${(p.spread ?? '')}</td></tr>`).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:12px">—</td></tr>';
   </script>
 </body>
 </html>

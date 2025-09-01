@@ -1,1 +1,41 @@
-import supabase from './supabase-init.js'; const cache=new Map(); const key=(n,p)=>n+':'+JSON.stringify(p||{}); export async function checkDatabaseConnection(){try{const {error}=await supabase.from('banks').select('id',{count:'exact',head:true}); return !error;}catch(e){return false;}} export async function getBanks(){const k=key('banks'); if(cache.has(k)) return cache.get(k); const {data,error}=await supabase.from('banks').select('id,short_name,name').order('short_name'); const res=error?[]:data; cache.set(k,res); return res;} export async function getActivePromotions(productType='MORTGAGE'){const k=key('promotions',{productType}); if(cache.has(k)) return cache.get(k); const {data,error}=await supabase.from('promotions').select('id,bank_id,product_type,title,description,year1_rate,base_rate,spread,active').eq('active',true).eq('product_type',productType).order('id'); const res=error?[]:data; cache.set(k,res); return res;} export async function getUserCalculations(limit=10){ const {data,error}=await supabase.from('calculations').select('*').order('created_at',{ascending:false}).limit(limit); return error?[]:data;} export function clearAllCache(){cache.clear();} export default {checkDatabaseConnection,getBanks,getActivePromotions,getUserCalculations,clearAllCache};
+
+// data-manager.js
+// รวม helper คุยกับ Supabase
+import { getSupabase } from './supabase-init.js';
+const SB = () => getSupabase();
+
+export const DataManager = {
+  async checkConnection(){
+    try{
+      const { error } = await SB().from('user_profiles').select('id').limit(1);
+      return !error;
+    }catch(e){ return false; }
+  },
+  // Banks
+  async getBanks(){ const { data, error } = await SB().from('banks').select('*').order('short_name'); if(error) throw error; return data||[]; },
+  // Promotions
+  async getActivePromotions(product='MORTGAGE'){
+    const { data, error } = await SB().from('promotions').select('*').eq('active', true).eq('product', product).order('bank_short'); 
+    if(error) throw error; 
+    return data||[]; 
+  },
+  // Save calculation history (optional table)
+  async saveCalculation(payload){
+    // table: calculations { id uuid pk, user_id uuid, payload json, created_at timestamptz default now() }
+    const { data: session } = await SB().auth.getUser();
+    const userId = session?.user?.id || null;
+    const { error } = await SB().from('calculations').insert({ user_id: userId, payload });
+    if(error) console.warn('saveCalculation error', error);
+  },
+  async getUserCalculations(limit=10){
+    const { data: session } = await SB().auth.getUser();
+    const userId = session?.user?.id || null;
+    if(!userId) return [];
+    const { data, error } = await SB().from('calculations').select('id, payload, created_at').eq('user_id', userId).order('created_at', { ascending:false }).limit(limit);
+    if(error) return [];
+    return data || [];
+  }
+};
+
+if(typeof window!=='undefined') window.DataManager = DataManager;
+export default DataManager;

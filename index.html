@@ -1,93 +1,76 @@
+
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>เข้าสู่ระบบ | โปรแกรมวิเคราะห์สินเชื่อบ้าน</title>
-  <link rel="stylesheet" href="./css/app.css">
-  
-    <!-- วางไว้ใน <head> หรือก่อนสคริปต์ type="module" ตัวอื่นๆ -->
-<script src="/js/supabase-config.js"></script>
-<script type="module" src="/js/supabase-init.js"></script>
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loan App – Login</title>
+  <link rel="stylesheet" href="./css/app.css" />
+  <!-- ตั้งค่า Supabase ได้สองแบบ: แก้ใน js/supabase-config.js หรือใส่ meta -->
+  <!-- <meta name="supabase-url"  content="https://YOUR-REF.supabase.co" /> -->
+  <!-- <meta name="supabase-anon" content="YOUR-ANON-KEY" /> -->
 </head>
 <body>
   <div class="container">
-    <div class="page-header">
-      <h1>เข้าสู่ระบบ</h1>
-      <span class="badge">Loan App</span>
+    <div class="topbar">
+      <h1>Loan App</h1>
+      <a class="btn" href="https://supabase.com/docs" target="_blank">Docs</a>
     </div>
-
+    <div id="msg" class="alert hidden"></div>
     <div class="card">
-      <p class="muted">โปรดกรอกอีเมลและรหัสผ่านเพื่อเข้าใช้งาน</p>
-      <form id="login-form" class="form" autocomplete="on">
-        <div class="field">
-          <label for="email">อีเมล</label>
-          <input id="email" type="email" required autocomplete="username">
+      <h2>เข้าสู่ระบบ</h2>
+      <div class="grid two">
+        <div>
+          <label>อีเมล</label>
+          <input id="email" class="input" placeholder="you@email.com" />
         </div>
-        <div class="field">
-          <label for="password">รหัสผ่าน</label>
-          <input id="password" type="password" required autocomplete="current-password">
+        <div>
+          <label>รหัสผ่าน</label>
+          <input id="password" class="input" type="password" placeholder="••••••••" />
         </div>
-        <button class="btn primary" type="submit"><span id="spin" class="spinner" style="display:none"></span>เข้าสู่ระบบ</button>
-      </form>
+      </div>
+      <div style="margin-top:14px" class="row">
+        <button id="btn-login" class="btn primary">เข้าสู่ระบบ</button>
+        <button id="btn-signup" class="btn">สมัครสมาชิก</button>
+      </div>
+      <p class="note" style="margin-top:10px">หากคุณเป็น admin จะถูกพาไปหน้าแอดมินอัตโนมัติ</p>
     </div>
-
-    <div class="card">
-      <h3>สถานะ</h3>
-      <div id="status" class="muted">ยังไม่เข้าสู่ระบบ</div>
-    </div>
-
-    <div class="page-footer muted">© Loan App</div>
+    <div class="footer">© Loan App</div>
   </div>
 
-  <!-- ตั้งค่า Supabase ของคุณตรงนี้ -->
-
-  
   <script type="module">
+    import './js/supabase-config.js';
     import './js/supabase-init.js';
-    import AM, { hasAdminRole } from './js/auth-manager.js';
+    import Auth from './js/auth-manager.js';
+    const $ = (s)=>document.querySelector(s);
+    const msg = (t,ok=false)=>{ const m=$('#msg'); m.textContent=t; m.className='alert '+(ok?'ok':'err'); m.classList.remove('hidden'); };
 
-    const form = document.getElementById('login-form');
-    const statusEl = document.getElementById('status');
-    const spin = document.getElementById('spin');
-
-    // ถ้ามี session อยู่แล้ว ให้เด้งไปหน้าที่ตรงตาม role
-    AM.initialize().then(async () => {
-      if (AM.user) {
-        if (!AM.profile) await AM.loadUserProfile();
-        routeByRole();
-      }
+    document.querySelector('#btn-login').addEventListener('click', async ()=>{
+      try{
+        const email = $('#email').value.trim();
+        const pass  = $('#password').value.trim();
+        const info = await Auth.signInWithPassword(email, pass);
+        if(info.role==='admin') window.location.href='/admin/';
+        else window.location.href='/loan/';
+      }catch(e){ msg(e.message||String(e)); }
+    });
+    document.querySelector('#btn-signup').addEventListener('click', async ()=>{
+      try{
+        const email = $('#email').value.trim();
+        const pass  = $('#password').value.trim();
+        await Auth.signUp(email, pass);
+        msg('สมัครสำเร็จ! โปรดยืนยันอีเมล (ถ้าตั้งค่าไว้) แล้วเข้าสู่ระบบ', true);
+      }catch(e){ msg(e.message||String(e)); }
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      spin.style.display = 'inline-block';
-      statusEl.textContent = 'กำลังเข้าสู่ระบบ...';
-
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-
-      const { user, error } = await AM.signInWithPassword(email, password);
-      spin.style.display = 'none';
-
-      if (error) {
-        statusEl.textContent = 'เข้าสู่ระบบไม่สำเร็จ: ' + (error.message || String(error));
-        return;
+    // ถ้า login อยู่แล้ว พาเข้าหน้าเหมาะสม
+    (async ()=>{
+      const info = await Auth.getUser();
+      if(info){
+        if(info.role==='admin') window.location.href='/admin/';
+        else window.location.href='/loan/';
       }
-      statusEl.textContent = 'สำเร็จ กำลังเปลี่ยนหน้า...';
-      await AM.loadUserProfile();
-      routeByRole();
-    });
-
-    function routeByRole() {
-      const isAdmin = AM.isAdmin();
-      if (isAdmin) {
-        window.location.href = './admin/';
-      } else {
-        window.location.href = './loan/';
-      }
-    }
+    })();
   </script>
 </body>
 </html>
