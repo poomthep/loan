@@ -4,15 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>แผงควบคุมแอดมิน | Loan App</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
   <style>
     :root{
       --bg:#0b1220; --card:#121a2b; --muted:#8590a6; --text:#e6eefc; --accent:#2eaadc; --danger:#ef4444; --ok:#22c55e;
       --border:#1e2a44;
     }
-    *{box-sizing:border-box} html,body{height:100%}
+    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
       background:var(--bg); color:var(--text);
@@ -154,156 +157,114 @@
     </div>
   </div>
 
-  <!-- โมดูลหลัก (กัน cache ด้วย ?v=) + fallback รองรับ named/default export -->
+  <!-- Script: Fallback import รองรับทั้ง named & default -->
+  <script type="module">
+    import DefaultExport, * as NS from '../js/admin-manager-supabase.js?v=20250901-12';
+    const AdminManager = NS.AdminManager || DefaultExport;
+    if (typeof AdminManager !== 'function') {
+      console.error('admin-manager-supabase.js exports =', { NS, DefaultExport });
+      throw new Error('AdminManager export not found');
+    }
 
-<script type="module">
-  // ไม่มี HTML หรือ <!-- comment --> อยู่ข้างในนะครับ!
-  import AdminDefault, * as AdminNS
-    from '../js/admin-manager-supabase.js?v=20250901-9';
+    const am = new AdminManager();
+    window.am = am; // เผื่อ debug
 
-  // รองรับทั้ง default และ named export
-  const AdminManager =
-    (typeof AdminDefault === 'function' && AdminDefault) ||
-    (typeof AdminNS.AdminManager === 'function' && AdminNS.AdminManager);
+    // ---------- helpers ----------
+    const $  = (s,root=document)=>root.querySelector(s);
+    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const fmt = (n,d=2)=> (n??n===0) ? Number(n).toFixed(d) : '';
 
-  if (!AdminManager) {
-    console.error('AdminManager export not found', { AdminDefault, AdminNS });
-    throw new Error('AdminManager export mismatch');
-  }
-
-  const am = new AdminManager();
-  window.am = am; // เผื่อ debug ใน Console
-
-  // …โค้ดเดิมของคุณ (ฟังก์ชัน $, $$, fmt, loadBanks(), loadPromotions(), listeners ฯลฯ)…
-</script>
-
-
-  // กันพลาด: ถ้า default ไม่ใช่คลาส ให้ log ออกมาเพื่อเห็นว่า export อะไรมา
-  if (typeof AdminManager !== 'function') {
-    console.error('AdminManager export is not a class. Got =', AdminManager);
-    throw new Error('AdminManager export mismatch');
-  }
-
-  const am = new AdminManager();      // ✅ ตอนนี้ new ได้แน่นอน
-  window.am = am;                     // (เลือกได้) ไว้ debug ใน console
-
-    // --------- Utilities ---------
-    const $ = (sel, root = document) => root.querySelector(sel);
-    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-    const fmt = (n, d=2) => (n ?? n === 0) ? Number(n).toFixed(d) : '';
-
-    // --------- Banks ---------
-    async function loadBanks() {
+    // ---------- Banks ----------
+    async function loadBanks(){
       const tbody = $('#banks-tbody');
       tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
-      try {
-        const banks = await am.getBanks(); // [{id, short_name, name, mrr, mrr_effective_from}]
-        if (!banks.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>';
-          return;
-        }
+      try{
+        const banks = await am.getBanks();
+        if(!banks?.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>'; return; }
         tbody.innerHTML = '';
-        for (const b of banks) {
+        for(const b of banks){
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td><span class="badge">${b.short_name || '-'}</span></td>
-            <td>${b.name || '-'}</td>
-            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr" /></td>
-            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date" /></td>
-            <td class="row-actions">
-              <button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button>
-            </td>
+            <td><span class="badge">${b.short_name||'-'}</span></td>
+            <td>${b.name||'-'}</td>
+            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr"></td>
+            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date"></td>
+            <td class="row-actions"><button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button></td>
           `;
           tbody.appendChild(tr);
         }
-
-        // bind save per-row
-        $$('.btn-save', tbody).forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            const bankId = btn.dataset.bank;
+        $$('.btn-save',tbody).forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
             const row = btn.closest('tr');
-            const mrr = parseFloat($('input[data-field="mrr"]', row).value || '0');
-            const eff = $('input[data-field="date"]', row).value || null;
+            const id  = btn.dataset.bank;
+            const mrr = parseFloat($('input[data-field="mrr"]',row).value||'0');
+            const eff = $('input[data-field="date"]',row).value || null;
             btn.disabled = true;
-            try {
-              await am.updateBankMRR(bankId, mrr, eff);
+            try{
+              await am.updateBankMRR(id, mrr, eff);
               btn.textContent = '✔︎ บันทึกแล้ว';
               setTimeout(()=>btn.textContent='บันทึก', 1200);
-            } catch (err) {
-              console.error(err);
-              btn.textContent = 'ผิดพลาด';
-              btn.classList.add('btn-danger');
-              setTimeout(()=>{
-                btn.textContent='บันทึก';
-                btn.classList.remove('btn-danger');
-              }, 1500);
-            } finally {
-              btn.disabled = false;
-            }
+            }catch(e){
+              console.error(e); btn.textContent='ผิดพลาด'; btn.classList.add('btn-danger');
+              setTimeout(()=>{btn.textContent='บันทึก';btn.classList.remove('btn-danger');}, 1500);
+            }finally{ btn.disabled = false; }
           });
         });
-      } catch (err) {
-        console.error(err);
+      }catch(e){
+        console.error(e);
         tbody.innerHTML = '<tr><td colspan="5" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
       }
     }
 
-    // --------- Promotions ---------
+    // ---------- Promotions ----------
     let bankOptionsCache = [];
-
-    function rebuildBankSelect() {
+    function rebuildBankSelect(){
       const sel = $('#promo-bank');
       sel.innerHTML = '';
-      for (const b of bankOptionsCache) {
-        const opt = document.createElement('option');
-        opt.value = b.id; opt.textContent = `${b.short_name || b.name || 'Bank'} (#${b.id})`;
-        sel.appendChild(opt);
+      for(const b of bankOptionsCache){
+        const o = document.createElement('option');
+        o.value = b.id; o.textContent = `${b.short_name || b.name} (#${b.id})`;
+        sel.appendChild(o);
       }
     }
 
-    async function loadPromotions() {
+    async function loadPromotions(){
       const tbody = $('#promos-tbody');
       tbody.innerHTML = '<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
-      try {
+      try{
         const promos = await am.listPromotions();
-        if (!promos.length) {
-          tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>';
-          return;
-        }
-        const bankMap = Object.fromEntries(bankOptionsCache.map(b => [b.id, b.short_name || b.name]));
+        if(!promos?.length){ tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>'; return; }
+        const bankMap = Object.fromEntries(bankOptionsCache.map(b=>[b.id, b.short_name||b.name]));
         tbody.innerHTML = '';
-        for (const p of promos) {
+        for(const p of promos){
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${p.id}</td>
-            <td>${bankMap[p.bank_id] || p.bank_id}</td>
-            <td>${p.product_type || '-'}</td>
-            <td>${p.title || '-'}</td>
-            <td>${p.base || '-'}</td>
-            <td>${fmt(p.year1 ?? null)}</td>
-            <td>${fmt(p.year2 ?? null)}</td>
-            <td>${fmt(p.year3 ?? null)}</td>
-            <td>${p.active ? '✅' : '—'}</td>
+            <td>${bankMap[p.bank_id]||p.bank_id}</td>
+            <td>${p.product_type||'-'}</td>
+            <td>${p.title||'-'}</td>
+            <td>${p.base||'-'}</td>
+            <td>${fmt(p.year1??null)}</td>
+            <td>${fmt(p.year2??null)}</td>
+            <td>${fmt(p.year3??null)}</td>
+            <td>${p.active?'✅':'—'}</td>
             <td class="row-actions">
               <button class="btn btn-primary btn-edit" data-id="${p.id}">แก้ไข</button>
-              <button class="btn btn-danger btn-del" data-id="${p.id}">ลบ</button>
+              <button class="btn btn-danger btn-del"  data-id="${p.id}">ลบ</button>
             </td>
           `;
           tbody.appendChild(tr);
         }
-
-        // bind edit / delete
-        $$('.btn-edit', tbody).forEach(btn=>{
+        $$('.btn-edit',tbody).forEach(btn=>{
           btn.addEventListener('click', ()=>{
-            const id = Number(btn.dataset.id);
+            const id  = Number(btn.dataset.id);
             const row = btn.closest('tr');
-            // preload form จากแถว
             const bankShort = row.children[1].textContent.trim();
-            const bank = bankOptionsCache.find(b => (b.short_name||b.name) === bankShort) || {};
+            const bank = bankOptionsCache.find(b => (b.short_name||b.name)===bankShort) || {};
             $('#promo-bank').value = bank.id || '';
             $('#promo-product').value = row.children[2].textContent.trim();
-            $('#promo-title').value = row.children[3].textContent.trim();
-            $('#promo-base').value = row.children[4].textContent.trim() || '';
+            $('#promo-title').value   = row.children[3].textContent.trim();
+            $('#promo-base').value    = row.children[4].textContent.trim() || '';
             $('#promo-y1').value = row.children[5].textContent.trim();
             $('#promo-y2').value = row.children[6].textContent.trim();
             $('#promo-y3').value = row.children[7].textContent.trim();
@@ -312,24 +273,18 @@
             $('#promo-save').textContent = 'อัปเดตโปร';
           });
         });
-        $$('.btn-del', tbody).forEach(btn=>{
+        $$('.btn-del',tbody).forEach(btn=>{
           btn.addEventListener('click', async ()=>{
             const id = Number(btn.dataset.id);
-            if (!confirm(`ลบโปรโมชัน #${id} ?`)) return;
+            if(!confirm(`ลบโปรโมชัน #${id} ?`)) return;
             btn.disabled = true;
-            try {
-              await am.deletePromotion(id);
-              await loadPromotions();
-            } catch (err) {
-              console.error(err);
-              alert('ลบไม่สำเร็จ');
-            } finally {
-              btn.disabled = false;
-            }
+            try{ await am.deletePromotion(id); await loadPromotions(); }
+            catch(e){ console.error(e); alert('ลบไม่สำเร็จ'); }
+            finally{ btn.disabled = false; }
           });
         });
-      } catch (err) {
-        console.error(err);
+      }catch(e){
+        console.error(e);
         tbody.innerHTML = '<tr><td colspan="10" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
       }
     }
@@ -348,40 +303,22 @@
       };
       const btn = $('#promo-save');
       btn.disabled = true;
-      try {
+      try{
         await am.upsertPromotion(payload);
-        // reset form
         btn.removeAttribute('data-edit-id');
         btn.textContent = 'บันทึกโปร';
-        $('#promo-title').value = '';
-        $('#promo-base').value = '';
-        $('#promo-y1').value = '';
-        $('#promo-y2').value = '';
-        $('#promo-y3').value = '';
+        $('#promo-title').value=''; $('#promo-base').value='';
+        $('#promo-y1').value=''; $('#promo-y2').value=''; $('#promo-y3').value='';
         $('#promo-active').checked = true;
         await loadPromotions();
-      } catch (err) {
-        console.error(err);
-        alert('บันทึกโปรไม่สำเร็จ');
-      } finally {
-        btn.disabled = false;
-      }
+      }catch(e){ console.error(e); alert('บันทึกโปรไม่สำเร็จ'); }
+      finally{ btn.disabled = false; }
     });
 
-    // --------- Logout (ถ้ามีระบบ auth) ---------
-    $('#btn-logout').addEventListener('click', ()=>{
-      // ถ้าใช้ supabase auth ให้เรียกผ่าน auth-manager.js ที่หน้า root
-      // location.href = '/'; // แล้วแต่ระบบที่คุณใช้
-      location.href = '/';
-    });
+    $('#btn-logout').addEventListener('click', ()=>{ location.href = '/'; });
 
-    // --------- Bootstrap ---------
-    (async () => {
-      // โหลดธนาคารไว้ทำ options ของฟอร์มโปร
-      try {
-        bankOptionsCache = await am.getBanks();
-        rebuildBankSelect();
-      } catch(e){ console.error(e); }
+    (async ()=>{
+      try{ bankOptionsCache = await am.getBanks(); rebuildBankSelect(); }catch(e){ console.error(e); }
       await loadBanks();
       await loadPromotions();
     })();

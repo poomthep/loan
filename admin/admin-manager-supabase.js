@@ -1,6 +1,6 @@
-// /js/admin-manager-supabase.js
 'use strict';
 
+// ดึง helper จาก data-manager.js (ต้องมี export ตามชื่อเหล่านี้)
 import {
   getBanks as dmGetBanks,
   updateBankMRR as dmUpdateBankMRR,
@@ -10,7 +10,8 @@ import {
   deletePromotion as dmDeletePromotion,
 } from './data-manager.js';
 
-export class AdminManager {
+/** ชั้นบาง ๆ สำหรับหน้า /admin/ */
+class AdminManager {
   // ---------- Banks ----------
   async getBanks() {
     return dmGetBanks();
@@ -23,6 +24,7 @@ export class AdminManager {
   async listPromotions() {
     return dmListPromotions();
   }
+  /** upsert: มี id = update, ไม่มีก็ create */
   async upsertPromotion(payload) {
     if (payload?.id) return dmUpdatePromotion(payload.id, payload);
     return dmCreatePromotion(payload);
@@ -32,7 +34,10 @@ export class AdminManager {
   }
 }
 
-// เผื่ออยากเรียก helper โดยตรง
+// named export
+export { AdminManager };
+
+// เผื่อเรียก helper ตรง ๆ
 export {
   dmGetBanks as getBanks,
   dmUpdateBankMRR as updateBankMRR,
@@ -42,5 +47,5 @@ export {
   dmDeletePromotion as deletePromotion,
 };
 
-// ✅ default export เป็นคลาสจริง ๆ
+// ✅ default export (แก้ปัญหา "does not provide an export named 'default'")
 export default AdminManager;
