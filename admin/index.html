@@ -142,192 +142,184 @@
   </div>
 
   <!-- ====== ลำดับโหลดสคริปต์ (โกลบอล ไม่ใช้ type="module") ====== -->
-  <!-- 1) Supabase JS SDK (ต้องมาก่อน) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 1) Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 2) คอนฟิก + init -->
+<script src="../js/supabase-config.js?v=20250901-1"></script>
+<script src="../js/supabase-init.js?v=20250901-1"></script>
+<!-- 3) Data layer (โกลบอล) -->
+<script src="../js/data-manager.global.js?v=20250902-2"></script>
+<!-- 4) Admin manager (โกลบอล) -->
+<script src="../js/admin-manager.global.js?v=20250901-1"></script>
 
-  <!-- 2) คอนฟิก + init client -->
-  <script src="../js/supabase-config.js?v=20250901-1"></script>
-  <script src="../js/supabase-init.js?v=20250901-1"></script>
+<!-- 5) Inline code -->
+<script>
+  const am = new AdminManager();
+  const $  = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const fmt = (n, d=2) => (n ?? n === 0) ? Number(n).toFixed(d) : '';
 
-  <!-- 3) Data layer (โกลบอล) -->
-  <script src="../js/data-manager.global.js?v=20250901-1"></script>
-
-  <!-- 4) Admin manager (โกลบอล) -->
-  <script src="../js/admin-manager.global.js?v=20250901-1"></script>
-
-  <!-- 5) Inline code ของหน้า (เรียกผ่านโกลบอล) -->
-  <script>
-    const am = new AdminManager();
-
-    // helpers
-    const $  = (s, r=document) => r.querySelector(s);
-    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-    const fmt = (n, d=2) => (n ?? n === 0) ? Number(n).toFixed(d) : '';
-
-    // ===== Banks =====
-    async function loadBanks() {
-      const tbody = $('#banks-tbody');
-      tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
-      try {
-        const banks = await am.getBanks();
-        if (!banks.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>';
-          return;
-        }
-        tbody.innerHTML = '';
-        for (const b of banks) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><span class="badge">${b.short_name || '-'}</span></td>
-            <td>${b.name || '-'}</td>
-            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr" /></td>
-            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date" /></td>
-            <td class="row-actions"><button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button></td>
-          `;
-          tbody.appendChild(tr);
-        }
-        $$('.btn-save', tbody).forEach(btn=>{
-          btn.addEventListener('click', async ()=>{
-            const row = btn.closest('tr');
-            const id  = btn.dataset.bank;
-            const mrr = parseFloat($('input[data-field="mrr"]', row).value || '0');
-            const eff = $('input[data-field="date"]', row).value || null;
-            btn.disabled = true;
-            try {
-              await am.updateBankMRR(id, mrr, eff);
-              btn.textContent = '✔︎ บันทึกแล้ว';
-              setTimeout(()=> btn.textContent='บันทึก', 1200);
-            } catch (e) {
-              console.error(e);
-              btn.textContent = 'ผิดพลาด';
-              btn.classList.add('btn-danger');
-              setTimeout(()=>{ btn.textContent='บันทึก'; btn.classList.remove('btn-danger'); }, 1500);
-            } finally { btn.disabled = false; }
-          });
-        });
-      } catch (e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
+  // ===== Banks =====
+  async function loadBanks() {
+    const tbody = $('#banks-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
+    try {
+      const banks = await am.getBanks(); // {id, short_name, name, mrr, mrr_effective_from?}
+      if (!banks.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>';
+        return;
       }
-    }
-
-    // ===== Promotions =====
-    let bankOptionsCache = [];
-    function rebuildBankSelect() {
-      const sel = $('#promo-bank');
-      sel.innerHTML = '';
-      for (const b of bankOptionsCache) {
-        const opt = document.createElement('option');
-        opt.value = b.id; opt.textContent = `${b.short_name || b.name || 'Bank'} (#${b.id})`;
-        sel.appendChild(opt);
+      tbody.innerHTML = '';
+      for (const b of banks) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="badge">${b.short_name || '-'}</span></td>
+          <td>${b.name || '-'}</td>
+          <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr" /></td>
+          <td><input type="date" value="${(b.mrr_effective_from||'').slice ? (b.mrr_effective_from||'').slice(0,10) : ''}" data-bank="${b.id}" data-field="date" disabled /></td>
+          <td class="row-actions"><button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button></td>
+        `;
+        tbody.appendChild(tr);
       }
+      $$('.btn-save', tbody).forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const row = btn.closest('tr');
+          const id  = btn.dataset.bank;
+          const mrr = parseFloat($('input[data-field="mrr"]', row).value || '0');
+          btn.disabled = true;
+          try {
+            await am.updateBankMRR(id, mrr); // อัปเดตเฉพาะ mrr
+            btn.textContent = '✔︎ บันทึกแล้ว';
+            setTimeout(()=> btn.textContent='บันทึก', 1200);
+          } catch (e) {
+            console.error(e);
+            btn.textContent = 'ผิดพลาด';
+            btn.classList.add('btn-danger');
+            setTimeout(()=>{ btn.textContent='บันทึก'; btn.classList.remove('btn-danger'); }, 1500);
+          } finally { btn.disabled = false; }
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
     }
+  }
 
-    async function loadPromotions() {
-      const tbody = $('#promos-tbody');
-      tbody.innerHTML = '<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
-      try {
-        const promos = await am.listPromotions();
-        if (!promos.length) {
-          tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>';
-          return;
-        }
-        const bankMap = Object.fromEntries(bankOptionsCache.map(b => [b.id, b.short_name || b.name]));
-        tbody.innerHTML = '';
-        for (const p of promos) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${p.id}</td>
-            <td>${bankMap[p.bank_id] || p.bank_id}</td>
-            <td>${p.product_type || '-'}</td>
-            <td>${p.title || '-'}</td>
-            <td>${p.base || '-'}</td>
-            <td>${fmt(p.year1 ?? null)}</td>
-            <td>${fmt(p.year2 ?? null)}</td>
-            <td>${fmt(p.year3 ?? null)}</td>
-            <td>${p.active ? '✅' : '—'}</td>
-            <td class="row-actions">
-              <button class="btn btn-primary btn-edit" data-id="${p.id}">แก้ไข</button>
-              <button class="btn btn-danger btn-del" data-id="${p.id}">ลบ</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        }
+  // ===== Promotions =====
+  let bankOptionsCache = [];
+  function rebuildBankSelect() {
+    const sel = $('#promo-bank');
+    sel.innerHTML = '';
+    for (const b of bankOptionsCache) {
+      const opt = document.createElement('option');
+      opt.value = b.id; opt.textContent = `${b.short_name || b.name || 'Bank'} (#${b.id})`;
+      sel.appendChild(opt);
+    }
+  }
 
-        $$('.btn-edit', tbody).forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            const id = Number(btn.dataset.id);
-            const row = btn.closest('tr');
-            const bankShort = row.children[1].textContent.trim();
-            const bank = bankOptionsCache.find(b => (b.short_name||b.name) === bankShort) || {};
-            $('#promo-bank').value = bank.id || '';
-            $('#promo-product').value = row.children[2].textContent.trim();
-            $('#promo-title').value = row.children[3].textContent.trim();
-            $('#promo-base').value = row.children[4].textContent.trim() || '';
-            $('#promo-y1').value = row.children[5].textContent.trim();
-            $('#promo-y2').value = row.children[6].textContent.trim();
-            $('#promo-y3').value = row.children[7].textContent.trim();
-            $('#promo-active').checked = row.children[8].textContent.includes('✅');
-            const saveBtn = $('#promo-save');
-            saveBtn.dataset.editId = String(id);
-            saveBtn.textContent = 'อัปเดตโปร';
-          });
-        });
-
-        $$('.btn-del', tbody).forEach(btn=>{
-          btn.addEventListener('click', async ()=>{
-            const id = Number(btn.dataset.id);
-            if (!confirm(`ลบโปรโมชัน #${id} ?`)) return;
-            btn.disabled = true;
-            try { await am.deletePromotion(id); await loadPromotions(); }
-            catch(e){ console.error(e); alert('ลบไม่สำเร็จ'); }
-            finally { btn.disabled = false; }
-          });
-        });
-
-      } catch (e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="10" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
+  async function loadPromotions() {
+    const tbody = $('#promos-tbody');
+    tbody.innerHTML = '<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
+    try {
+      const promos = await am.listPromotions(); // ใช้คอลัมน์ y1,y2,y3
+      if (!promos.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>';
+        return;
       }
+      const bankMap = Object.fromEntries(bankOptionsCache.map(b => [b.id, b.short_name || b.name]));
+      tbody.innerHTML = '';
+      for (const p of promos) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${bankMap[p.bank_id] || p.bank_id}</td>
+          <td>${p.product_type || '-'}</td>
+          <td>${p.title || '-'}</td>
+          <td>${p.base || '-'}</td>
+          <td>${fmt(p.y1 ?? null)}</td>
+          <td>${fmt(p.y2 ?? null)}</td>
+          <td>${fmt(p.y3 ?? null)}</td>
+          <td>${p.active ? '✅' : '—'}</td>
+          <td class="row-actions">
+            <button class="btn btn-primary btn-edit" data-id="${p.id}">แก้ไข</button>
+            <button class="btn btn-danger btn-del" data-id="${p.id}">ลบ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      $$('.btn-edit', tbody).forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const id = Number(btn.dataset.id);
+          const row = btn.closest('tr');
+          const bankShort = row.children[1].textContent.trim();
+          const bank = bankOptionsCache.find(b => (b.short_name||b.name) === bankShort) || {};
+          $('#promo-bank').value = bank.id || '';
+          $('#promo-product').value = row.children[2].textContent.trim();
+          $('#promo-title').value = row.children[3].textContent.trim();
+          $('#promo-base').value = row.children[4].textContent.trim() || '';
+          $('#promo-y1').value = row.children[5].textContent.trim();
+          $('#promo-y2').value = row.children[6].textContent.trim();
+          $('#promo-y3').value = row.children[7].textContent.trim();
+          $('#promo-active').checked = row.children[8].textContent.includes('✅');
+          const saveBtn = $('#promo-save');
+          saveBtn.dataset.editId = String(id);
+          saveBtn.textContent = 'อัปเดตโปร';
+        });
+      });
+
+      $$('.btn-del', tbody).forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const id = Number(btn.dataset.id);
+          if (!confirm(`ลบโปรโมชัน #${id} ?`)) return;
+          btn.disabled = true;
+          try { await am.deletePromotion(id); await loadPromotions(); }
+          catch(e){ console.error(e); alert('ลบไม่สำเร็จ'); }
+          finally { btn.disabled = false; }
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="10" class="muted">โหลดข้อมูลผิดพลาด</td></tr>';
     }
+  }
 
-    // save/create
-    $('#promo-save').addEventListener('click', async ()=>{
-      const btn = $('#promo-save');
-      const payload = {
-        id: btn.dataset.editId ? Number(btn.dataset.editId) : undefined,
-        bank_id: Number($('#promo-bank').value),
-        product_type: $('#promo-product').value,
-        title: $('#promo-title').value.trim(),
-        base: $('#promo-base').value || null,
-        year1: $('#promo-y1').value ? Number($('#promo-y1').value) : null,
-        year2: $('#promo-y2').value ? Number($('#promo-y2').value) : null,
-        year3: $('#promo-y3').value ? Number($('#promo-y3').value) : null,
-        active: $('#promo-active').checked,
-      };
-      btn.disabled = true;
-      try {
-        await am.upsertPromotion(payload);
-        btn.removeAttribute('data-edit-id');
-        btn.textContent = 'บันทึกโปร';
-        $('#promo-title').value = ''; $('#promo-base').value = '';
-        $('#promo-y1').value = ''; $('#promo-y2').value = ''; $('#promo-y3').value = '';
-        $('#promo-active').checked = true;
-        await loadPromotions();
-      } catch (e) {
-        console.error(e); alert('บันทึกโปรไม่สำเร็จ');
-      } finally { btn.disabled = false; }
-    });
-
-    // logout (ถ้าอยากให้กลับหน้าแรก)
-    $('#btn-logout').addEventListener('click', ()=> location.href = '/');
-
-    // bootstrap
-    (async () => {
-      try { bankOptionsCache = await am.getBanks(); rebuildBankSelect(); } catch (e) { console.error(e); }
-      await loadBanks();
+  // save/create (ใช้ y1,y2,y3)
+  $('#promo-save').addEventListener('click', async ()=>{
+    const btn = $('#promo-save');
+    const payload = {
+      id: btn.dataset.editId ? Number(btn.dataset.editId) : undefined,
+      bank_id: Number($('#promo-bank').value),
+      product_type: $('#promo-product').value,
+      title: $('#promo-title').value.trim(),
+      base: $('#promo-base').value || null,
+      y1: $('#promo-y1').value ? Number($('#promo-y1').value) : null,
+      y2: $('#promo-y2').value ? Number($('#promo-y2').value) : null,
+      y3: $('#promo-y3').value ? Number($('#promo-y3').value) : null,
+      active: $('#promo-active').checked,
+    };
+    btn.disabled = true;
+    try {
+      await am.upsertPromotion(payload);
+      btn.removeAttribute('data-edit-id');
+      btn.textContent = 'บันทึกโปร';
+      $('#promo-title').value = ''; $('#promo-base').value = '';
+      $('#promo-y1').value = ''; $('#promo-y2').value = ''; $('#promo-y3').value = '';
+      $('#promo-active').checked = true;
       await loadPromotions();
-    })();
-  </script>
+    } catch (e) {
+      console.error(e); alert('บันทึกโปรไม่สำเร็จ');
+    } finally { btn.disabled = false; }
+  });
+
+  $('#btn-logout').addEventListener('click', ()=> location.href = '/');
+
+  (async () => {
+    try { bankOptionsCache = await am.getBanks(); rebuildBankSelect(); } catch (e) { console.error(e); }
+    await loadBanks();
+    await loadPromotions();
+  })();
+</script>
+
 </body>
 </html>
