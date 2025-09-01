@@ -1,52 +1,49 @@
-import {supabase}from './supabase-init.js';
+// data-manager.js
+// ฟังก์ชันข้อมูลกลางที่หน้า Admin (และหน้าอื่น) เรียกใช้
+// ต้องมีฟังก์ชัน: getBanks, updateBankMRR, listPromotions, createPromotion, updatePromotion, deletePromotion
 
-export async function getBanks(){
-		const {data,error}=await supabase.from('banks').select('id,short_name,name').order('id');
-		if(error)throw error;
-		return data||[]
-	}
-	
-// js/data-manager.js
-export async function getActivePromotions(productType) {
-  let query = window.supabase
-    .from('promotions')
-    .select('*')
-    .eq('active', true);        // <- ใช้ active ไม่ใช่ is_active
+import { supabase as _sb } from './supabase-init.js';
 
-  if (productType) {
-    query = query.eq('product_type', productType);
-  }
-
-  const { data, error } = await query.order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+// -------- utils --------
+function client() {
+  // ใช้ client จากโมดูล หรือสำรองจาก window
+  return _sb || (typeof window !== 'undefined' ? window.supabase : null);
+}
+function ensureClient() {
+  const sb = client();
+  if (!sb) throw new Error('Supabase client is required. Make sure supabase-init.js is loaded.');
+  return sb;
+}
+function nOrNull(v) {
+  if (v === '' || v === undefined || v === null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function sanitizePromo(p = {}) {
+  return {
+    bank_id: p.bank_id ?? null,
+    product_type: p.product_type ?? null,
+    title: (p.title || '').toString().slice(0, 200),
+    description: p.description ?? null,
+    base: (p.base || 'fixed').toLowerCase() === 'mrr' ? 'mrr' : 'fixed',
+    year1: nOrNull(p.year1 ?? p.year1_rate ?? p.year1_spread),
+    year2: nOrNull(p.year2 ?? p.year2_rate ?? p.year2_spread),
+    year3: nOrNull(p.year3 ?? p.year3_rate ?? p.year3_spread),
+    active: !!p.active,
+  };
 }
 
-export async function saveCalculation(params,results,mode){
-		const s=(await supabase.auth.getSession()).data.session;
-		if(!s)return;
-		const payload={user_id:s.user.id,product_type:params.productType,calculation_mode:mode,params,results:{calculationResults:results}};
-		const {error}=await supabase.from('calculations').insert(payload);
-		if(error)console.warn('saveCalculation',error.message)
-	}
+// ===============================
+// Banks
+// ===============================
 
-export async function getUserCalculations(limit=10){
-	const s=(await supabase.auth.getSession()).data.session;
-	if(!s)return[];
-	const {data,error}=await supabase.from('calculations').select('*').eq('user_id',s.user.id).order('created_at',{ascending:false}).limit(limit);
-	if(error)throw error;return data||[]
-	}
-	
-export async function checkDatabaseConnection(){
-		try{await supabase.from('banks').select('id').limit(1);
-		return true}catch(e){return false}
-	}
-	
-	// js/data-manager.js
-// NOTE: ต้องมี window.supabase มาจาก supabase-init.js แล้ว
-
+/**
+ * ดึงรายชื่อธนาคาร
+ * fields: id, short_name, name, mrr, mrr_effective_date
+ */
 export async function getBanks() {
-  const { data, error } = await window.supabase
+  const sb = ensureClient();
+  const { data, error } = await sb
     .from('banks')
     .select('id, short_name, name, mrr, mrr_effective_date')
     .order('short_name', { ascending: true });
@@ -55,83 +52,98 @@ export async function getBanks() {
   return data || [];
 }
 
+/**
+ * อัปเดต MRR ของธนาคาร
+ * @param {number} bankId
+ * @param {number|null} mrr
+ * @param {string|null} effectiveDate yyyy-mm-dd
+ */
 export async function updateBankMRR(bankId, mrr, effectiveDate) {
-  const payload = { mrr };
-  if (effectiveDate) payload.mrr_effective_date = effectiveDate;
-
-  const { data, error } = await window.supabase
-    .from('banks')
-    .update(payload)
-    .eq('id', bankId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function getActivePromotions(productType) {
-  let query = window.supabase
-    .from('promotions')
-    .select(`
-      id, bank_id, product_type, title, description,
-      base, year1_rate, year2_rate, year3_rate,
-      active
-    `)
-    .eq('active', true)
-    .order('id', { ascending: true });
-
-  if (productType) query = query.eq('product_type', productType);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
-}
-
-export async function listPromotions(productType) {
-  // ใช้ในหน้าแอดมิน (เห็นทั้ง active/inactive)
-  let query = window.supabase
-    .from('promotions')
-    .select(`
-      id, bank_id, product_type, title, description,
-      base, year1_rate, year2_rate, year3_rate,
-      active
-    `)
-    .order('id', { ascending: true });
-
-  if (productType) query = query.eq('product_type', productType);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createPromotion(promo) {
-  // promo: { bank_id, product_type, title, description, base, year1_rate, year2_rate, year3_rate, active }
-  const { data, error } = await window.supabase
-    .from('promotions')
-    .insert(promo)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function updatePromotion(id, patch) {
-  const { data, error } = await window.supabase
-    .from('promotions')
-    .update(patch)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deletePromotion(id) {
-  const { error } = await window.supabase
-    .from('promotions')
-    .delete()
-    .eq('id', id);
+  const sb = ensureClient();
+  const payload = {
+    mrr: nOrNull(mrr),
+    mrr_effective_date: effectiveDate || null,
+  };
+  const { error } = await sb.from('banks').update(payload).eq('id', bankId);
   if (error) throw error;
   return true;
 }
+
+// ===============================
+// Promotions
+// ===============================
+
+/**
+ * ดึงรายการโปรทั้งหมด (สำหรับ admin)
+ * เติม bank_short_name ให้แต่ละแถวด้วย
+ */
+export async function listPromotions() {
+  const sb = ensureClient();
+
+  const { data: promos, error } = await sb
+    .from('promotions')
+    .select('id, bank_id, product_type, title, description, base, year1, year2, year3, active')
+    .order('id', { ascending: true });
+
+  if (error) throw error;
+  const list = promos || [];
+
+  // เติม bank_short_name (ถ้าดึง banks ได้)
+  try {
+    const banks = await getBanks();
+    const map = new Map(banks.map((b) => [b.id, b.short_name]));
+    return list.map((p) => ({ ...p, bank_short_name: map.get(p.bank_id) || null }));
+  } catch {
+    return list;
+  }
+}
+
+/**
+ * สร้างโปรโมชันใหม่
+ * payload รองรับคีย์:
+ * { bank_id, product_type, title, description, base('fixed'|'mrr'), year1, year2, year3, active }
+ */
+export async function createPromotion(payload) {
+  const sb = ensureClient();
+  const clean = sanitizePromo(payload);
+  const { data, error } = await sb
+    .from('promotions')
+    .insert([clean])
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data; // { id }
+}
+
+/**
+ * แก้ไขโปรโมชัน
+ * @param {number} id
+ * @param {object} payload
+ */
+export async function updatePromotion(id, payload) {
+  const sb = ensureClient();
+  const clean = sanitizePromo(payload);
+  const { data, error } = await sb
+    .from('promotions')
+    .update(clean)
+    .eq('id', id)
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data; // { id }
+}
+
+/**
+ * ลบโปรโมชัน
+ * @param {number} id
+ */
+export async function deletePromotion(id) {
+  const sb = ensureClient();
+  const { error } = await sb.from('promotions').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+}
+
+// ===== (ถ้าหน้าอื่นต้องใช้เพิ่ม สามารถ export ฟังก์ชันอื่นๆ ต่อจากนี้ได้) =====
