@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>แผงควบคุมแอดมิน | Loan App</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    :root{ --bg:#0b1220; --card:#121a2b; --muted:#8590a6; --text:#e6eefc; --accent:#2eaadc; --danger:#ef4444; --border:#1e2a44; }
+    :root{--bg:#0b1220;--card:#121a2b;--muted:#8590a6;--text:#e6eefc;--accent:#2eaadc;--danger:#ef4444;--border:#1e2a44}
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
     .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
@@ -23,8 +23,8 @@
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--border);padding:10px 8px;vertical-align:middle}
     th{font-weight:600;color:#c5d2ea;text-align:left}
-    input,select,textarea{background:#0c1425;border:1px solid var(--border);color:#e6eefc;border-radius:10px;padding:9px 10px;outline:none;width:100%}
-    input:focus,select:focus,textarea:focus{border-color:#2d9ed6}
+    input,select{background:#0c1425;border:1px solid var(--border);color:#e6eefc;border-radius:10px;padding:9px 10px;outline:none;width:100%}
+    input:focus,select:focus{border-color:#2d9ed6}
     .grid{display:grid;gap:12px}
     .grid-3{grid-template-columns:repeat(3,1fr)}
     .muted{color:var(--muted);font-size:12px}
@@ -46,9 +46,17 @@
       <div style="overflow:auto">
         <table>
           <thead>
-          <tr><th style="width:80px">ย่อ</th><th>ชื่อ</th><th style="width:140px">MRR</th><th style="width:200px">มีผลตั้งแต่</th><th style="width:120px"></th></tr>
+            <tr>
+              <th style="width:80px">ย่อ</th>
+              <th>ชื่อ</th>
+              <th style="width:140px">MRR</th>
+              <th style="width:200px">มีผลตั้งแต่</th>
+              <th style="width:120px"></th>
+            </tr>
           </thead>
-          <tbody id="banks-tbody"><tr><td colspan="5" class="muted">กำลังโหลด…</td></tr></tbody>
+          <tbody id="banks-tbody">
+            <tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -74,7 +82,9 @@
       <div class="grid grid-3" style="margin-bottom:10px">
         <div>
           <label class="muted">ฐานดอกเบี้ย</label>
-          <select id="promo-base"><option value="">—</option><option value="MRR">MRR</option><option value="MLR">MLR</option><option value="MOR">MOR</option></select>
+          <select id="promo-base">
+            <option value="">—</option><option value="MRR">MRR</option><option value="MLR">MLR</option><option value="MOR">MOR</option>
+          </select>
         </div>
         <div><label class="muted">ปี 1 (%)</label><input id="promo-y1" type="number" step="0.01" placeholder="3.99"/></div>
         <div><label class="muted">ปี 2 (%)</label><input id="promo-y2" type="number" step="0.01"/></div>
@@ -93,44 +103,45 @@
       <div style="overflow:auto">
         <table>
           <thead>
-          <tr>
-            <th style="width:60px">ID</th><th style="width:90px">Bank</th><th style="width:130px">Product</th>
-            <th>Title</th><th style="width:100px">Base</th>
-            <th style="width:80px">Y1</th><th style="width:80px">Y2</th><th style="width:80px">Y3</th>
-            <th style="width:90px">Active</th><th style="width:120px"></th>
-          </tr>
+            <tr>
+              <th style="width:60px">ID</th><th style="width:90px">Bank</th><th style="width:130px">Product</th>
+              <th>Title</th><th style="width:100px">Base</th>
+              <th style="width:80px">Y1</th><th style="width:80px">Y2</th><th style="width:80px">Y3</th>
+              <th style="width:90px">Active</th><th style="width:120px"></th>
+            </tr>
           </thead>
-          <tbody id="promos-tbody"><tr><td colspan="10" class="muted">กำลังโหลด…</td></tr></tbody>
+          <tbody id="promos-tbody">
+            <tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ใช้ named import เพียงอย่างเดียว -->
+  <!-- ใช้ named import เท่านั้น (เปลี่ยน v ทุกครั้งที่อัปเดตไฟล์เพื่อกัน cache) -->
   <script type="module">
-    import { AdminManager } from '../js/admin-manager-supabase.js?v=20250901-14';
+    import { AdminManager } from '../js/admin-manager-supabase.js?v=20250901-15';
 
     const am = new AdminManager();
-    const $  = (s,root=document)=>root.querySelector(s);
-    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const $  = (s, r=document)=>r.querySelector(s);
+    const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
     const fmt = (n,d=2)=> (n??n===0) ? Number(n).toFixed(d) : '';
 
     async function loadBanks(){
-      const tbody = $('#banks-tbody');
-      tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
+      const tbody=$('#banks-tbody');
+      tbody.innerHTML='<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
       try{
-        const banks = await am.getBanks();
+        const banks=await am.getBanks();
         if(!banks?.length){ tbody.innerHTML='<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>'; return; }
         tbody.innerHTML='';
         for(const b of banks){
           const tr=document.createElement('tr');
-          tr.innerHTML = `
+          tr.innerHTML=`
             <td><span class="badge">${b.short_name||'-'}</span></td>
             <td>${b.name||'-'}</td>
-            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr"></td>
-            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date"></td>
-            <td class="row-actions"><button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button></td>
-          `;
+            <td><input type="number" step="0.01" value="${b.mrr ?? ''}" data-bank="${b.id}" data-field="mrr"/></td>
+            <td><input type="date" value="${(b.mrr_effective_from||'').slice(0,10)}" data-bank="${b.id}" data-field="date"/></td>
+            <td class="row-actions"><button class="btn btn-primary btn-save" data-bank="${b.id}">บันทึก</button></td>`;
           tbody.appendChild(tr);
         }
         $$('.btn-save',tbody).forEach(btn=>{
@@ -141,7 +152,7 @@
             const eff=$('input[data-field="date"]',row).value||null;
             btn.disabled=true;
             try{ await am.updateBankMRR(id,mrr,eff); btn.textContent='✔︎ บันทึกแล้ว'; setTimeout(()=>btn.textContent='บันทึก',1200); }
-            catch(e){ console.error(e); btn.textContent='ผิดพลาด'; btn.classList.add('btn-danger'); setTimeout(()=>{btn.textContent='บันทึก';btn.classList.remove('btn-danger');},1500); }
+            catch(e){ console.error(e); btn.textContent='ผิดพลาด'; btn.classList.add('btn-danger'); setTimeout(()=>{btn.textContent='บันทึก';btn.classList.remove('btn-danger');},1400); }
             finally{ btn.disabled=false; }
           });
         });
@@ -151,11 +162,16 @@
     let bankOptionsCache=[];
     function rebuildBankSelect(){
       const sel=$('#promo-bank'); sel.innerHTML='';
-      for(const b of bankOptionsCache){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.short_name||b.name} (#${b.id})`; sel.appendChild(o); }
+      for(const b of bankOptionsCache){
+        const o=document.createElement('option');
+        o.value=b.id; o.textContent=`${b.short_name||b.name} (#${b.id})`;
+        sel.appendChild(o);
+      }
     }
 
     async function loadPromotions(){
-      const tbody=$('#promos-tbody'); tbody.innerHTML='<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
+      const tbody=$('#promos-tbody');
+      tbody.innerHTML='<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
       try{
         const promos=await am.listPromotions();
         if(!promos?.length){ tbody.innerHTML='<tr><td colspan="10" class="muted">ไม่มีโปร active</td></tr>'; return; }
@@ -190,8 +206,12 @@
         });
         $$('.btn-del',tbody).forEach(btn=>{
           btn.addEventListener('click', async ()=>{
-            const id=Number(btn.dataset.id); if(!confirm(`ลบโปรโมชัน #${id} ?`)) return;
-            btn.disabled=true; try{ await am.deletePromotion(id); await loadPromotions(); } catch(e){ console.error(e); alert('ลบไม่สำเร็จ'); } finally{ btn.disabled=false; }
+            const id=Number(btn.dataset.id);
+            if(!confirm(`ลบโปรโมชัน #${id} ?`)) return;
+            btn.disabled=true;
+            try{ await am.deletePromotion(id); await loadPromotions(); }
+            catch(e){ console.error(e); alert('ลบไม่สำเร็จ'); }
+            finally{ btn.disabled=false; }
           });
         });
       }catch(e){ console.error(e); tbody.innerHTML='<tr><td colspan="10" class="muted">โหลดข้อมูลผิดพลาด</td></tr>'; }

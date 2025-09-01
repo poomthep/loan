@@ -1,5 +1,6 @@
-// ใช้ named export เท่านั้น
-// ทำงานทับกับ data-manager.js ที่ export เป็น named อยู่แล้ว
+// ใช้ named export เท่านั้น (ไม่มี default)
+// โมดูลนี้คือชั้นบาง ๆ สำหรับหน้า /admin/
+// พึ่งพา data-manager.js ซึ่ง export ฟังก์ชันแบบ named เช่นกัน
 
 import {
   getBanks,
@@ -15,6 +16,13 @@ export class AdminManager {
   async getBanks() {
     return getBanks();
   }
+
+  /**
+   * อัปเดต MRR ธนาคาร
+   * @param {number|string} bankId
+   * @param {number} mrr
+   * @param {string|null} effectiveDate 'YYYY-MM-DD' | null
+   */
   async updateBankMRR(bankId, mrr, effectiveDate = null) {
     return updateBankMRR(bankId, mrr, effectiveDate);
   }
@@ -23,17 +31,22 @@ export class AdminManager {
   async listPromotions() {
     return listPromotions();
   }
+
+  /**
+   * ถ้ามี id => update, ถ้าไม่มี => create
+   */
   async upsertPromotion(payload) {
     return payload?.id
       ? updatePromotion(payload.id, payload)
       : createPromotion(payload);
   }
+
   async deletePromotion(id) {
     return deletePromotion(id);
   }
 }
 
-// เผื่ออยากเรียกฟังก์ชันตรง ๆ จากที่อื่น ก็ re-export ให้ด้วย (named ทั้งหมด)
+// เผื่อใช้ helper โดยตรง (ยังคงเป็น named ทั้งหมด)
 export {
   getBanks,
   updateBankMRR,
