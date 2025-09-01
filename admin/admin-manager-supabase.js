@@ -1,15 +1,10 @@
 // /js/admin-manager-supabase.js
 // เวอร์ชันสะอาด: รองรับทั้ง named และ default export
 // ใช้ร่วมกับ data-manager.js ที่มีฟังก์ชันต่อไปนี้แล้ว
-import * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-6';
-const AdminManager = AdminNS.AdminManager || AdminNS.default;
-const am = new AdminManager();
 
 import {
-  // banks
   getBanks as dmGetBanks,
   updateBankMRR as dmUpdateBankMRR,
-  // promotions
   listPromotions as dmListPromotions,
   createPromotion as dmCreatePromotion,
   updatePromotion as dmUpdatePromotion,
@@ -22,37 +17,11 @@ import {
  * - upsertPromotion จะเลือก create/update ให้อัตโนมัติ
  */
 export class AdminManager {
-  // ---------- Banks ----------
-  async getBanks() {
-    return dmGetBanks();
-  }
-
-  /**
-   * อัปเดต MRR ธนาคาร
-   * @param {number|string} bankId
-   * @param {number} mrr ค่า MRR เช่น 6.85
-   * @param {string|null} effectiveDate 'YYYY-MM-DD' หรือ null
-   */
-  async updateBankMRR(bankId, mrr, effectiveDate = null) {
-    return dmUpdateBankMRR(bankId, mrr, effectiveDate);
-  }
-
-  // ---------- Promotions ----------
-  async listPromotions() {
-    return dmListPromotions();
-  }
-
-  /**
-   * upsertPromotion: ถ้ามี id => update, ถ้าไม่มี => create
-   * (เมธอดนี้เรียกใช้ฟังก์ชันระดับบนชื่อเดียวกันอีกที)
-   */
-  async upsertPromotion(payload) {
-    return upsertPromotion(payload);
-  }
-
-  async deletePromotion(id) {
-    return dmDeletePromotion(id);
-  }
+  async getBanks() { return dmGetBanks(); }
+  async updateBankMRR(id, mrr, eff=null) { return dmUpdateBankMRR(id, mrr, eff); }
+  async listPromotions() { return dmListPromotions(); }
+  async upsertPromotion(payload) { return upsertPromotion(payload); }
+  async deletePromotion(id) { return dmDeletePromotion(id); }
 }
 
 /** ฟังก์ชันระดับบนสำหรับ import ตรง ๆ: { upsertPromotion } */

@@ -155,10 +155,19 @@
   </div>
 
   <!-- โมดูลหลัก (กัน cache ด้วย ?v=) + fallback รองรับ named/default export -->
-  <script type="module">
-	import * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-5';  // เปลี่ยนเลข v เพื่อเคลียร์ cache
-	const AdminManager = AdminNS.AdminManager || AdminNS.default;
-    const am = new AdminManager();
+
+<script type="module">
+  // ++ เปลี่ยนมาใช้ default export ตรง ๆ และกัน cache ด้วยเวอร์ชันใหม่
+  import AdminManager from '../js/admin-manager-supabase.js?v=20250901-7';
+
+  // กันพลาด: ถ้า default ไม่ใช่คลาส ให้ log ออกมาเพื่อเห็นว่า export อะไรมา
+  if (typeof AdminManager !== 'function') {
+    console.error('AdminManager export is not a class. Got =', AdminManager);
+    throw new Error('AdminManager export mismatch');
+  }
+
+  const am = new AdminManager();      // ✅ ตอนนี้ new ได้แน่นอน
+  window.am = am;                     // (เลือกได้) ไว้ debug ใน console
 
     // --------- Utilities ---------
     const $ = (sel, root = document) => root.querySelector(sel);
