@@ -1,1 +1,193 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>แอดมิน | Loan App</title><link rel="stylesheet" href="../css/app.css"/></head><body><div class="container"><div class="row" style="justify-content:space-between;align-items:center"><h1>แผงควบคุมแอดมิน</h1><button id="btn-logout" class="btn">ออกจากระบบ</button></div><div class="panel"><h2>ธนาคาร</h2><table id="tbl-banks" class="table"><thead><tr><th>ID</th><th>ย่อ</th><th>ชื่อ</th></tr></thead><tbody><tr><td colspan="3" class="center">กำลังโหลด…</td></tr></tbody></table></div><div class="panel"><h2>โปรโมชัน (active)</h2><table id="tbl-promos" class="table"><thead><tr><th>ID</th><th>Bank</th><th>Product</th><th>Title</th><th>Year1</th><th>Base+Spread</th><th>Active</th></tr></thead><tbody><tr><td colspan="7" class="center">กำลังโหลด…</td></tr></tbody></table></div><div class="footer">© Loan App</div></div><script type="module" src="./admin-manager-supabase.js"></script></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>แผงควบคุมแอดมิน | Loan App</title>
+  <link rel="stylesheet" href="../css/app.css" />
+  <style>
+    /* เสริมเล็กน้อยให้ตารางอ่านง่าย */
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    h1, h2 { margin: 0 0 12px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-top:16px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom:1px solid #1f2937; padding:10px 8px; text-align:left; }
+    thead th { position: sticky; top:0; background:#0b1220; }
+    .toolbar { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:8px 12px; border-radius:8px; border:1px solid #374151;
+      background:#111827; color:#e5e7eb; cursor:pointer;
+    }
+    .btn-primary { background:#2563eb; border-color:#1d4ed8; color:#fff; }
+    .grid { display:grid; gap:12px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+      width:100%; background:#0b1220; color:#e5e7eb; border:1px solid #374151; border-radius:8px; padding:8px 10px;
+    }
+    label { font-size: 0.9rem; color:#9ca3af; }
+    .muted { color:#9ca3af; font-size:0.9rem; }
+    .table-wrap { overflow:auto; max-height: 420px; }
+    .badge { padding:2px 8px; border-radius:999px; font-size:.8rem; border:1px solid #334155; }
+    .ok { background:#065f46; border-color:#064e3b; color:#ecfdf5; }
+    .no { background:#7f1d1d; border-color:#7f1d1d; color:#fee2e2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="toolbar" style="margin-bottom: 12px;">
+      <button id="btn-logout" class="btn">ออกจากระบบ</button>
+    </div>
+    <h1>แผงควบคุมแอดมิน</h1>
+
+    <!-- ธนาคาร -->
+    <div class="card">
+      <h2>ธนาคาร</h2>
+      <p class="muted">ปรับ MRR เพื่อนำไปใช้อ้างอิงโปรที่เป็นฐาน MRR</p>
+      <div class="table-wrap">
+        <table id="banks-table">
+          <thead>
+            <tr>
+              <th>ย่อ</th>
+              <th>ชื่อ</th>
+              <th>MRR</th>
+              <th>มีผลตั้งแต่</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4" class="muted">กำลังโหลด…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px; text-align:right;">
+        <button id="btn-save-mrr" class="btn btn-primary">บันทึก MRR</button>
+      </div>
+    </div>
+
+    <!-- โปรโมชัน -->
+    <div class="card">
+      <h2>โปรโมชัน (active)</h2>
+      <p class="muted">เพิ่ม/แก้ไข/ลบ โปร เพื่อใช้ในการคำนวณหน้าใช้งาน</p>
+
+      <!-- ฟอร์มเพิ่ม/แก้ไขโปร -->
+      <div class="grid grid-3" style="margin: 10px 0 16px;">
+        <input type="hidden" id="promo_id" />
+        <div>
+          <label for="promo_bank_id">Bank ID</label>
+          <input type="number" id="promo_bank_id" placeholder="เช่น 1" />
+        </div>
+        <div>
+          <label for="promo_product_type">Product</label>
+          <select id="promo_product_type">
+            <option value="">— ไม่ระบุ —</option>
+            <option value="MORTGAGE">MORTGAGE</option>
+            <option value="REFINANCE">REFINANCE</option>
+            <option value="PERSONAL">PERSONAL</option>
+            <option value="SME">SME</option>
+          </select>
+        </div>
+        <div>
+          <label for="promo_title">ชื่อโปร</label>
+          <input type="text" id="promo_title" placeholder="เช่น โปรดอกพิเศษ 3.99%" />
+        </div>
+
+        <div class="grid-2" style="grid-column: 1 / -1; display:grid; gap:12px;">
+          <div>
+            <label for="promo_desc">รายละเอียด</label>
+            <textarea id="promo_desc" rows="2" placeholder="เงื่อนไขเพิ่มเติม"></textarea>
+          </div>
+          <div>
+            <label>ฐานอัตราดอกเบี้ย</label><br/>
+            <label><input type="radio" name="promo_base" value="fixed" checked /> fixed</label>
+            &nbsp;&nbsp;
+            <label><input type="radio" name="promo_base" value="mrr" /> MRR (ใช้ค่าด้านล่างเป็น spread)</label>
+
+            <div class="grid grid-3" style="margin-top:8px;">
+              <div>
+                <label for="promo_year1">ปี 1 (อัตรา/สเปรด)</label>
+                <input type="number" id="promo_year1" step="0.01" placeholder="เช่น 3.99 หรือ -1.00" />
+              </div>
+              <div>
+                <label for="promo_year2">ปี 2 (อัตรา/สเปรด)</label>
+                <input type="number" id="promo_year2" step="0.01" />
+              </div>
+              <div>
+                <label for="promo_year3">ปี 3 (อัตรา/สเปรด)</label>
+                <input type="number" id="promo_year3" step="0.01" />
+              </div>
+            </div>
+
+            <div style="margin-top:8px;">
+              <label><input type="checkbox" id="promo_active" checked /> เปิดใช้งาน (active)</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="grid-column: 1 / -1; text-align:right;">
+          <button id="btn-add-promotion" class="btn">เพิ่มโปร</button>
+          <button id="btn-update-promotion" class="btn btn-primary">บันทึกการแก้ไข</button>
+        </div>
+      </div>
+
+      <!-- ตารางโปรทั้งหมดสำหรับแอดมิน -->
+      <div class="table-wrap">
+        <table id="promotions-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Bank</th>
+              <th>Product</th>
+              <th>Title</th>
+              <th>Base</th>
+              <th>Year1</th>
+              <th>Year2</th>
+              <th>Year3</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- โหลดสคริปต์แบบ ESM: ห้าม include ซ้ำ -->
+  <script type="module">
+    import '../js/supabase-init.js';              // สร้าง window.supabase
+    import '../js/auth-manager.js';               // จัดการ session/role
+    import { AdminManager } from '../js/admin-manager-supabase.js';
+
+    // ป้องกันโหลดไฟล์ซ้ำ ๆ จาก caching ของบาง host โดยเฉพาะ
+    if (!window.__ADMIN_BOOTSTRAPPED__) {
+      window.__ADMIN_BOOTSTRAPPED__ = true;
+
+      // บังคับสิทธิ์ admin (ถ้าไฟล์ auth-manager ของคุณมี helper อื่น ให้เรียกตามนั้น)
+      if (window.AuthManager?.requireRole) {
+        await window.AuthManager.requireRole('admin');
+      } else if (window.AuthManager?.waitUntilReady) {
+        await window.AuthManager.waitUntilReady();
+        const role = await window.AuthManager.getRole?.();
+        if (role !== 'admin') {
+          alert('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
+          location.href = '/';
+        }
+      }
+
+      const app = new AdminManager();
+      await app.init();
+
+      // logout
+      const btnLogout = document.getElementById('btn-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+          try { await window.AuthManager?.logout(); } finally { location.href = '/'; }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
