@@ -158,7 +158,28 @@
 
 <script type="module">
   // ++ เปลี่ยนมาใช้ default export ตรง ๆ และกัน cache ด้วยเวอร์ชันใหม่
-  import AdminManager from '../js/admin-manager-supabase.js?v=20250901-7';
+<script type="module">
+  // กันแคชด้วยเวอร์ชันใหม่
+  import AdminDefault, * as AdminNS
+    from '../js/admin-manager-supabase.js?v=20250901-8';
+
+  // Fallback: รับได้ทั้ง default หรือ named
+  const AdminManager =
+    (typeof AdminDefault === 'function') ? AdminDefault :
+    (typeof AdminNS.AdminManager === 'function') ? AdminNS.AdminManager :
+    null;
+
+  if (!AdminManager) {
+    console.error('AdminManager export not found.', { AdminDefault, AdminNS });
+    throw new Error('AdminManager export mismatch');
+  }
+
+  const am = new AdminManager();
+  window.am = am; // optional: ไว้ debug ใน Console
+
+  // …โค้ดเดิมของคุณ (ฟังก์ชัน $, $$, fmt, loadBanks(), loadPromotions(), listeners ฯลฯ)…
+</script>
+
 
   // กันพลาด: ถ้า default ไม่ใช่คลาส ให้ log ออกมาเพื่อเห็นว่า export อะไรมา
   if (typeof AdminManager !== 'function') {
