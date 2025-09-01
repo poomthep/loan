@@ -1,17 +1,19 @@
 // /js/admin-manager-supabase.js
-// เวอร์ชันล่าสุด: รองรับทั้ง named และ default export + รวม helper ครบ
-// ใช้ร่วมกับ data-manager.js ที่ export ฟังก์ชันเหล่านี้ไว้แล้ว
+// เวอร์ชันสะอาด: รองรับทั้ง named และ default export
+// ใช้ร่วมกับ data-manager.js ที่มีฟังก์ชันต่อไปนี้แล้ว
+import * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-6';
+const AdminManager = AdminNS.AdminManager || AdminNS.default;
+const am = new AdminManager();
 
 import {
   // banks
-  getBanks,
-  updateBankMRR,
-
+  getBanks as dmGetBanks,
+  updateBankMRR as dmUpdateBankMRR,
   // promotions
-  listPromotions,
-  createPromotion,
-  updatePromotion,
-  deletePromotion,
+  listPromotions as dmListPromotions,
+  createPromotion as dmCreatePromotion,
+  updatePromotion as dmUpdatePromotion,
+  deletePromotion as dmDeletePromotion,
 } from './data-manager.js';
 
 /**
@@ -19,10 +21,10 @@ import {
  * - รวมเมธอดใช้งานทั่วไปสำหรับแอดมิน
  * - upsertPromotion จะเลือก create/update ให้อัตโนมัติ
  */
-class AdminManager {
+export class AdminManager {
   // ---------- Banks ----------
   async getBanks() {
-    return await getBanks();
+    return dmGetBanks();
   }
 
   /**
@@ -32,54 +34,42 @@ class AdminManager {
    * @param {string|null} effectiveDate 'YYYY-MM-DD' หรือ null
    */
   async updateBankMRR(bankId, mrr, effectiveDate = null) {
-    return await updateBankMRR(bankId, mrr, effectiveDate);
+    return dmUpdateBankMRR(bankId, mrr, effectiveDate);
   }
 
   // ---------- Promotions ----------
   async listPromotions() {
-    return await listPromotions();
+    return dmListPromotions();
   }
 
   /**
    * upsertPromotion: ถ้ามี id => update, ถ้าไม่มี => create
-   * @param {{
-   *  id?: number,
-   *  bank_id: number,
-   *  product_type: 'MORTGAGE'|'REFINANCE'|'PERSONAL'|'SME',
-   *  title: string,
-   *  description?: string|null,
-   *  base?: 'MRR'|'MLR'|'MOR'|null,
-   *  year1?: number|null,
-   *  year2?: number|null,
-   *  year3?: number|null,
-   *  active?: boolean
-   * }} payload
+   * (เมธอดนี้เรียกใช้ฟังก์ชันระดับบนชื่อเดียวกันอีกที)
    */
   async upsertPromotion(payload) {
-    if (payload && payload.id) {
-      return await updatePromotion(payload.id, payload);
-    }
-    return await createPromotion(payload);
+    return upsertPromotion(payload);
   }
 
   async deletePromotion(id) {
-    return await deletePromotion(id);
+    return dmDeletePromotion(id);
   }
 }
 
-// export ได้ทั้ง named + default เพื่อกันพลาดเวลา import
-export { AdminManager };
-export default AdminManager;
+/** ฟังก์ชันระดับบนสำหรับ import ตรง ๆ: { upsertPromotion } */
+export async function upsertPromotion(payload) {
+  if (payload?.id) return dmUpdatePromotion(payload.id, payload);
+  return dmCreatePromotion(payload);
+}
 
-// re-export helper เผื่ออยากเรียกโดยตรง
+// re-export helper เผื่ออยากเรียกโดยตรงจากโมดูลนี้
 export {
-	AdminManager,
-	getBanks,
-	updateBankMRR,
-	listPromotions,
-	createPromotion,
-	updatePromotion,
-	deletePromotion,
+  dmGetBanks as getBanks,
+  dmUpdateBankMRR as updateBankMRR,
+  dmListPromotions as listPromotions,
+  dmCreatePromotion as createPromotion,
+  dmUpdatePromotion as updatePromotion,
+  dmDeletePromotion as deletePromotion,
 };
-export { AdminManager, getBanks, updateBankMRR, listPromotions, upsertPromotion, deletePromotion };
+
+// ให้ default เป็นคลาส AdminManager (ใครจะ import default ก็ได้)
 export default AdminManager;

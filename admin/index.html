@@ -156,8 +156,8 @@
 
   <!-- โมดูลหลัก (กัน cache ด้วย ?v=) + fallback รองรับ named/default export -->
   <script type="module">
-    import AdminDefault, * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-3';
-    const AdminManager = AdminNS.AdminManager || AdminDefault;
+	import * as AdminNS from '../js/admin-manager-supabase.js?v=20250901-5';  // เปลี่ยนเลข v เพื่อเคลียร์ cache
+	const AdminManager = AdminNS.AdminManager || AdminNS.default;
     const am = new AdminManager();
 
     // --------- Utilities ---------
