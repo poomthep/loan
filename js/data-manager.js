@@ -151,6 +151,17 @@ export async function updatePromotion(id, payload) {
   return assertNoError({ data, error }, 'อัปเดตโปรโมชันไม่สำเร็จ');
 }
 
+// --- เพิ่ม: upsertPromotion (เพื่อความเข้ากันได้กับหน้าแอดมินเดิม) ---
+export async function upsertPromotion(payload) {
+  // ถ้ามี id => อัปเดต, ถ้าไม่มี => สร้างใหม่
+  if (payload && payload.id != null) {
+    const { id, ...rest } = payload;
+    return updatePromotion(id, rest);
+  }
+  return createPromotion(payload);
+}
+
+
 /**
  * ลบโปรโมชันตาม id
  */
@@ -249,6 +260,7 @@ const DataManager = {
   createPromotion,
   updatePromotion,
   deletePromotion,
+  upsertPromotion,        // <--- เพิ่มบรรทัดนี้
 
   // promotions (app)
   getActivePromotions,
@@ -259,3 +271,5 @@ const DataManager = {
 };
 
 export default DataManager;
+
+
