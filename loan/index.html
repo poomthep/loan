@@ -24,5 +24,60 @@
   <script src="/js/supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-init.js"></script>
+  
+  <script src="/js/data-manager.js"></script>
+<script>
+  (async () => {
+    // บังคับให้ต้องล็อกอินก่อน
+    const sess = await getSession();
+    if (!sess) { location.assign('/'); return; }
+
+    // โหลดโปรฯ active ทั้งหมด
+    const promos = await DM.listPromotions();
+    // ทำ bank map ไว้แปะชื่อ
+    const banks = await DM.getBanks();
+    const bankMap = Object.fromEntries(banks.map(b => [b.id, b.short_name || b.name]));
+
+    const root = document.getElementById('loan-content');
+    if (!promos.length) {
+      root.innerHTML = '<div class="card">ยังไม่มีโปรโมชัน active</div>';
+      return;
+    }
+
+    // วาดตารางโปรฯ แบบง่าย ๆ
+    let html = `
+      <div class="card">
+        <h2>โปรโมชันที่ใช้งานอยู่</h2>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Bank</th><th>Product</th>
+                <th>Title</th><th>Base</th><th>Y1</th><th>Y2</th><th>Y3</th><th>Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${promos.map(p => `
+                <tr>
+                  <td>${p.id}</td>
+                  <td>${bankMap[p.bank_id] || p.bank_id}</td>
+                  <td>${p.product_type || '-'}</td>
+                  <td>${p.title || '-'}</td>
+                  <td>${p.base || '-'}</td>
+                  <td>${p.y1 ?? ''}</td>
+                  <td>${p.y2 ?? ''}</td>
+                  <td>${p.y3 ?? ''}</td>
+                  <td>${p.active ? '✅' : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    root.insertAdjacentHTML('beforeend', html);
+  })();
+</script>
+
+  
 </body>
 </html>
