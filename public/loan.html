@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Calculator</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+  <h1>เครื่องคิดเลขสินเชื่อบ้าน</h1>
+
+  <form id="loanForm">
+    <label>จำนวนเงินกู้:</label>
+    <input id="amount" type="number" placeholder="กรอกจำนวนเงิน" required>
+
+    <label>อัตราดอกเบี้ย (%):</label>
+    <input id="rate" type="number" step="0.01" placeholder="กรอกอัตราดอกเบี้ย" required>
+
+    <label>ระยะเวลา (ปี):</label>
+    <input id="years" type="number" placeholder="กรอกจำนวนปี" required>
+
+    <button type="submit" class="btn-primary">คำนวณ</button>
+  </form>
+
+  <div id="result"></div>
+
+  <button onclick="logout()" class="btn-danger">ออกจากระบบ</button>
+
+  <footer>© Loan App</footer>
+
+  <script type="module" src="/src/js/index-manager.js"></script>
+  <script type="module">
+    import { calculateLoan } from "/src/js/loan-calculator.js";
+    import { calculateLoanWithPromo } from "/src/js/loan-calculator-supabase.js";
+
+    document.getElementById("loanForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById("amount").value);
+      const rate = parseFloat(document.getElementById("rate").value);
+      const years = parseInt(document.getElementById("years").value);
+
+      const result = calculateLoan(amount, rate, years);
+      document.getElementById("result").textContent = "ค่างวดต่อเดือน: " + result;
+    });
+  </script>
+</body>
+</html>
