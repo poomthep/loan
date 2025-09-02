@@ -1,55 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>วิเคราะห์สินเชื่อ | Loan App</title>
-<link rel="stylesheet" href="/css/app.css"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Calculator</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="/config/supabase-config.js"></script>
+  <script src="/config/supabase-init.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <div class="bar">
-      <h1 style="flex:1">วิเคราะห์สินเชื่อ</h1>
-      <button id="btn-logout" class="btn">ออกจากระบบ</button>
-    </div>
+  <h1>เครื่องคิดเลขสินเชื่อบ้าน</h1>
 
-    <div class="card">
-      <h2>ข้อมูลคำนวณ</h2>
-      <div class="grid grid-3" style="margin-bottom:10px">
-        <div>
-          <label class="muted">วงเงินกู้ (บาท)</label>
-          <input id="loan-amount" type="number" step="100000" value="3000000" />
-        </div>
-        <div>
-          <label class="muted">ระยะเวลากู้ (ปี)</label>
-          <input id="loan-term" type="number" value="30" min="1" max="40" />
-        </div>
-        <div>
-          <label class="muted">ประเภทสินเชื่อ</label>
-          <select id="product-type">
-            <option value="MORTGAGE">สินเชื่อบ้าน</option>
-            <option value="REFINANCE">รีไฟแนนซ์</option>
-          </select>
-        </div>
-      </div>
-      <div class="center" style="margin-top:10px">
-        <button id="btn-calculate" class="btn btn-primary">คำนวณ</button>
-      </div>
-    </div>
+  <form id="loanForm">
+    <label>จำนวนเงินกู้:</label>
+    <input id="amount" type="number" placeholder="กรอกจำนวนเงิน" required>
 
-    <div class="card">
-      <h2>ผลการเปรียบเทียบ</h2>
-      <div id="results-container">
-        <p class="muted center">กรุณากรอกข้อมูลและกด "คำนวณ" เพื่อดูผล</p>
-      </div>
-    </div>
-    
-    <footer>© Loan App</footer>
-  </div>
+    <label>อัตราดอกเบี้ย (%):</label>
+    <input id="rate" type="number" step="0.01" placeholder="กรอกอัตราดอกเบี้ย" required>
 
-  <script type="module" src="/js/loan-manager.js"></script>
+    <label>ระยะเวลา (ปี):</label>
+    <input id="years" type="number" placeholder="กรอกจำนวนปี" required>
+
+    <button type="submit" class="btn-primary">คำนวณ</button>
+  </form>
+
+  <div id="result"></div>
+
+  <footer>
+    © Loan App
+  </footer>
+
+  <script src="/js/loan-calculator.js"></script>
+  <script src="/js/loan-calculator-supabase.js"></script>
 </body>
 </html>
