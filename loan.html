@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loan Calculator</title>
   <link rel="stylesheet" href="/app.css">
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
-  <script src="/config/supabase-config.js"></script>
-  <script src="/config/supabase-init.js"></script>
 </head>
 <body>
   <h1>เครื่องคิดเลขสินเชื่อบ้าน</h1>
@@ -27,11 +24,21 @@
 
   <div id="result"></div>
 
-  <footer>
-    © Loan App
-  </footer>
+  <footer>© Loan App</footer>
 
-  <script src="/js/loan-calculator.js"></script>
-  <script src="/js/loan-calculator-supabase.js"></script>
+  <script type="module">
+    import { calculateLoan } from "/src/js/loan-calculator.js";
+    import { calculateLoanWithPromo } from "/src/js/loan-calculator-supabase.js";
+
+    document.getElementById("loanForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById("amount").value);
+      const rate = parseFloat(document.getElementById("rate").value);
+      const years = parseInt(document.getElementById("years").value);
+
+      const result = calculateLoan(amount, rate, years);
+      document.getElementById("result").textContent = "ค่างวดต่อเดือน: " + result;
+    });
+  </script>
 </body>
 </html>

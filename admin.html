@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Console</title>
   <link rel="stylesheet" href="/app.css">
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
-  <script src="/config/supabase-config.js"></script>
-  <script src="/config/supabase-init.js"></script>
-  <script src="/js/auth-manager.js"></script>
 </head>
 <body>
   <h1>แผงควบคุมผู้ดูแลระบบ</h1>
@@ -18,11 +14,8 @@
     <div id="admin-content"></div>
   </section>
 
-  <footer>
-    © Loan App Admin
-  </footer>
+  <footer>© Loan App Admin</footer>
 
-  <script src="/js/admin-manager.js"></script>
-  <script src="/js/data-manager.js"></script>
+  <script type="module" src="/src/js/auth-manager.js"></script>
 </body>
 </html>
