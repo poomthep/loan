@@ -13,6 +13,7 @@
   <div class="wrap">
     <div class="bar">
       <h1 style="flex:1">แผงควบคุมแอดมิน</h1>
+      <a href="/loan.html" class="btn">วิเคราะห์สินเชื่อ</a>
       <button id="btn-logout" class="btn">ออกจากระบบ</button>
     </div>
 
@@ -90,14 +91,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-init.js"></script>
   <script src="/js/data-manager.js"></script>
-  <script src="/js/auth-manager.js"></script> <script src="/js/admin-manager.js"></script>
-  <script>
-    // ตรวจสอบเซสชันก่อนเรียก initAdmin
-    AppAuth.ensureLogin().then(isLoggedIn => {
-      if (isLoggedIn) {
-        AdminUI.initAdmin();
-      }
-    });
-  </script>
+  <script src="/js/admin-manager.js"></script>
+  <script>AdminUI.initAdmin();</script>
 </body>
 </html>
