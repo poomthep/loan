@@ -25,8 +25,11 @@
 
   <div id="result"></div>
 
+  <button onclick="logout()" class="btn-danger">ออกจากระบบ</button>
+
   <footer>© Loan App</footer>
 
+  <script type="module" src="/src/js/index-manager.js"></script>
   <script type="module">
     import { calculateLoan } from "/src/js/loan-calculator.js";
     import { calculateLoanWithPromo } from "/src/js/loan-calculator-supabase.js";
