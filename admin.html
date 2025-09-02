@@ -13,7 +13,6 @@
   <div class="wrap">
     <div class="bar">
       <h1 style="flex:1">แผงควบคุมแอดมิน</h1>
-      <a href="/loan.html" class="btn">วิเคราะห์สินเชื่อ</a>
       <button id="btn-logout" class="btn">ออกจากระบบ</button>
     </div>
 
@@ -88,10 +87,17 @@
   </div>
 
   <script src="/js/supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-init.js"></script>
-  <script src="/js/data-manager.js"></script>
-  <script src="/js/admin-manager.js"></script>
-  <script>AdminUI.initAdmin();</script>
+  <script type="module">
+    import { ensureLogin, logout } from './js/auth-manager.js';
+    import { initAdmin } from './js/admin-manager.js';
+
+    ensureLogin().then(isLoggedIn => {
+      if (isLoggedIn) {
+        initAdmin();
+      }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', logout);
+  </script>
 </body>
 </html>

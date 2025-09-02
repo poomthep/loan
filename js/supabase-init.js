@@ -1,23 +1,17 @@
-// Require: window.AppConfig + CDN <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-(function () {
-  if (!window.AppConfig) { console.error("AppConfig missing"); return; }
-  if (!window.supabase || !supabase.createClient) {
-    console.error("Supabase UMD not found. Load CDN before supabase-init.js");
-    return;
-  }
-  const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.AppConfig;
-  window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-  });
+import { AppConfig } from './supabase-config.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-  window.getSession = async function () {
-    const { data, error } = await sb.auth.getSession();
-    if (error) throw error;
-    return data.session || null;
-  };
+export const sb = createClient(AppConfig.SUPABASE_URL, AppConfig.SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
 
-  window.logout = async function () {
-    try { await sb.auth.signOut(); }
-    finally { window.location.assign(window.AppConfig.REDIRECTS.afterLogout); }
-  };
-})();
+export async function getSession() {
+  const { data, error } = await sb.auth.getSession();
+  if (error) throw error;
+  return data.session || null;
+}
+
+export async function logout() {
+  try { await sb.auth.signOut(); }
+  finally { window.location.assign(AppConfig.REDIRECTS.afterLogout); }
+}

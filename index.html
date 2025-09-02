@@ -34,42 +34,39 @@
   </div>
 
   <script src="/js/supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-init.js"></script>
-  <script src="/js/data-manager.js"></script>
-  <script src="/js/auth-manager.js"></script>
-  <script>
-    const $ = (s, r=document)=>r.querySelector(s);
-    const msg = (t)=>{ document.getElementById('msg').textContent = t||''; };
+  <script type="module">
+    import { loginWithPassword, redirectAfterLogin } from './js/auth-manager.js';
+    import { getSession } from './js/supabase-init.js';
+    
+    const $ = (s, r = document) => r.querySelector(s);
+    const msg = (t) => { document.getElementById('msg').textContent = t || ''; };
 
-    // เพิ่มฟังก์ชันนี้เพื่อตรวจสอบและเปลี่ยนเส้นทาง
     async function checkSessionAndRedirect() {
       const session = await getSession();
       if (session) {
         msg("มีเซสชันอยู่, กำลังเปลี่ยนเส้นทาง...");
-        await AppAuth.redirectAfterLogin();
+        await redirectAfterLogin();
       }
     }
 
-    document.getElementById('btn-login').addEventListener('click', async ()=>{
+    document.getElementById('btn-login').addEventListener('click', async () => {
       msg('กำลังเข้าสู่ระบบ...');
       const email = $('#email').value.trim();
       const password = $('#password').value;
       try {
-        await AppAuth.loginWithPassword(email, password);
-        await AppAuth.redirectAfterLogin();
-      } catch(e){
+        await loginWithPassword(email, password);
+        await redirectAfterLogin();
+      } catch (e) {
         console.error(e);
-        msg('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message||e));
+        msg('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || e));
       }
     });
 
-    document.getElementById('btn-check').addEventListener('click', async ()=>{
+    document.getElementById('btn-check').addEventListener('click', async () => {
       const sess = await getSession();
       msg(sess ? 'มีเซสชัน' : 'ไม่มีเซสชัน');
     });
 
-    // เรียกใช้งานเมื่อหน้าเว็บโหลด
     checkSessionAndRedirect();
   </script>
 </body>

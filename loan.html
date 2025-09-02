@@ -13,17 +13,53 @@
   <div class="wrap">
     <div class="bar">
       <h1 style="flex:1">วิเคราะห์สินเชื่อ</h1>
-      <a href="/admin.html" class="btn">แผงควบคุมแอดมิน</a>
-      <button class="btn" onclick="logout()">ออกจากระบบ</button>
+      <button id="btn-logout" class="btn">ออกจากระบบ</button>
     </div>
+
     <div class="card">
-      <p>หน้านี้เป็น placeholder สำหรับคำนวณ/เปรียบเทียบสินเชื่อในอนาคต</p>
-      <p class="muted">ผู้ใช้ทั่วไปและผู้ดูแลระบบเข้าถึงได้หลังล็อกอิน</p>
+      <h2>ข้อมูลคำนวณ</h2>
+      <div class="grid grid-3" style="margin-bottom:10px">
+        <div>
+          <label class="muted">วงเงินกู้ (บาท)</label>
+          <input id="loan-amount" type="number" step="100000" value="3000000" />
+        </div>
+        <div>
+          <label class="muted">ระยะเวลากู้ (ปี)</label>
+          <input id="loan-term" type="number" value="30" min="1" max="40" />
+        </div>
+        <div>
+          <label class="muted">ประเภทสินเชื่อ</label>
+          <select id="product-type">
+            <option value="MORTGAGE">สินเชื่อบ้าน</option>
+            <option value="REFINANCE">รีไฟแนนซ์</option>
+          </select>
+        </div>
+      </div>
+      <div class="center" style="margin-top:10px">
+        <button id="btn-calculate" class="btn btn-primary">คำนวณ</button>
+      </div>
     </div>
+
+    <div class="card">
+      <h2>ผลการเปรียบเทียบ</h2>
+      <div id="results-container">
+        <p class="muted center">กรุณากรอกข้อมูลและกด "คำนวณ" เพื่อดูผล</p>
+      </div>
+    </div>
+    
     <footer>© Loan App</footer>
   </div>
+
   <script src="/js/supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-init.js"></script>
+  <script type="module">
+    import { ensureLogin, logout } from './js/auth-manager.js';
+    import { loanCalculator } from './js/loan-calculator.js';
+
+    ensureLogin();
+
+    document.getElementById('btn-logout').addEventListener('click', logout);
+
+    loanCalculator.init();
+  </script>
 </body>
 </html>
