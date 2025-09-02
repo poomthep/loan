@@ -1,13 +1,13 @@
 // auth-manager.js
 async function checkAdminAccess() {
-  const { data: { user } } = await __supabase__.auth.getUser();
+  const { data: { user } } = await window.__supabase__.auth.getUser();
 
   if (!user) {
     window.location.href = "/index.html";
     return;
   }
 
-  const { data, error } = await __supabase__
+  const { data, error } = await window.__supabase__
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -19,7 +19,6 @@ async function checkAdminAccess() {
   }
 }
 
-// เรียกใช้ทันทีเมื่อโหลดหน้า admin
 if (window.location.pathname.includes("admin.html")) {
   checkAdminAccess();
 }

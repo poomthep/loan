@@ -1,33 +1,27 @@
-import { loginWithPassword, redirectAfterLogin } from './auth-manager.js';
-import { getSession } from './supabase-init.js';
-
-const $ = (s, r = document) => r.querySelector(s);
-const msg = (t) => { document.getElementById('msg').textContent = t || ''; };
-
-async function checkSessionAndRedirect() {
-  const session = await getSession();
-  if (session) {
-    msg("มีเซสชันอยู่, กำลังเปลี่ยนเส้นทาง...");
-    await redirectAfterLogin();
+// index-manager.js
+async function checkSession() {
+  const { data: { user } } = await window.__supabase__.auth.getUser();
+  if (user) {
+    console.log("Logged in:", user.email);
+  } else {
+    console.log("ยังไม่ได้เข้าสู่ระบบ");
   }
 }
 
-document.getElementById('btn-login').addEventListener('click', async () => {
-  msg('กำลังเข้าสู่ระบบ...');
-  const email = $('#email').value.trim();
-  const password = $('#password').value;
-  try {
-    await loginWithPassword(email, password);
-    await redirectAfterLogin();
-  } catch (e) {
-    console.error(e);
-    msg('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message || e));
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { data, error } = await window.__supabase__.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("เข้าสู่ระบบไม่สำเร็จ: " + error.message);
+  } else {
+    alert("เข้าสู่ระบบสำเร็จ");
+    window.location.href = "/loan.html";
   }
 });
-
-document.getElementById('btn-check').addEventListener('click', async () => {
-  const sess = await getSession();
-  msg(sess ? 'มีเซสชัน' : 'ไม่มีเซสชัน');
-});
-
-checkSessionAndRedirect();

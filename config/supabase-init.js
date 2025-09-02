@@ -1,17 +1,9 @@
-import { AppConfig } from './supabase-config.js';
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// supabase-init.js
+// ใช้ global Supabase จาก CDN และ config
+const supabase = window.supabase.createClient(
+  window.__SUPABASE_URL__,
+  window.__SUPABASE_ANON_KEY__
+);
+window.__supabase__ = supabase;
 
-export const sb = createClient(AppConfig.SUPABASE_URL, AppConfig.SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-});
-
-export async function getSession() {
-  const { data, error } = await sb.auth.getSession();
-  if (error) throw error;
-  return data.session || null;
-}
-
-export async function logout() {
-  try { await sb.auth.signOut(); }
-  finally { window.location.assign(AppConfig.REDIRECTS.afterLogout); }
-}
+console.log("Supabase initialized:", window.__SUPABASE_URL__);
