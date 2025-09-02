@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loan App — Login</title>
+<link rel="stylesheet" href="/css/app.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="wrap" style="max-width:620px">
+    <h1>Loan App</h1>
+    <div class="card">
+      <h2>เข้าสู่ระบบ</h2>
+      <div class="grid grid-1">
+        <div>
+          <label class="muted">อีเมล</label>
+          <input id="email" placeholder="you@email.com"/>
+        </div>
+        <div>
+          <label class="muted">รหัสผ่าน</label>
+          <input id="password" type="password" placeholder="••••••••"/>
+        </div>
+        <div class="center" style="gap:10px;margin-top:10px">
+          <button id="btn-login" class="btn btn-primary">เข้าสู่ระบบ</button>
+          <button id="btn-check" class="btn">ตรวจสอบเซสชัน</button>
+        </div>
+        <div id="msg" class="muted"></div>
+      </div>
+    </div>
+    <footer>© Loan App</footer>
+  </div>
+
+  <!-- Load order: config -> supabase CDN -> init -> data-manager -> auth-manager -> inline -->
+  <script src="/js/supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/data-manager.js"></script>
+  <script src="/js/auth-manager.js"></script>
+  <script>
+    const $ = (s, r=document)=>r.querySelector(s);
+    const msg = (t)=>{ document.getElementById('msg').textContent = t||''; };
+
+    document.getElementById('btn-login').addEventListener('click', async ()=>{
+      msg('กำลังเข้าสู่ระบบ...');
+      const email = $('#email').value.trim();
+      const password = $('#password').value;
+      try {
+        await AppAuth.loginWithPassword(email, password);
+        await AppAuth.redirectAfterLogin();
+      } catch(e){
+        console.error(e);
+        msg('เข้าสู่ระบบไม่สำเร็จ: ' + (e.message||e));
+      }
+    });
+
+    document.getElementById('btn-check').addEventListener('click', async ()=>{
+      const sess = await getSession();
+      msg(sess ? 'มีเซสชัน' : 'ไม่มีเซสชัน');
+    });
+  </script>
+</body>
+</html>
