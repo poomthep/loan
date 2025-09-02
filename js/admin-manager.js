@@ -1,22 +1,21 @@
-// Simple Admin UI helpers built on DM (no modules)
-(function(){
-  if (!window.DM) { console.error("DM not loaded"); return; }
+import { ensureLogin } from './auth-manager.js';
+import { getMyRole, getBanks, updateBankMRR, listPromotions, upsertPromotion, deletePromotion } from './data-manager.js';
 
-  async function ensureAdmin() {
-    const role = await DM.getMyRole();
-    if (role !== "admin") {
-      alert("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
-      window.location.assign("/");
-      return false;
-    }
-    return true;
+export async function initAdmin() {
+  const role = await getMyRole();
+  if (role !== "admin") {
+    alert("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
+    window.location.assign("/");
+    return;
   }
 
+  let bankOptionsCache = [];
+  
   async function loadBanksUI() {
     const tbody = document.getElementById("banks-tbody");
     tbody.innerHTML = '<tr><td colspan="5" class="muted">กำลังโหลด…</td></tr>';
     try {
-      const banks = await DM.getBanks();
+      const banks = await getBanks();
       if (!banks.length) { tbody.innerHTML = '<tr><td colspan="5" class="muted">ไม่มีข้อมูล</td></tr>'; return; }
       tbody.innerHTML = "";
       for (const b of banks) {
@@ -38,7 +37,7 @@
           const eff = row.querySelector('input[data-field="date"]').value || null;
           btn.disabled = true;
           try {
-            await DM.updateBankMRR(id, mrr, eff);
+            await updateBankMRR(id, mrr, eff);
             btn.textContent = "✔︎ บันทึกแล้ว";
             setTimeout(()=>btn.textContent="บันทึก", 1200);
           } catch(e) {
@@ -53,7 +52,6 @@
     }
   }
 
-  let bankOptionsCache = [];
   function rebuildBankSelect() {
     const sel = document.getElementById("promo-bank");
     sel.innerHTML = "";
@@ -69,7 +67,7 @@
     const tbody = document.getElementById("promos-tbody");
     tbody.innerHTML = '<tr><td colspan="10" class="muted">กำลังโหลด…</td></tr>';
     try {
-      const promos = await DM.listPromotions();
+      const promos = await listPromotions();
       if (!promos.length) { tbody.innerHTML = '<tr><td colspan="10" class="muted">ไม่มีโปร</td></tr>'; return; }
       const bankMap = Object.fromEntries(bankOptionsCache.map(b => [b.id, b.short_name || b.name]));
       tbody.innerHTML = "";
@@ -116,7 +114,7 @@
           const id = Number(btn.dataset.id);
           if (!confirm(`ลบโปรโมชัน #${id} ?`)) return;
           btn.disabled = true;
-          try { await DM.deletePromotion(id); await loadPromotions(); }
+          try { await deletePromotion(id); await loadPromotions(); }
           catch(e){ console.error(e); alert("ลบไม่สำเร็จ"); }
           finally { btn.disabled = false; }
         });
@@ -126,43 +124,48 @@
     }
   }
 
-  async function initAdmin() {
-    if (!(await ensureAdmin())) return;
-    try { bankOptionsCache = await DM.getBanks(); rebuildBankSelect(); } catch(e){ console.error(e); }
-    await loadBanksUI();
-    await loadPromotions();
+  await ensureLogin();
 
-    document.getElementById("promo-save").addEventListener("click", async ()=>{
-      const payload = {
-        id: document.getElementById("promo-save").dataset.editId ? Number(document.getElementById("promo-save").dataset.editId) : undefined,
-        bank_id: Number(document.getElementById("promo-bank").value),
-        product_type: document.getElementById("promo-product").value,
-        title: document.getElementById("promo-title").value.trim(),
-        base: document.getElementById("promo-base").value || null,
-        y1: document.getElementById("promo-y1").value ? Number(document.getElementById("promo-y1").value) : null,
-        y2: document.getElementById("promo-y2").value ? Number(document.getElementById("promo-y2").value) : null,
-        y3: document.getElementById("promo-y3").value ? Number(document.getElementById("promo-y3").value) : null,
-        active: document.getElementById("promo-active").checked
-      };
-      const btn = document.getElementById("promo-save");
-      btn.disabled = true;
-      try {
-        await DM.upsertPromotion(payload);
-        btn.removeAttribute("data-edit-id");
-        btn.textContent = "บันทึกโปร";
-        document.getElementById("promo-title").value = "";
-        document.getElementById("promo-base").value = "";
-        document.getElementById("promo-y1").value = "";
-        document.getElementById("promo-y2").value = "";
-        document.getElementById("promo-y3").value = "";
-        document.getElementById("promo-active").checked = true;
-        await loadPromotions();
-      } catch(e){ console.error(e); alert("บันทึกโปรไม่สำเร็จ"); }
-      finally { btn.disabled = false; }
-    });
-
-    document.getElementById("btn-logout").addEventListener("click", ()=> logout());
+  try { 
+    bankOptionsCache = await getBanks(); 
+    rebuildBankSelect(); 
+  } catch(e) { 
+    console.error(e); 
   }
+  
+  await loadBanksUI();
+  await loadPromotions();
 
-  window.AdminUI = { initAdmin };
-})();
+  document.getElementById("promo-save").addEventListener("click", async ()=>{
+    const payload = {
+      id: document.getElementById("promo-save").dataset.editId ? Number(document.getElementById("promo-save").dataset.editId) : undefined,
+      bank_id: Number(document.getElementById("promo-bank").value),
+      product_type: document.getElementById("promo-product").value,
+      title: document.getElementById("promo-title").value.trim(),
+      base: document.getElementById("promo-base").value || null,
+      y1: document.getElementById("promo-y1").value ? Number(document.getElementById("promo-y1").value) : null,
+      y2: document.getElementById("promo-y2").value ? Number(document.getElementById("promo-y2").value) : null,
+      y3: document.getElementById("promo-y3").value ? Number(document.getElementById("promo-y3").value) : null,
+      active: document.getElementById("promo-active").checked
+    };
+    const btn = document.getElementById("promo-save");
+    btn.disabled = true;
+    try {
+      await upsertPromotion(payload);
+      btn.removeAttribute("data-edit-id");
+      btn.textContent = "บันทึกโปร";
+      document.getElementById("promo-title").value = "";
+      document.getElementById("promo-base").value = "";
+      document.getElementById("promo-y1").value = "";
+      document.getElementById("promo-y2").value = "";
+      document.getElementById("promo-y3").value = "";
+      document.getElementById("promo-active").checked = true;
+      await loadPromotions();
+    } catch(e){ 
+      console.error(e); 
+      alert("บันทึกโปรไม่สำเร็จ"); 
+    } finally { 
+      btn.disabled = false; 
+    }
+  });
+}

@@ -50,16 +50,6 @@
     <footer>© Loan App</footer>
   </div>
 
-  <script src="/js/supabase-config.js"></script>
-  <script type="module">
-    import { ensureLogin, logout } from './js/auth-manager.js';
-    import { loanCalculator } from './js/loan-calculator.js';
-
-    ensureLogin();
-
-    document.getElementById('btn-logout').addEventListener('click', logout);
-
-    loanCalculator.init();
-  </script>
+  <script type="module" src="/js/loan-manager.js"></script>
 </body>
 </html>

@@ -86,18 +86,6 @@
     <footer>© Loan App</footer>
   </div>
 
-  <script src="/js/supabase-config.js"></script>
-  <script type="module">
-    import { ensureLogin, logout } from './js/auth-manager.js';
-    import { initAdmin } from './js/admin-manager.js';
-
-    ensureLogin().then(isLoggedIn => {
-      if (isLoggedIn) {
-        initAdmin();
-      }
-    });
-
-    document.getElementById('btn-logout').addEventListener('click', logout);
-  </script>
+  <script type="module" src="/js/admin-manager.js"></script>
 </body>
 </html>
