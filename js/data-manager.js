@@ -13,7 +13,6 @@ async function simpleSelect(table, fields, filters = []) {
   return data || [];
 }
 
-// ---- Profiles ----
 export async function getMyRole() {
   const session = await getSession();
   if (!session) return null;
@@ -23,7 +22,6 @@ export async function getMyRole() {
   return data?.role || null;
 }
 
-// ---- Banks ----
 export async function getBanks() {
   return await simpleSelect("banks", "id, short_name, name, mrr, mrr_effective_from", [["order", "id", true]]);
 }
@@ -36,7 +34,6 @@ export async function updateBankMRR(bankId, mrr, effectiveDate) {
   return true;
 }
 
-// ---- Promotions ----
 export async function listPromotions() {
   return await simpleSelect("promotions", "id, bank_id, product_type, title, base, y1, y2, y3, active", [["order", "id", true]]);
 }

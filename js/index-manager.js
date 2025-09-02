@@ -1,6 +1,5 @@
 import { loginWithPassword, redirectAfterLogin } from './auth-manager.js';
 import { getSession } from './supabase-init.js';
-import { AppConfig } from './supabase-config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const msg = (t) => { document.getElementById('msg').textContent = t || ''; };

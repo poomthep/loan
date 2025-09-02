@@ -6,14 +6,11 @@ ensureLogin();
 const $ = s => document.querySelector(s);
 
 const calc = new LoanCalculator();
-const form = $('#loan-form');
-const resultTbody = $('#offers');
-const connBtn = $('#btn-check-conn');
+const btnCalculate = $('#btn-calculate');
 const logoutBtn = $('#btn-logout');
 
 logoutBtn?.addEventListener('click', () => logout());
 
-const btnCalculate = $('#btn-calculate');
 btnCalculate?.addEventListener('click', async () => {
   const loanAmount = parseFloat($('#loan-amount').value);
   const loanTermYears = parseInt($('#loan-term').value);
