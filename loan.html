@@ -59,10 +59,10 @@
         tbody.innerHTML = "";
         compare.forEach(row => {
           const tr = document.createElement("tr");
-          if (row.bank === best.bank && row.promo === best.promo) { tr.classList.add("highlight"); }
-          tr.innerHTML = `<td>${row.bank}</td><td>${row.promo}</td><td>${row.year1Rate.toFixed(2)}%</td>
+          if (row.bank === best.bank && row.promo_name === best.promo_name) { tr.classList.add("highlight"); }
+          tr.innerHTML = `<td>${row.bank}</td><td>${row.promo_name}</td><td>${row.year1Rate.toFixed(2)}%</td>
             <td>${row.avg3yRate.toFixed(2)}%</td><td>${row.installmentYear1.toFixed(2)}</td>
-            <td>${row.installmentAvg3y.toFixed(2)}</td><td>${row.condition || "-"}</td>`;
+            <td>${row.installmentAvg3y.toFixed(2)}</td><td>${row.conditions || "-"}</td>`;
           tbody.appendChild(tr);
         });
       } catch (err) {
