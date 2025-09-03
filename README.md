@@ -1,3 +1,3 @@
-# Loan Project Full Real (Fix5)
+# Loan Project Fix6
 
-รวม loan.html, admin.html, index-manager.js, supabase-init.js ที่ถูกต้อง และ schema.sql พร้อม RPC
+ใช้ไฟล์ supabaseClient.js แทน supabase-init.js เพื่อลดปัญหา build บน Vercel.
