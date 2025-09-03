@@ -1,13 +1,10 @@
-# Loan App (Vite + Supabase)
+# Loan Project Full Real
 
-## Development
-npm install
-npm run dev
+## User
+เปิด loan.html กรอกข้อมูล ระบบจะคำนวณวงเงินกู้สูงสุด + ค่างวด และดึงโปรโมชั่นมาเปรียบเทียบ
 
-## Build
-npm run build
+## Admin
+เปิด admin.html เพิ่มและดูโปรโมชั่นธนาคารได้
 
-## Deploy (Vercel/Netlify)
-- Build command: npm run build
-- Publish directory: dist
-- Env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+## Database
+โครงสร้าง SQL อยู่ใน database/schema.sql

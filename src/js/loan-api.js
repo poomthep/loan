@@ -1,0 +1,2 @@
+import { supabase } from '../config/supabase-init.js';
+export async function getLoanCapacity(){return [];} export async function getInstallment(){return 0;} export async function getPromotions(){return [];} export async function calculatePromotionInstallments(){return [];}
