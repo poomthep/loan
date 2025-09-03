@@ -1,29 +1,41 @@
 import { supabase } from "../config/supabase-init.js";
 
 async function checkSession() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    window.location.href = "./loan.html";
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    window.location.href = "/loan.html";
   }
 }
 
-document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+async function login(email, password) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    alert("เข้าสู่ระบบไม่สำเร็จ: " + error.message);
+    alert("Login failed: " + error.message);
   } else {
-    window.location.href = "./loan.html";
+    window.location.href = "/loan.html";
   }
-});
-
-export async function logout() {
-  const { error } = await supabase.auth.signOut();
-  if (error) alert("ออกจากระบบไม่สำเร็จ: " + error.message);
-  else window.location.href = "./index.html";
 }
 
-window.checkSession = checkSession;
-window.logout = logout;
+async function logout() {
+  await supabase.auth.signOut();
+  window.location.href = "/index.html";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      login(email, password);
+    });
+  }
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+  }
+  checkSession();
+});
+
+export { login, logout, checkSession };

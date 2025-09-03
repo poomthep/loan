@@ -1,10 +1,3 @@
-# Loan Project Full Real (Fix4 Full)
+# Loan Project Full Real (Fix5)
 
-## User
-เปิด loan.html กรอกข้อมูล ระบบจะคำนวณวงเงินกู้สูงสุด + ค่างวด และดึงโปรโมชั่นมาเปรียบเทียบ
-
-## Admin
-เปิด admin.html เพิ่มและดูโปรโมชั่นธนาคารได้
-
-## Database
-โครงสร้าง SQL อยู่ใน database/schema.sql (drop + create + insert sample data + stored procedures)
+รวม loan.html, admin.html, index-manager.js, supabase-init.js ที่ถูกต้อง และ schema.sql พร้อม RPC
