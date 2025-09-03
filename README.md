@@ -1,10 +1,4 @@
-# Loan Project Full Real (Fix2)
-
-## User
-เปิด loan.html กรอกข้อมูล ระบบจะคำนวณวงเงินกู้สูงสุด + ค่างวด และดึงโปรโมชั่นมาเปรียบเทียบ
-
-## Admin
-เปิด admin.html เพิ่มและดูโปรโมชั่นธนาคารได้
+# Loan Project Full Real (Fix3)
 
 ## Database
-โครงสร้าง SQL อยู่ใน database/schema.sql (ใช้ promo_name แทน name)
+ไฟล์ database/schema.sql จะลบตารางเก่า + สร้างใหม่ + ใส่ sample data และ Stored Procedures (calculate_loan_capacity, calculate_installment)
