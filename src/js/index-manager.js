@@ -1,4 +1,4 @@
-import { supabase } from "../config/supabase-init.js";
+import { supabase } from "../config/supabase-init";
 
 async function checkSession() {
   const { data: { session } } = await supabase.auth.getSession();
