@@ -1,24 +1,14 @@
 {
   "builds": [
     {
-      "src": "vite.config.js",
-      "use": "@vercel/static-build",
-      "config": {}
+      "src": "package.json",
+      "use": "@vercel/static-build"
     }
   ],
   "routes": [
-    {
-      "src": "/loan",
-      "dest": "/loan.html"
-    },
-    {
-      "src": "/admin",
-      "dest": "/admin.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/loan", "dest": "/loan.html" },
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/.*", "dest": "/index.html" }
   ],
   "framework": "vite",
   "outputDirectory": "dist"
