@@ -1,9 +1,0 @@
-{
-  "cleanUrls": false,
-  "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/loan", "destination": "/loan.html" },
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
