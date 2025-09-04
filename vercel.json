@@ -1,15 +1,9 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build"
-    }
-  ],
+  "framework": "vite",
+  "outputDirectory": "dist",
   "routes": [
     { "src": "/loan", "dest": "/loan.html" },
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/.*", "dest": "/index.html" }
-  ],
-  "framework": "vite",
-  "outputDirectory": "dist"
+  ]
 }
