@@ -31,6 +31,16 @@
 
   <script type="module" src="./src/js/index-manager.js"></script>
   <script type="module">
+  import { supabase } from "../config/supabase-init.js";
+
+async function checkSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    window.location.href = "/index.html"; // หรือหน้า login
+  }
+}
+checkSession();
+
     import { calculateLoan } from "./src/js/loan-calculator.js";
     import { calculateLoanWithPromo } from "./src/js/loan-calculator-supabase.js";
 
