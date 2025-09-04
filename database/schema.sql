@@ -1,1 +1,2 @@
--- schema.sql with banks, promotions, profiles, and RPC functions
+-- schema.sql
+-- drop + create + insert sample data + stored procedures

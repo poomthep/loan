@@ -1,3 +1,6 @@
-# Loan Project Fix6
+# Loan Project
 
-ใช้ไฟล์ supabaseClient.js แทน supabase-init.js เพื่อลดปัญหา build บน Vercel.
+## Usage
+1. Init Supabase DB
+2. Run local with Vite
+3. Deploy to Vercel
