@@ -1,6 +1,13 @@
-# Loan Project
+# Loan App (Vite + Supabase)
 
-## Usage
-1. Init Supabase DB
-2. Run local with Vite
-3. Deploy to Vercel
+## Development
+npm install
+npm run dev
+
+## Build
+npm run build
+
+## Deploy (Vercel/Netlify)
+- Build command: npm run build
+- Publish directory: dist
+- Env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
